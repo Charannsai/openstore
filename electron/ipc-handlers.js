@@ -12,7 +12,7 @@ const { BrowserWindow, shell } = require('electron');
  */
 
 const auditLog = [];
-const managedProcesses = new Map(); // pid -> process info
+const managedProcesses = new Map();
 
 function logAudit(action, source, result, details = '') {
   const entry = {
@@ -95,7 +95,7 @@ function registerAgentHandlers(ipcMain) {
     }
   });
 
-  // ── Git Clone ────────────────────────────────────────────────────────────
+  // ── Native Git Clone ─────────────────────────────────────────────────────
   ipcMain.handle('agent:git-clone', async (_event, repoUrl, targetDir) => {
     if (!repoUrl || typeof repoUrl !== 'string') throw new Error('Invalid repository URL');
 
@@ -140,7 +140,14 @@ function registerAgentHandlers(ipcMain) {
     const requirementsPath = path.join(repoPath, 'requirements.txt');
     const dockerComposePath = path.join(repoPath, 'docker-compose.yml');
     const dockerfilePath = path.join(repoPath, 'Dockerfile');
-    const readmePath = fs.readdirSync(repoPath).find(f => f.toLowerCase().startsWith('readme'));
+
+    let readmeText = '';
+    try {
+      const readmeFile = fs.readdirSync(repoPath).find(f => f.toLowerCase().startsWith('readme'));
+      if (readmeFile) {
+        readmeText = fs.readFileSync(path.join(repoPath, readmeFile), 'utf-8');
+      }
+    } catch {}
 
     // Node.js Ecosystem
     if (fs.existsSync(packageJsonPath)) {
@@ -185,23 +192,19 @@ function registerAgentHandlers(ipcMain) {
       result.is_web_app = true;
     }
 
-    // Inspect README for port definitions
-    if (readmePath) {
-      try {
-        const readmeText = fs.readFileSync(path.join(repoPath, readmePath), 'utf-8');
-        const portMatch = readmeText.match(/localhost:(\d{4,5})/i) || readmeText.match(/port\s*:?\s*(\d{4,5})/i);
-        if (portMatch) {
-          result.detected_port = parseInt(portMatch[1], 10);
-          result.is_web_app = true;
-        }
-      } catch {}
+    if (readmeText) {
+      const portMatch = readmeText.match(/localhost:(\d{4,5})/i) || readmeText.match(/port\s*:?\s*(\d{4,5})/i);
+      if (portMatch) {
+        result.detected_port = parseInt(portMatch[1], 10);
+        result.is_web_app = true;
+      }
     }
 
-    logAudit('inspect-repo', 'renderer', 'success', `Ecosystem: ${result.ecosystem}, Start: ${result.start_command}`);
+    logAudit('inspect-repo', 'renderer', 'success', `Ecosystem: ${result.ecosystem}`);
     return result;
   });
 
-  // ── Execute Terminal Command (Live Stream Output) ────────────────────────
+  // ── Execute Terminal Command with Live Output ─────────────────────────────
   ipcMain.handle('agent:execute-terminal-command', async (_event, command, cwd) => {
     if (!command || typeof command !== 'string') throw new Error('Invalid command');
 
@@ -214,7 +217,7 @@ function registerAgentHandlers(ipcMain) {
 
       const child = spawn(shellCmd, shellArgs, {
         cwd: cwd || getDownloadsDir(),
-        env: { ...process.env, PATH: process.env.PATH },
+        env: { ...process.env },
       });
 
       let stdoutData = '';
@@ -224,18 +227,14 @@ function registerAgentHandlers(ipcMain) {
         const text = data.toString();
         stdoutData += text;
         const win = BrowserWindow.getAllWindows()[0];
-        if (win) {
-          win.webContents.send('agent:terminal-output', { command, text, type: 'stdout' });
-        }
+        if (win) win.webContents.send('agent:terminal-output', { command, text, type: 'stdout' });
       });
 
       child.stderr.on('data', (data) => {
         const text = data.toString();
         stderrData += text;
         const win = BrowserWindow.getAllWindows()[0];
-        if (win) {
-          win.webContents.send('agent:terminal-output', { command, text, type: 'stderr' });
-        }
+        if (win) win.webContents.send('agent:terminal-output', { command, text, type: 'stderr' });
       });
 
       child.on('close', (code) => {
@@ -243,9 +242,8 @@ function registerAgentHandlers(ipcMain) {
           logAudit('execute-command', 'renderer', 'success', command);
           resolve({ success: true, output: stdoutData });
         } else {
-          logAudit('execute-command', 'renderer', 'failed', `Exit code ${code}`);
-          // Resolve gracefully for non-fatal exit warnings
-          resolve({ success: false, code, output: stdoutData + stderrData });
+          logAudit('execute-command', 'renderer', 'completed-code', `Code ${code}`);
+          resolve({ success: code === 0, code, output: stdoutData + stderrData });
         }
       });
 
@@ -256,7 +254,7 @@ function registerAgentHandlers(ipcMain) {
     });
   });
 
-  // ── Start Managed Background Dev Server / Application Service ────────────
+  // ── Start Background Service ──────────────────────────────────────────────
   ipcMain.handle('agent:start-background-service', async (_event, command, cwd, appId) => {
     if (!command || typeof command !== 'string') throw new Error('Invalid command');
 
@@ -274,7 +272,7 @@ function registerAgentHandlers(ipcMain) {
     });
 
     const pid = child.pid;
-    managedProcesses.set(appId, { pid, child, command, cwd, startTime: new Date() });
+    managedProcesses.set(appId, { pid, child, command, cwd });
 
     child.stdout.on('data', (data) => {
       const text = data.toString();
@@ -292,7 +290,7 @@ function registerAgentHandlers(ipcMain) {
     return { success: true, pid };
   });
 
-  // ── Stop Managed Background Service ──────────────────────────────────────
+  // ── Stop Background Service ───────────────────────────────────────────────
   ipcMain.handle('agent:stop-background-service', async (_event, appId) => {
     const processInfo = managedProcesses.get(appId);
     if (processInfo) {
@@ -310,21 +308,32 @@ function registerAgentHandlers(ipcMain) {
     return { success: true };
   });
 
-  // ── File Downloader ──────────────────────────────────────────────────────
+  // ── Robust File Downloader (Supports Redirects & Non-chunked Downloads) ────
   ipcMain.handle('agent:download-file', async (event, url, dest) => {
+    if (!url || typeof url !== 'string') throw new Error('Invalid URL');
+
     const finalDest = dest || path.join(getDownloadsDir(), path.basename(new URL(url).pathname) || 'download.bin');
     const dir = path.dirname(finalDest);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
     return new Promise((resolve, reject) => {
       function downloadUrl(targetUrl, redirectCount = 0) {
-        if (redirectCount > 5) return reject(new Error('Too many redirects'));
+        if (redirectCount > 8) return reject(new Error('Too many redirects'));
 
-        const parsedUrl = new URL(targetUrl);
+        let parsedUrl;
+        try {
+          parsedUrl = new URL(targetUrl);
+        } catch (e) {
+          return reject(new Error(`Invalid redirect URL: ${targetUrl}`));
+        }
+
         const protocol = parsedUrl.protocol === 'https:' ? https : http;
 
         const req = protocol.get(targetUrl, {
-          headers: { 'User-Agent': 'OpenStore-Desktop-Agent/1.0' },
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': '*/*',
+          },
         }, (res) => {
           if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
             const redirectUrl = new URL(res.headers.location, targetUrl).href;
@@ -339,7 +348,7 @@ function registerAgentHandlers(ipcMain) {
 
           res.on('data', (chunk) => {
             received += chunk.length;
-            const progress = total > 0 ? Math.round((received / total) * 100) : 0;
+            const progress = total > 0 ? Math.round((received / total) * 100) : 50;
             const win = BrowserWindow.getAllWindows()[0];
             if (win) {
               win.webContents.send('agent:download-progress', { url, received, total, progress, path: finalDest });
@@ -427,7 +436,7 @@ function registerAgentHandlers(ipcMain) {
           fs.rmSync(installPath, { recursive: true, force: true });
         }
       } catch (err) {
-        console.error('Uninstall file error:', err);
+        console.error('Uninstall error:', err);
       }
     }
 
