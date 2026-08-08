@@ -96,8 +96,8 @@ export default function MyAppsPage() {
       }
 
       case 'executable': {
-        // Desktop app / binary: launch the executable
-        await window.electronAPI!.launchApp({ path });
+        // Desktop app / binary: launch the executable or start script
+        await window.electronAPI!.launchApp({ path, command: installed.start_command });
         updateInstalledAppStatus(installed.id, 'running');
         break;
       }

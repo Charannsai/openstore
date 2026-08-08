@@ -568,7 +568,7 @@ function registerAgentHandlers(ipcMain) {
     return { success: true, targetDir };
   });
 
-  // ── Open Folder or URL ───────────────────────────────────────────────────
+  // ── Smart App Launcher & Executable Resolver ──────────────────────────────
   ipcMain.handle('agent:launch-app', async (_event, config) => {
     if (!config) throw new Error('Invalid launch config');
 
@@ -580,9 +580,66 @@ function registerAgentHandlers(ipcMain) {
 
     if (config.path) {
       if (fs.existsSync(config.path)) {
-        shell.openPath(config.path);
-        logAudit('launch-app', 'renderer', 'opened-path', config.path);
-        return 0;
+        const stat = fs.statSync(config.path);
+
+        if (stat.isDirectory()) {
+          const dir = config.path;
+
+          // 1. Search for built .exe binary in dist/win-unpacked, dist, out, build, release-builds
+          const candidateDirs = [
+            path.join(dir, 'dist', 'win-unpacked'),
+            path.join(dir, 'dist'),
+            path.join(dir, 'out'),
+            path.join(dir, 'build'),
+            path.join(dir, 'release-builds'),
+            path.join(dir, 'release'),
+            dir,
+          ];
+
+          for (const cand of candidateDirs) {
+            if (fs.existsSync(cand)) {
+              try {
+                const files = fs.readdirSync(cand);
+                const exeFiles = files.filter(f => f.endsWith('.exe') && !f.toLowerCase().includes('unins') && !f.toLowerCase().includes('setup'));
+                if (exeFiles.length > 0) {
+                  const exePath = path.join(cand, exeFiles[0]);
+                  logAudit('launch-app', 'renderer', 'launching-built-exe', exePath);
+                  exec(`"${exePath}"`, { cwd: dir });
+                  return 0;
+                }
+              } catch {}
+            }
+          }
+
+          // 2. Try start_command or npm start / npm run dev if package.json exists
+          const pkgPath = path.join(dir, 'package.json');
+          if (fs.existsSync(pkgPath)) {
+            try {
+              const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+              const scripts = pkg.scripts || {};
+              const cmd = config.command || (scripts.start ? 'npm start' : scripts.dev ? 'npm run dev' : null);
+              if (cmd) {
+                logAudit('launch-app', 'renderer', 'launching-npm-command', `${cmd} in ${dir}`);
+                const isWin = os.platform() === 'win32';
+                const shellCmd = isWin ? 'cmd.exe' : '/bin/sh';
+                const shellArgs = isWin ? ['/c', cmd] : ['-c', cmd];
+                const child = spawn(shellCmd, shellArgs, { cwd: dir, detached: true, stdio: 'ignore' });
+                child.unref();
+                return 0;
+              }
+            } catch {}
+          }
+
+          // 3. Fallback: open folder in file manager
+          shell.openPath(dir);
+          logAudit('launch-app', 'renderer', 'opened-path', dir);
+          return 0;
+        } else {
+          // File path provided (.exe, .app, etc.)
+          shell.openPath(config.path);
+          logAudit('launch-app', 'renderer', 'opened-file', config.path);
+          return 0;
+        }
       }
     }
 
