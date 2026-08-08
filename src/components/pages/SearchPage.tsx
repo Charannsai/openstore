@@ -51,8 +51,15 @@ export default function SearchPage() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="mb-6">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      {/* Centered Search Hero Header */}
+      <div className="relative text-center max-w-2xl mx-auto pt-2 pb-4">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950 dark:text-white mb-2">
+          Explore Open Source
+        </h1>
+        <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 font-medium mb-6">
+          Search over 100M+ open-source software tools and GitHub repositories
+        </p>
         <SearchBar />
       </div>
 

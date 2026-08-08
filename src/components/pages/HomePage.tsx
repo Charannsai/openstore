@@ -44,23 +44,42 @@ export default function HomePage() {
     loadInitialData();
   }, []);
 
+  const { navigate } = useAppStore();
+
   return (
     <div className="space-y-10">
-      {/* Hero with High Z-Index for Dropdown Stacking */}
+      {/* Hero Section with Quick Action CTAs */}
       <motion.section
         initial={{ opacity: 0, y: 15, filter: 'blur(10px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-50 pt-4 pb-2"
+        className="relative z-20 pt-6 pb-4"
       >
-        <div className="relative text-center max-w-2xl mx-auto mb-8">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white mb-2">
+        <div className="relative text-center max-w-2xl mx-auto space-y-4">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-white">
             Open-source software, simplified.
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-6 font-normal">
-            Discover, install, and run open-source projects — directly from GitHub.
+          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 font-medium max-w-lg mx-auto leading-relaxed">
+            Discover, clone, and run top-tier open-source tools and GitHub repositories locally with one click.
           </p>
-          <SearchBar />
+
+          {/* Quick Action CTAs */}
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => navigate('search')}
+              className="px-5 py-2.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-bold text-xs hover:opacity-90 transition-all shadow-md cursor-pointer flex items-center gap-2"
+            >
+              <span>Explore All Apps</span>
+              <ChevronRightIcon className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => navigate('my-apps')}
+              className="px-5 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 font-bold text-xs hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all cursor-pointer"
+            >
+              My Installed Apps
+            </button>
+          </div>
         </div>
       </motion.section>
 
