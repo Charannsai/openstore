@@ -156,7 +156,8 @@ export default function AppDetailPage() {
     if (!app) return;
     if (isElectron && typeof window.electronAPI?.uninstallApp === 'function') {
       try {
-        const userConfiguredDir = useAppStore.getState().settings.installDir;
+        const defaultDir = (await window.electronAPI.getDownloadsDir()) || 'C:/Users/Public/OpenStore';
+        const userConfiguredDir = useAppStore.getState().settings.installDir || defaultDir;
         const sanitizeName = app.slug.replace(/[^a-zA-Z0-9-_]/g, '_');
         const targetDir = `${userConfiguredDir}/${sanitizeName}`;
         await window.electronAPI.uninstallApp(app.id, targetDir);

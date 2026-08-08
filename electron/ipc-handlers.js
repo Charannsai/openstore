@@ -785,7 +785,7 @@ function registerAgentHandlers(ipcMain) {
   });
 
   ipcMain.handle('agent:uninstall-app', async (_event, appId, installPath) => {
-    // Stop any running background service first
+    // 1. Stop any running background service first
     const processInfo = managedProcesses.get(appId);
     if (processInfo) {
       try {
@@ -798,30 +798,43 @@ function registerAgentHandlers(ipcMain) {
       managedProcesses.delete(appId);
     }
 
-    // Delete project files unconditionally (including custom workspace paths)
-    if (installPath && typeof installPath === 'string') {
+    // 2. Kill any stray git.exe on Windows that might hold open handles
+    if (os.platform() === 'win32') {
       try {
-        if (fs.existsSync(installPath)) {
-          if (os.platform() === 'win32') {
-            try { await execPromise(`attrib -R -H -S "${installPath}\\*.*" /S /D`, { timeout: 15000 }); } catch {}
-            try { await execPromise(`rmdir /S /Q "${installPath}"`, { timeout: 30000 }); } catch {}
-            try { await execPromise(`powershell -Command "Remove-Item -Path '${installPath}' -Recurse -Force -ErrorAction SilentlyContinue"`, { timeout: 30000 }); } catch {}
-          }
-          try {
-            if (fs.existsSync(installPath)) {
-              fs.rmSync(installPath, { recursive: true, force: true });
-            }
-          } catch {}
-          logAudit('uninstall-app', 'renderer', 'files-deleted', installPath);
-        }
+        await execPromise(`taskkill /F /IM git.exe /T`);
+      } catch {}
+    }
 
-        // Also clean up any lingering .zip archive
-        const zipArchive = `${installPath}.zip`;
-        if (fs.existsSync(zipArchive)) {
-          try { fs.unlinkSync(zipArchive); } catch {}
+    // 3. Resolve target directory
+    let target = installPath ? path.resolve(installPath) : null;
+    if ((!target || !fs.existsSync(target)) && appId) {
+      const defaultRoot = getDownloadsDir();
+      const sanitizeName = appId.replace(/[^a-zA-Z0-9-_]/g, '_');
+      const fallbackTarget = path.join(defaultRoot, sanitizeName);
+      if (fs.existsSync(fallbackTarget)) {
+        target = fallbackTarget;
+      }
+    }
+
+    if (target && fs.existsSync(target)) {
+      try {
+        if (os.platform() === 'win32') {
+          try { await execPromise(`attrib -R -H -S /S /D "${target}\\*"`, { timeout: 15000 }); } catch {}
+          try { await execPromise(`cmd /c rmdir /S /Q "${target}"`, { timeout: 30000 }); } catch {}
+          try { await execPromise(`powershell -NoProfile -Command "if (Test-Path '${target}') { Remove-Item -LiteralPath '${target}' -Recurse -Force -ErrorAction SilentlyContinue }"`, { timeout: 30000 }); } catch {}
         }
+        if (fs.existsSync(target)) {
+          fs.rmSync(target, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+        }
+        logAudit('uninstall-app', 'renderer', 'files-deleted', target);
       } catch (err) {
         console.error('Uninstall file deletion error:', err);
+      }
+
+      // Also clean up any lingering .zip archive
+      const zipArchive = `${target}.zip`;
+      if (fs.existsSync(zipArchive)) {
+        try { fs.unlinkSync(zipArchive); } catch {}
       }
     }
 

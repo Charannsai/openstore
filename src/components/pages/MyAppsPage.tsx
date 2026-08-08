@@ -144,8 +144,19 @@ export default function MyAppsPage() {
     const target = installedApps.find((a) => a.id === id);
     if (target) {
       if (isElectron) {
-        await window.electronAPI!.stopBackgroundService(target.id);
-        await window.electronAPI!.uninstallApp(target.id, target.install_path);
+        try {
+          await window.electronAPI!.stopBackgroundService(target.id);
+        } catch {}
+        const defaultDir = (await window.electronAPI!.getDownloadsDir()) || 'C:/Users/Public/OpenStore';
+        const userDir = useAppStore.getState().settings.installDir || defaultDir;
+        const sanitizeName = target.id.replace(/[^a-zA-Z0-9-_]/g, '_');
+        const fallbackPath = `${userDir}/${sanitizeName}`;
+        const pathToDelete = target.install_path || fallbackPath;
+        try {
+          await window.electronAPI!.uninstallApp(target.id, pathToDelete);
+        } catch (err) {
+          console.error('Error deleting app folder:', err);
+        }
       }
       removeInstalledApp(id);
     }
