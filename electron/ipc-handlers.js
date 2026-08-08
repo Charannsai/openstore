@@ -156,11 +156,12 @@ function registerAgentHandlers(ipcMain) {
       build_command: '',
       start_command: '',
       detected_port: 3000,
-      is_web_app: true,
+      is_web_app: false,
       has_package_json: false,
       has_requirements_txt: false,
       has_dockerfile: false,
-      resolved_cwd: repoPath, // The actual directory to run commands in (may differ for monorepos)
+      run_mode: 'ide', // Default: open in IDE. Changed to 'browser' when web framework detected
+      resolved_cwd: repoPath,
     };
 
     // Helper: Try to resolve ecosystem from a given directory
