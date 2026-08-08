@@ -353,57 +353,67 @@ export default function AppDetailPage() {
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
             {isInstalling ? (
-              <div className="flex items-center gap-3.5 px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-xs">
-                {/* PlayStore Circular Progress Ring */}
-                <div className="relative flex items-center justify-center w-8 h-8 flex-shrink-0">
-                  <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 36 36">
-                    <path
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                className="inline-flex items-center gap-3 px-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-white/10 bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-xs"
+              >
+                {/* Thin Stroke SVG Ring */}
+                <div className="relative flex items-center justify-center w-5 h-5 flex-shrink-0">
+                  <svg className="w-5 h-5 transform -rotate-90" viewBox="0 0 36 36">
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.5"
                       className="text-zinc-200 dark:text-zinc-800"
-                      strokeWidth="3.5"
+                      strokeWidth="1.75"
                       stroke="currentColor"
                       fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
-                    <path
-                      className="text-emerald-500 transition-all duration-300 ease-out"
-                      strokeDasharray={`${installProgress}, 100`}
-                      strokeWidth="3.5"
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.5"
+                      className="text-emerald-500 dark:text-emerald-400 transition-all duration-300 ease-out"
+                      strokeWidth="1.75"
+                      strokeDasharray={`${(installProgress * 97.4) / 100}, 97.4`}
                       strokeLinecap="round"
                       stroke="currentColor"
                       fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
                   </svg>
-                  <span className="absolute text-[9px] font-extrabold text-zinc-950 dark:text-white">
-                    {installProgress}%
-                  </span>
                 </div>
 
-                {/* Status Label & Progress Bar */}
-                <div className="min-w-[130px]">
-                  <div className="flex items-center justify-between text-xs font-bold text-zinc-950 dark:text-white tracking-tight mb-1">
-                    <span>
-                      {installProgress < 30 ? 'Downloading...' : installProgress < 80 ? 'Setting up repo...' : 'Finishing...'}
+                {/* Minimal Thin Micro-Bar & Status */}
+                <div className="flex flex-col min-w-[130px] space-y-1">
+                  <div className="flex items-center justify-between text-[11px] font-medium tracking-tight text-zinc-700 dark:text-zinc-300">
+                    <span className="truncate">
+                      {installProgress < 30 ? 'Downloading...' : installProgress < 80 ? 'Cloning repository...' : 'Finalizing...'}
                     </span>
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">{installProgress}%</span>
+                    <span className="font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400 ml-2">
+                      {installProgress}%
+                    </span>
                   </div>
-                  <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+
+                  {/* 2px Thin Line Bar */}
+                  <div className="w-full h-[2px] bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                      className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${installProgress}%` }}
                     />
                   </div>
                 </div>
 
-                {/* Cancel X Button */}
+                {/* Minimal Cancel Icon Button */}
                 <button
                   onClick={handleCancelInstallation}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer ml-1"
-                  title="Cancel Installation and Delete Workspace Files"
+                  className="p-1 rounded-full text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer ml-0.5"
+                  title="Cancel installation & clean up files"
                 >
-                  <XIcon className="w-4 h-4" />
+                  <XIcon className="w-3.5 h-3.5" />
                 </button>
-              </div>
+              </motion.div>
             ) : isInstalled && installedRecord ? (
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
