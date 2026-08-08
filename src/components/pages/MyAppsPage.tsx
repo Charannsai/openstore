@@ -207,7 +207,9 @@ export default function MyAppsPage() {
               initial={{ opacity: 0, y: 8, filter: 'blur(6px)' }}
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               transition={{ delay: i * 0.04 }}
-              className="glass-card rounded-xl p-4 border border-zinc-200 dark:border-white/10"
+              className={`glass-card rounded-xl p-4 border border-zinc-200 dark:border-white/10 relative transition-all ${
+                activeMenuId === installed.id ? 'z-40' : 'z-10'
+              }`}
             >
               <div className="flex items-center gap-3.5">
                 {/* Icon */}
@@ -309,7 +311,7 @@ export default function MyAppsPage() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: -4 }}
                             transition={{ duration: 0.12 }}
-                            className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-white/10 shadow-xl z-40 py-1.5 overflow-hidden text-xs"
+                            className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-white/10 shadow-xl z-50 py-1.5 overflow-hidden text-xs"
                           >
                             {/* Item 1: Open Details */}
                             <button
