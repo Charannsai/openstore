@@ -9,12 +9,19 @@ import type { Application } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SearchBar() {
-  const { setSearchQuery, navigate } = useAppStore();
-  const [query, setQuery] = useState('');
+  const { setSearchQuery, navigate, searchQuery } = useAppStore();
+  const [query, setQuery] = useState(searchQuery || '');
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync internal state with store query if changed externally
+  useEffect(() => {
+    if (searchQuery && searchQuery !== query) {
+      setQuery(searchQuery);
+    }
+  }, [searchQuery]);
 
   // Debounced real-time GitHub search suggestions
   useEffect(() => {
@@ -29,18 +36,19 @@ export default function SearchBar() {
       const results = await searchGitHubRepos(query);
       setSuggestions(results.slice(0, 5));
       setIsLoading(false);
-    }, 300);
+    }, 350);
 
     return () => clearTimeout(timer);
   }, [query]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      setSearchQuery(query.trim());
-      navigate('search');
+    const cleanQuery = query.trim();
+    if (cleanQuery) {
+      setSearchQuery(cleanQuery);
       setSuggestions([]);
       inputRef.current?.blur();
+      navigate('search');
     }
   };
 
@@ -93,6 +101,7 @@ export default function SearchBar() {
               type="button"
               onClick={() => {
                 setQuery('');
+                setSearchQuery('');
                 setSuggestions([]);
               }}
               className="absolute right-3.5 text-zinc-500 hover:text-zinc-300 transition-colors"

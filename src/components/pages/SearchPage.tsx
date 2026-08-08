@@ -7,32 +7,40 @@ import SearchBar from '@/components/store/SearchBar';
 import { searchGitHubRepos } from '@/lib/github-api';
 import type { Application } from '@/lib/types';
 import { motion } from 'framer-motion';
-import { SlidersHorizontal, X, Loader2 } from 'lucide-react';
-import { categories } from '@/lib/mock-data';
+import { SlidersHorizontal, X, Loader2, Search } from 'lucide-react';
+import { CATEGORIES } from '@/lib/constants';
 
 export default function SearchPage() {
   const { searchQuery } = useAppStore();
   const [results, setResults] = useState<Application[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeDifficulty, setActiveDifficulty] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function performSearch() {
       setIsLoading(true);
-      const queryToUse = searchQuery || 'open source';
+      const queryToUse = searchQuery.trim() || 'open source';
       const fetched = await searchGitHubRepos(queryToUse);
-      setResults(fetched);
 
-      // Save to store
-      useAppStore.setState((state) => ({
-        applications: [...fetched, ...state.applications],
-      }));
+      if (isMounted) {
+        setResults(fetched);
+        setIsLoading(false);
 
-      setIsLoading(false);
+        // Store in global store for navigation
+        useAppStore.setState((state) => ({
+          applications: [...fetched, ...state.applications],
+        }));
+      }
     }
 
     performSearch();
+
+    return () => {
+      isMounted = false;
+    };
   }, [searchQuery]);
 
   let filteredResults = results;
@@ -55,7 +63,7 @@ export default function SearchPage() {
           <SlidersHorizontal className="w-3 h-3" />
           Filter:
         </span>
-        {categories.map((cat) => (
+        {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
@@ -98,12 +106,12 @@ export default function SearchPage() {
       {/* Results header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-          {searchQuery ? `Results for "${searchQuery}"` : 'Popular Repositories'}
+          {searchQuery ? `Results for "${searchQuery}" (${filteredResults.length})` : 'Popular Open-Source Projects'}
         </h2>
         {isLoading && (
           <div className="flex items-center gap-2 text-xs text-zinc-500">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            <span>Fetching GitHub repositories...</span>
+            <span>Fetching repositories...</span>
           </div>
         )}
       </div>
@@ -122,9 +130,10 @@ export default function SearchPage() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-xs text-zinc-400 mb-1">No repositories found</p>
-          <p className="text-[11px] text-zinc-600">Try a different search term or adjust filters.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center glass-card rounded-xl border border-white/[0.08]">
+          <Search className="w-8 h-8 text-zinc-600 mb-3" />
+          <p className="text-xs font-medium text-zinc-300 mb-1">No repositories found for &quot;{searchQuery}&quot;</p>
+          <p className="text-[11px] text-zinc-500">Try searching for project names like &quot;obs-studio&quot;, &quot;ollama&quot;, or &quot;vscode&quot;.</p>
         </div>
       )}
     </motion.div>
