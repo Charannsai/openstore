@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useSyncExternalStore } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useAppStore } from '@/store/app-store';
 import Sidebar from '@/components/layout/Sidebar';
 import HomePage from '@/components/pages/HomePage';
@@ -39,6 +39,21 @@ export default function App() {
   const [viewOverride, setViewOverride] = useState<'landing' | 'desktop' | null>(null);
 
   const PageComponent = pageComponents[currentView] || HomePage;
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.electronAPI?.getInstalledApps) {
+      window.electronAPI
+        .getInstalledApps()
+        .then((list) => {
+          if (Array.isArray(list)) {
+            useAppStore.setState({ installedApps: list });
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to sync installed apps registry:', err);
+        });
+    }
+  }, []);
 
   // Decide whether to show Landing Page or Desktop App
   // Web Browser -> Landing Page (unless user clicked "Launch Desktop App View")

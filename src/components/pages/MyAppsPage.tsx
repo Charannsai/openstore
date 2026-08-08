@@ -30,7 +30,7 @@ export default function MyAppsPage() {
       if (isElectron && typeof window.electronAPI?.getInstalledApps === 'function') {
         try {
           const list: InstalledApp[] = await window.electronAPI.getInstalledApps();
-          if (list && list.length > 0) {
+          if (Array.isArray(list)) {
             useAppStore.setState({ installedApps: list });
           }
         } catch (err) {
