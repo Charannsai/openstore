@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { registerAgentHandlers } = require('./ipc-handlers');

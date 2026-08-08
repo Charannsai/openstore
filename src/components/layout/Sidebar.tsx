@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { BRAND } from '@/lib/constants';
 import {

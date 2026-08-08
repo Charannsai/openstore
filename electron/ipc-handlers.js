@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const os = require('os');
 const { exec, spawn } = require('child_process');
 const path = require('path');
