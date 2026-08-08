@@ -188,6 +188,9 @@ export async function runRealInstallation(
   callbacks.onLog(`[AGENT] Completing hands-free setup and registering service...`);
 
   const localWebUrl = ecosystemInfo.is_web_app ? `http://localhost:${ecosystemInfo.detected_port || 3000}` : undefined;
+  const detectedRunMode = isBinaryInstaller ? 'executable' : (ecosystemInfo.run_mode || 'ide');
+
+  callbacks.onLog(`[AGENT] Detected run mode: ${detectedRunMode.toUpperCase()}${localWebUrl ? ` (${localWebUrl})` : ''}`);
 
   const installedAppRecord: InstalledApp = {
     id: `inst-${Date.now()}`,
@@ -199,6 +202,8 @@ export async function runRealInstallation(
     installed_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     status: 'stopped',
+    run_mode: detectedRunMode,
+    start_command: ecosystemInfo.start_command || undefined,
     local_url: localWebUrl,
   };
 
