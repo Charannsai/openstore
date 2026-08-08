@@ -9,6 +9,7 @@ export interface AppSettings {
   sendDiagnostics: boolean;
   verifyChecksums: boolean;
   updateNotifications: boolean;
+  groqApiKey?: string;
 }
 
 const getInitialActivities = (): ActivityEvent[] => {
@@ -28,6 +29,7 @@ const getInitialSettings = (): AppSettings => {
     sendDiagnostics: false,
     verifyChecksums: true,
     updateNotifications: true,
+    groqApiKey: '',
   };
   if (typeof window === 'undefined') return defaults;
   try {
