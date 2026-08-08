@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import Sidebar from '@/components/layout/Sidebar';
 import HomePage from '@/components/pages/HomePage';
@@ -11,6 +12,7 @@ import UpdatesPage from '@/components/pages/UpdatesPage';
 import ActivityPage from '@/components/pages/ActivityPage';
 import SettingsPage from '@/components/pages/SettingsPage';
 import CategoryPage from '@/components/pages/CategoryPage';
+import LandingPage from '@/components/pages/LandingPage';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const pageComponents: Record<string, React.ComponentType> = {
@@ -27,7 +29,30 @@ const pageComponents: Record<string, React.ComponentType> = {
 
 export default function App() {
   const { currentView, isSidebarCollapsed } = useAppStore();
+  const [isElectron, setIsElectron] = useState<boolean | null>(null);
+  const [viewOverride, setViewOverride] = useState<'landing' | 'desktop' | null>(null);
+
+  useEffect(() => {
+    const checkElectron = typeof window !== 'undefined' && !!window.electronAPI;
+    setIsElectron(checkElectron);
+  }, []);
+
   const PageComponent = pageComponents[currentView] || HomePage;
+
+  // Decide whether to show Landing Page or Desktop App
+  // Web Browser -> Landing Page (unless user clicked "Launch Desktop App View")
+  // Electron -> Desktop App Dashboard
+  const isWebMode = isElectron === false;
+  const showLandingPage = viewOverride === 'landing' || (isWebMode && viewOverride !== 'desktop');
+
+  if (isElectron === null) {
+    // Initial mount hydration check
+    return <div className="min-h-screen bg-[var(--bg-app)]" />;
+  }
+
+  if (showLandingPage) {
+    return <LandingPage onLaunchWebApp={() => setViewOverride('desktop')} />;
+  }
 
   return (
     <div className="flex min-h-screen relative">
