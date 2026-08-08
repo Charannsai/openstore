@@ -3,6 +3,7 @@
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useAppStore } from '@/store/app-store';
 import Sidebar from '@/components/layout/Sidebar';
+import WindowControls from '@/components/layout/WindowControls';
 import HomePage from '@/components/pages/HomePage';
 import AppDetailPage from '@/components/pages/AppDetailPage';
 import InstallPage from '@/components/pages/InstallPage';
@@ -72,6 +73,8 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div className="flex min-h-screen relative">
+        <div className="fixed top-0 left-0 right-0 h-10 drag-region z-40 pointer-events-auto" />
+        <WindowControls />
         <Sidebar />
         <main
           className={`flex-1 transition-all duration-300 ease-out ${

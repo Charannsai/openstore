@@ -115,6 +115,9 @@ export const useAppStore = create<AppStoreState>((set) => ({
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem('openstore-settings', JSON.stringify(newSettings));
+          if ((key as string) === 'theme' && window.electronAPI?.setTitlebarTheme) {
+            window.electronAPI.setTitlebarTheme(value as string);
+          }
         } catch {}
       }
       return { settings: newSettings };

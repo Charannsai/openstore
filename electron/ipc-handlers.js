@@ -47,6 +47,49 @@ function getDownloadsDir() {
 }
 
 function registerAgentHandlers(ipcMain) {
+  // ── Window Controls ──────────────────────────────────────────────────────
+  ipcMain.handle('window:minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.minimize();
+  });
+
+  ipcMain.handle('window:maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      if (win.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win.maximize();
+      }
+    }
+  });
+
+  ipcMain.handle('window:close', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) win.close();
+  });
+
+  ipcMain.handle('window:set-titlebar-theme', (event, theme) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win && typeof win.setTitleBarOverlay === 'function') {
+      try {
+        if (theme === 'light') {
+          win.setTitleBarOverlay({
+            color: '#ffffff',
+            symbolColor: '#09090b',
+            height: 38,
+          });
+        } else {
+          win.setTitleBarOverlay({
+            color: '#09090b',
+            symbolColor: '#f4f4f5',
+            height: 38,
+          });
+        }
+      } catch {}
+    }
+  });
+
   // ── System Info ──────────────────────────────────────────────────────────
   ipcMain.handle('agent:get-system-info', async () => {
     const platformMap = { win32: 'windows', darwin: 'macos', linux: 'linux' };

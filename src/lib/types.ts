@@ -346,6 +346,12 @@ export interface ElectronAPI {
   onServiceOutput: (
     callback: (data: { appId: string; text: string }) => void
   ) => () => void;
+
+  // Window Controls
+  minimizeWindow?: () => Promise<void>;
+  maximizeWindow?: () => Promise<void>;
+  closeWindow?: () => Promise<void>;
+  setTitlebarTheme?: (theme: string) => Promise<void>;
 }
 
 // ─── Literal Types ───────────────────────────────────────────────────────────

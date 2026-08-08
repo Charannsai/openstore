@@ -332,3 +332,16 @@ export const CopyIcon: React.FC<IconProps> = ({ size = 20, className = '', ...pr
   </svg>
 );
 
+export const MinusIcon: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
+  <svg width={size} height={size} {...defaultProps} className={className} {...props}>
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+export const MaximizeTileIcon: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
+  <svg width={size} height={size} {...defaultProps} className={className} {...props}>
+    <rect x="3" y="3" width="10" height="10" rx="1.5" />
+    <path d="M8 8h9v9H8z" />
+  </svg>
+);
+
