@@ -8,7 +8,7 @@ const net = require('net');
 const { BrowserWindow, shell } = require('electron');
 
 /**
- * Desktop Agent — Hands-Free Automated Setup & Lifecycle Orchestrator
+ * Desktop Agent — Hands-Free Execution & Universal Auto-Run Resolver
  */
 
 const auditLog = [];
@@ -95,7 +95,21 @@ function registerAgentHandlers(ipcMain) {
     }
   });
 
-  // ── Native Git Clone ─────────────────────────────────────────────────────
+  // ── Check Port ───────────────────────────────────────────────────────────
+  ipcMain.handle('agent:check-port', async (_event, port) => {
+    if (!port || typeof port !== 'number') return { inUse: false };
+
+    return new Promise((resolve) => {
+      const socket = new net.Socket();
+      socket.setTimeout(1500);
+      socket.on('connect', () => { socket.destroy(); resolve({ inUse: true }); });
+      socket.on('timeout', () => { socket.destroy(); resolve({ inUse: false }); });
+      socket.on('error', () => { socket.destroy(); resolve({ inUse: false }); });
+      socket.connect(port, '127.0.0.1');
+    });
+  });
+
+  // ── Robust Git Clone (Graceful Handling of Existing Folders) ─────────────
   ipcMain.handle('agent:git-clone', async (_event, repoUrl, targetDir) => {
     if (!repoUrl || typeof repoUrl !== 'string') throw new Error('Invalid repository URL');
 
@@ -104,23 +118,37 @@ function registerAgentHandlers(ipcMain) {
     if (fs.existsSync(targetDir)) {
       const gitDir = path.join(targetDir, '.git');
       if (fs.existsSync(gitDir)) {
-        await execPromise(`git -C "${targetDir}" pull`, { timeout: 120000 });
-        logAudit('git-clone', 'renderer', 'git-pull-success', targetDir);
-        return { success: true, targetDir, action: 'pulled' };
-      } else {
-        fs.rmSync(targetDir, { recursive: true, force: true });
+        try {
+          await execPromise(`git -C "${targetDir}" pull`, { timeout: 120000 });
+          logAudit('git-clone', 'renderer', 'git-pull-success', targetDir);
+          return { success: true, targetDir, action: 'pulled' };
+        } catch {
+          logAudit('git-clone', 'renderer', 'git-existing-used', targetDir);
+          return { success: true, targetDir, action: 'existing' };
+        }
+      } else if (fs.readdirSync(targetDir).length > 0) {
+        logAudit('git-clone', 'renderer', 'existing-dir-used', targetDir);
+        return { success: true, targetDir, action: 'existing' };
       }
     }
 
     const parentDir = path.dirname(targetDir);
     if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
 
-    await execPromise(`git clone "${repoUrl}" "${targetDir}"`, { timeout: 300000 });
-    logAudit('git-clone', 'renderer', 'git-clone-success', targetDir);
-    return { success: true, targetDir, action: 'cloned' };
+    try {
+      await execPromise(`git clone "${repoUrl}" "${targetDir}"`, { timeout: 300000 });
+      logAudit('git-clone', 'renderer', 'git-clone-success', targetDir);
+      return { success: true, targetDir, action: 'cloned' };
+    } catch (err) {
+      if (fs.existsSync(targetDir) && fs.readdirSync(targetDir).length > 0) {
+        logAudit('git-clone', 'renderer', 'git-clone-fallback', targetDir);
+        return { success: true, targetDir, action: 'existing' };
+      }
+      throw err;
+    }
   });
 
-  // ── Inspect Repository Ecosystem & Documentation ─────────────────────────
+  // ── Universal Smart Ecosystem & Run Command Resolver ─────────────────────
   ipcMain.handle('agent:inspect-repo-ecosystem', async (_event, repoPath) => {
     if (!fs.existsSync(repoPath)) throw new Error('Repository directory does not exist');
 
@@ -130,7 +158,7 @@ function registerAgentHandlers(ipcMain) {
       build_command: '',
       start_command: '',
       detected_port: 3000,
-      is_web_app: false,
+      is_web_app: true,
       has_package_json: false,
       has_requirements_txt: false,
       has_dockerfile: false,
@@ -141,15 +169,7 @@ function registerAgentHandlers(ipcMain) {
     const dockerComposePath = path.join(repoPath, 'docker-compose.yml');
     const dockerfilePath = path.join(repoPath, 'Dockerfile');
 
-    let readmeText = '';
-    try {
-      const readmeFile = fs.readdirSync(repoPath).find(f => f.toLowerCase().startsWith('readme'));
-      if (readmeFile) {
-        readmeText = fs.readFileSync(path.join(repoPath, readmeFile), 'utf-8');
-      }
-    } catch {}
-
-    // Node.js Ecosystem
+    // 1. Node.js Ecosystem
     if (fs.existsSync(packageJsonPath)) {
       result.has_package_json = true;
       result.ecosystem = 'node';
@@ -163,48 +183,78 @@ function registerAgentHandlers(ipcMain) {
 
         if (scripts.dev) {
           result.start_command = 'npm run dev';
-          result.is_web_app = true;
         } else if (scripts.start) {
           result.start_command = 'npm start';
-          result.is_web_app = true;
+        } else if (scripts.serve) {
+          result.start_command = 'npm run serve';
+        } else if (scripts.preview) {
+          result.start_command = 'npm run preview';
         } else {
-          result.start_command = 'node index.js';
+          result.start_command = 'npx serve -p 3000';
         }
-      } catch {}
+
+        // Port detection from Vite / Next / React config
+        if (JSON.stringify(scripts).includes('vite')) result.detected_port = 5173;
+        else if (JSON.stringify(scripts).includes('next')) result.detected_port = 3000;
+      } catch {
+        result.start_command = 'npx serve -p 3000';
+      }
     }
-    // Python Ecosystem
+    // 2. Python Ecosystem
     else if (fs.existsSync(requirementsPath)) {
       result.has_requirements_txt = true;
       result.ecosystem = 'python';
       result.install_command = 'pip install -r requirements.txt';
 
       const pyFiles = fs.readdirSync(repoPath).filter(f => f.endsWith('.py'));
-      if (pyFiles.includes('app.py')) result.start_command = 'python app.py';
-      else if (pyFiles.includes('main.py')) result.start_command = 'python main.py';
-      else if (pyFiles.length > 0) result.start_command = `python ${pyFiles[0]}`;
+      if (pyFiles.includes('app.py')) {
+        result.start_command = 'python app.py';
+      } else if (pyFiles.includes('main.py')) {
+        result.start_command = 'python main.py';
+      } else if (pyFiles.length > 0) {
+        result.start_command = `python ${pyFiles[0]}`;
+      } else {
+        result.start_command = 'python -m http.server 8000';
+        result.detected_port = 8000;
+      }
+
+      if (fs.readFileSync(requirementsPath, 'utf-8').includes('streamlit')) {
+        result.start_command = 'streamlit run app.py';
+        result.detected_port = 8501;
+      }
     }
-    // Docker Ecosystem
+    // 3. Static HTML Web Page
+    else if (fs.existsSync(path.join(repoPath, 'index.html'))) {
+      result.ecosystem = 'static-html';
+      result.start_command = 'npx serve -p 3000';
+      result.detected_port = 3000;
+    }
+    // 4. Docker Container
     else if (fs.existsSync(dockerComposePath) || fs.existsSync(dockerfilePath)) {
       result.has_dockerfile = true;
       result.ecosystem = 'docker';
-      result.install_command = fs.existsSync(dockerComposePath) ? 'docker compose build' : 'docker build .';
-      result.start_command = fs.existsSync(dockerComposePath) ? 'docker compose up' : 'docker run';
-      result.is_web_app = true;
+      result.install_command = fs.existsSync(dockerComposePath) ? 'docker compose build' : 'docker build -t openstore-app .';
+      result.start_command = fs.existsSync(dockerComposePath) ? 'docker compose up' : 'docker run -p 3000:3000 openstore-app';
+      result.detected_port = 3000;
     }
 
-    if (readmeText) {
-      const portMatch = readmeText.match(/localhost:(\d{4,5})/i) || readmeText.match(/port\s*:?\s*(\d{4,5})/i);
-      if (portMatch) {
-        result.detected_port = parseInt(portMatch[1], 10);
-        result.is_web_app = true;
+    // Inspect README for port hints
+    try {
+      const readmeFile = fs.readdirSync(repoPath).find(f => f.toLowerCase().startsWith('readme'));
+      if (readmeFile) {
+        const readmeText = fs.readFileSync(path.join(repoPath, readmeFile), 'utf-8');
+        const portMatch = readmeText.match(/localhost:(\d{4,5})/i) || readmeText.match(/port\s*:?\s*(\d{4,5})/i);
+        if (portMatch) {
+          result.detected_port = parseInt(portMatch[1], 10);
+        }
       }
-    }
+    } catch {}
 
-    logAudit('inspect-repo', 'renderer', 'success', `Ecosystem: ${result.ecosystem}`);
+    logAudit('inspect-repo', 'renderer', 'success', `Ecosystem: ${result.ecosystem}, Run: "${result.start_command}" on port ${result.detected_port}`);
     return result;
   });
 
-  // ── Execute Terminal Command with Live Output ─────────────────────────────
+  // ── Terminal Execution with Live Output Stream ────────────────────────────
   ipcMain.handle('agent:execute-terminal-command', async (_event, command, cwd) => {
     if (!command || typeof command !== 'string') throw new Error('Invalid command');
 
@@ -238,13 +288,8 @@ function registerAgentHandlers(ipcMain) {
       });
 
       child.on('close', (code) => {
-        if (code === 0) {
-          logAudit('execute-command', 'renderer', 'success', command);
-          resolve({ success: true, output: stdoutData });
-        } else {
-          logAudit('execute-command', 'renderer', 'completed-code', `Code ${code}`);
-          resolve({ success: code === 0, code, output: stdoutData + stderrData });
-        }
+        logAudit('execute-command', 'renderer', 'finished', `Exit code ${code}`);
+        resolve({ success: code === 0, code, output: stdoutData + stderrData });
       });
 
       child.on('error', (err) => {
@@ -254,7 +299,7 @@ function registerAgentHandlers(ipcMain) {
     });
   });
 
-  // ── Start Background Service ──────────────────────────────────────────────
+  // ── Start Background Service Server Process ──────────────────────────────
   ipcMain.handle('agent:start-background-service', async (_event, command, cwd, appId) => {
     if (!command || typeof command !== 'string') throw new Error('Invalid command');
 
@@ -308,7 +353,7 @@ function registerAgentHandlers(ipcMain) {
     return { success: true };
   });
 
-  // ── Robust File Downloader (Supports Redirects & Non-chunked Downloads) ────
+  // ── File Downloader ──────────────────────────────────────────────────────
   ipcMain.handle('agent:download-file', async (event, url, dest) => {
     if (!url || typeof url !== 'string') throw new Error('Invalid URL');
 
@@ -321,11 +366,7 @@ function registerAgentHandlers(ipcMain) {
         if (redirectCount > 8) return reject(new Error('Too many redirects'));
 
         let parsedUrl;
-        try {
-          parsedUrl = new URL(targetUrl);
-        } catch (e) {
-          return reject(new Error(`Invalid redirect URL: ${targetUrl}`));
-        }
+        try { parsedUrl = new URL(targetUrl); } catch (e) { return reject(new Error(`Invalid URL: ${targetUrl}`)); }
 
         const protocol = parsedUrl.protocol === 'https:' ? https : http;
 

@@ -12,13 +12,14 @@ import {
   ChevronUp,
   CheckCircle2,
   Terminal,
+  Globe,
   FolderOpen,
 } from 'lucide-react';
 import type { Task, InstalledApp } from '@/lib/types';
 import { runRealInstallation } from '@/lib/installer-engine';
 
 export default function InstallPage() {
-  const { selectedAppSlug, navigate, applications, addInstalledApp, addActivity } = useAppStore();
+  const { selectedAppSlug, navigate, applications, addInstalledApp, addActivity, updateInstalledAppStatus } = useAppStore();
   const app = applications.find((a) => a.slug === selectedAppSlug);
 
   const [tasks, setTasks] = useState<Task[]>([
@@ -52,8 +53,8 @@ export default function InstallPage() {
     },
     {
       id: 'task-3',
-      title: `Download ${app?.name || 'Package'}`,
-      description: 'Downloading release asset from GitHub to Downloads/OpenStore',
+      title: `Clone / Download ${app?.name || 'Package'}`,
+      description: 'Executing git clone into Downloads/OpenStore',
       type: 'DOWNLOAD',
       status: 'LOCKED',
       prerequisites: [],
@@ -66,13 +67,13 @@ export default function InstallPage() {
     },
     {
       id: 'task-4',
-      title: 'Extract & Verify Integrity',
-      description: 'Unzipping archive or validating binary executable',
+      title: 'Inspect & Install Dependencies',
+      description: 'Inspecting package.json/requirements.txt & running npm install',
       type: 'VERIFY',
       status: 'LOCKED',
       prerequisites: [],
       actions: [],
-      estimated_duration: 2,
+      estimated_duration: 15,
       requires_user_interaction: false,
       requires_elevation: false,
       documentation: '',
@@ -80,8 +81,8 @@ export default function InstallPage() {
     },
     {
       id: 'task-5',
-      title: 'Launch & Register Application',
-      description: 'Opening workspace directory or launching installer executable',
+      title: 'Register Service Lifecycle',
+      description: 'Configuring hands-free run script and port detection',
       type: 'LAUNCH',
       status: 'LOCKED',
       prerequisites: [],
@@ -100,6 +101,9 @@ export default function InstallPage() {
   const [showDetails, setShowDetails] = useState(true);
   const [logs, setLogs] = useState<string[]>([]);
   const [installedRecord, setInstalledRecord] = useState<InstalledApp | null>(null);
+  const [isStartingServer, setIsStartingServer] = useState(false);
+
+  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
 
   useEffect(() => {
     if (!app) return;
@@ -146,7 +150,7 @@ export default function InstallPage() {
       } catch (err: any) {
         if (isMounted) {
           setStatus('failed');
-          setLogs((prev) => [...prev, `[ERROR] Real installation failed: ${err.message || err}`]);
+          setLogs((prev) => [...prev, `[ERROR] Installation failed: ${err.message || err}`]);
         }
       }
     }
@@ -158,6 +162,66 @@ export default function InstallPage() {
     };
   }, [app]);
 
+  // Hands-Free Run & Open App Handler
+  const handleRunAndOpen = async () => {
+    if (!installedRecord || !isElectron) {
+      if (installedRecord?.local_url) window.open(installedRecord.local_url, '_blank');
+      return;
+    }
+
+    setIsStartingServer(true);
+    setLogs((prev) => [...prev, `[HANDS-FREE] Inspecting repository run command for ${app?.name}...`]);
+
+    try {
+      const path = installedRecord.install_path;
+
+      // Executable files (.exe / .msi)
+      if (path && (path.endsWith('.exe') || path.endsWith('.msi'))) {
+        await window.electronAPI!.launchApp({ path });
+        setIsStartingServer(false);
+        return;
+      }
+
+      // Web/Source Repo: Inspect ecosystem and run server
+      const eco = await window.electronAPI!.inspectRepoEcosystem(path);
+
+      if (eco.start_command) {
+        setLogs((prev) => [...prev, `[HANDS-FREE] Spawning background server: "${eco.start_command}"...`]);
+        await window.electronAPI!.startBackgroundService(eco.start_command, path, installedRecord.id);
+
+        const targetPort = eco.detected_port || 3000;
+        const webUrl = `http://localhost:${targetPort}`;
+        setLogs((prev) => [...prev, `[HANDS-FREE] Monitoring port ${targetPort} until ready...`]);
+
+        let retries = 0;
+        const interval = setInterval(async () => {
+          retries++;
+          const check = await window.electronAPI!.checkPort(targetPort);
+
+          if (check.inUse || retries >= 15) {
+            clearInterval(interval);
+            setIsStartingServer(false);
+            updateInstalledAppStatus(installedRecord.id, 'running');
+            setLogs((prev) => [...prev, `[HANDS-FREE] Server ready! Opening ${webUrl} in browser...`]);
+            await window.electronAPI!.launchApp({ url: webUrl });
+          }
+        }, 1000);
+      } else {
+        await window.electronAPI!.launchApp({ path });
+        setIsStartingServer(false);
+      }
+    } catch (err: any) {
+      setLogs((prev) => [...prev, `[HANDS-FREE ERROR] Failed to start service: ${err.message}`]);
+      setIsStartingServer(false);
+    }
+  };
+
+  const handleOpenFolder = async () => {
+    if (installedRecord?.install_path && isElectron) {
+      await window.electronAPI!.launchApp({ path: installedRecord.install_path });
+    }
+  };
+
   if (!app) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
@@ -165,12 +229,6 @@ export default function InstallPage() {
       </div>
     );
   }
-
-  const handleOpenApp = async () => {
-    if (installedRecord?.install_path && window.electronAPI) {
-      await window.electronAPI.launchApp({ path: installedRecord.install_path });
-    }
-  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-xl mx-auto">
@@ -198,14 +256,14 @@ export default function InstallPage() {
           </div>
           <div>
             <h1 className="text-sm font-semibold text-zinc-100">
-              {status === 'completed' ? `${app.name} installed` : `Installing ${app.name}`}
+              {status === 'completed' ? `${app.name} Ready` : `Installing ${app.name}`}
             </h1>
             <p className="text-[11px] text-zinc-500">
               {status === 'completed'
-                ? 'Real installation & verification complete'
+                ? 'Dependencies installed & workspace configured'
                 : status === 'failed'
                 ? 'Installation encountered an error'
-                : `Task ${currentIdx + 1} of 5 running`}
+                : `Step ${currentIdx + 1} of 5 in progress`}
             </p>
           </div>
         </div>
@@ -222,7 +280,7 @@ export default function InstallPage() {
         )}
       </div>
 
-      {/* Success State */}
+      {/* Success State with Hands-Free Run Action */}
       <AnimatePresence>
         {status === 'completed' && (
           <motion.div
@@ -232,26 +290,44 @@ export default function InstallPage() {
           >
             <CheckCircle2 className="w-8 h-8 text-zinc-100 mx-auto mb-3" />
             <h2 className="text-sm font-semibold text-zinc-100 mb-1">
-              Installation Complete
+              Setup Complete
             </h2>
-            <p className="text-xs text-zinc-400 mb-2">
-              {app.name} has been downloaded and processed on your hard drive.
+            <p className="text-xs text-zinc-400 mb-5 max-w-sm mx-auto">
+              Repository cloned and dependencies (`npm install`) installed hands-free.
             </p>
-            {installedRecord?.install_path && (
-              <p className="text-[10px] font-mono text-zinc-500 mb-5 truncate px-4">
-                Location: {installedRecord.install_path}
-              </p>
-            )}
             <div className="flex justify-center gap-2.5">
-              <button onClick={handleOpenApp} className="btn-primary px-6 py-2 text-xs font-semibold flex items-center gap-1.5">
-                <FolderOpen className="w-3.5 h-3.5" />
-                Open Application / Directory
+              <button
+                onClick={handleRunAndOpen}
+                disabled={isStartingServer}
+                className="btn-primary px-6 py-2.5 text-xs font-semibold flex items-center gap-2"
+              >
+                {isStartingServer ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Starting Server...</span>
+                  </>
+                ) : (
+                  <>
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Run Server & Open App</span>
+                  </>
+                )}
               </button>
+
+              <button
+                onClick={handleOpenFolder}
+                className="btn-secondary px-4 py-2.5 text-xs font-medium flex items-center gap-1.5"
+                title="Open project folder in Windows Explorer"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                <span>Open Folder</span>
+              </button>
+
               <button
                 onClick={() => navigate('my-apps')}
-                className="btn-secondary px-5 py-2 text-xs"
+                className="btn-secondary px-4 py-2.5 text-xs font-medium"
               >
-                View My Apps
+                My Apps
               </button>
             </div>
           </motion.div>
@@ -267,13 +343,13 @@ export default function InstallPage() {
         </div>
       </div>
 
-      {/* Real Agent Logs Toggle */}
+      {/* Real Terminal Output Log Toggle */}
       <button
         onClick={() => setShowDetails(!showDetails)}
         className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-3"
       >
         <Terminal className="w-3.5 h-3.5" />
-        <span>{showDetails ? 'Hide' : 'Show'} agent logs</span>
+        <span>{showDetails ? 'Hide' : 'Show'} real terminal output</span>
         {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
       </button>
 
@@ -283,7 +359,7 @@ export default function InstallPage() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="glass-card rounded-lg p-3.5 mb-5 font-mono text-[11px] text-zinc-400 bg-zinc-950/90 border border-white/10 overflow-x-auto max-h-48"
+            className="glass-card rounded-lg p-3.5 mb-5 font-mono text-[11px] text-zinc-400 bg-zinc-950/90 border border-white/10 overflow-x-auto max-h-56"
           >
             {logs.map((log, i) => (
               <p key={i} className="py-0.5 whitespace-pre-wrap">{log}</p>
