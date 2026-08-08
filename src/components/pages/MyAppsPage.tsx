@@ -315,7 +315,7 @@ export default function MyAppsPage() {
                             <button
                               onClick={() => {
                                 setActiveMenuId(null);
-                                const slug = installed.application?.slug || installed.id;
+                                const slug = installed.application?.slug || installed.application_id || installed.id;
                                 navigate('app-detail', { slug });
                               }}
                               className="w-full px-3 py-2 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 font-medium flex items-center gap-2 cursor-pointer transition-colors"

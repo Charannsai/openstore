@@ -31,15 +31,54 @@ export default function AppDetailPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'releases'>('overview');
   const [copied, setCopied] = useState(false);
 
-  const app = applications.find((a) => a.slug === selectedAppSlug) || (selectedAppSlug ? getAppBySlug(selectedAppSlug) : null);
+  let app = applications.find((a) => a.slug === selectedAppSlug || a.id === selectedAppSlug) || (selectedAppSlug ? getAppBySlug(selectedAppSlug) : null);
+
+  if (!app && selectedAppSlug) {
+    const installedMatch = installedApps.find(
+      (a) =>
+        a.id === selectedAppSlug ||
+        a.application_id === selectedAppSlug ||
+        a.application?.slug === selectedAppSlug ||
+        a.application?.id === selectedAppSlug
+    );
+    if (installedMatch?.application) {
+      app = installedMatch.application;
+    } else if (installedMatch) {
+      app = {
+        id: installedMatch.id,
+        name: installedMatch.id.replace(/[-_]/g, ' '),
+        slug: installedMatch.id,
+        description: `Local open-source repository installed at ${installedMatch.install_path}`,
+        long_description: `This application was cloned/installed into your local OpenStore workspace directory at ${installedMatch.install_path}.`,
+        icon_url: '',
+        category_id: 'developer-tools',
+        license: 'Open Source',
+        repository_url: '',
+        official_website: '',
+        documentation_url: '',
+        developer: 'Community Maintainer',
+        organization: 'OpenStore Workspace',
+        platforms: ['windows', 'macos', 'linux'],
+        architectures: ['x64', 'arm64'],
+        latest_version: installedMatch.version || '1.0.0',
+        installation_methods: [installedMatch.install_method || 'git-clone'],
+        difficulty: 'easy',
+        is_featured: false,
+        download_count: 1,
+        star_count: 0,
+        created_at: installedMatch.installed_at || new Date().toISOString(),
+        updated_at: installedMatch.updated_at || new Date().toISOString(),
+      };
+    }
+  }
 
   if (!app) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-3">
-        <p className="text-xs text-zinc-500">Repository metadata not found.</p>
+        <p className="text-xs text-zinc-500 font-semibold">Repository metadata not found.</p>
         <button
           onClick={() => navigate('home')}
-          className="btn-secondary px-4 py-2 text-xs flex items-center gap-2 cursor-pointer"
+          className="btn-secondary px-4 py-2 text-xs font-bold flex items-center gap-2 cursor-pointer"
         >
           <ArrowLeftIcon className="w-4 h-4" />
           <span>Return Home</span>
