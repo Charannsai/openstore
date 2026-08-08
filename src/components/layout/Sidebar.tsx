@@ -36,7 +36,9 @@ export default function Sidebar() {
     }
   }, [setTheme, theme]);
 
-  const updatesCount = 1;
+  const updatesCount = installedApps.filter(
+    (a) => a.version !== a.application.latest_version
+  ).length;
   const installedCount = installedApps.length;
 
   const toggleTheme = () => {

@@ -90,6 +90,8 @@ interface AppStoreState {
   addInstalledApp: (app: InstalledApp) => void;
   removeInstalledApp: (id: string) => void;
   updateInstalledAppStatus: (id: string, status: InstalledApp['status']) => void;
+  updateAppVersion: (installedId: string) => void;
+  updateAllApps: () => void;
 }
 
 export const useAppStore = create<AppStoreState>((set) => ({
@@ -228,5 +230,27 @@ export const useAppStore = create<AppStoreState>((set) => ({
       installedApps: state.installedApps.map((a) =>
         a.id === id ? { ...a, status } : a
       ),
+    })),
+
+  updateAppVersion: (installedId) =>
+    set((state) => ({
+      installedApps: state.installedApps.map((a) =>
+        a.id === installedId
+          ? {
+              ...a,
+              version: a.application.latest_version,
+              updated_at: new Date().toISOString(),
+            }
+          : a
+      ),
+    })),
+
+  updateAllApps: () =>
+    set((state) => ({
+      installedApps: state.installedApps.map((a) => ({
+        ...a,
+        version: a.application.latest_version,
+        updated_at: new Date().toISOString(),
+      })),
     })),
 }));
