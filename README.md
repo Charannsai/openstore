@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏪 OpenStore
+# OpenStore
 
 ### Open-source software, simplified.
 
@@ -13,13 +13,13 @@ No more `git clone && npm install && npm run build` — just click install.
 [![GitHub Issues](https://img.shields.io/github/issues/Charannsai/openstore?style=for-the-badge&color=ef4444)](https://github.com/Charannsai/openstore/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-22d3ee.svg?style=for-the-badge)](CONTRIBUTING.md)
 
-[**Download**](#-download) · [**Features**](#-features) · [**Quick Start**](#-quick-start) · [**Contributing**](#-contributing) · [**Roadmap**](#-roadmap)
+[**Download**](#download) · [**Features**](#features) · [**Quick Start**](#quick-start) · [**Contributing**](#contributing) · [**Roadmap**](#roadmap)
 
 </div>
 
 ---
 
-## 🤔 What is OpenStore?
+## What is OpenStore?
 
 **OpenStore** is a desktop app store for open-source software. Think of it as the App Store or Microsoft Store, but exclusively for free and open-source tools.
 
@@ -35,50 +35,50 @@ Most open-source software requires you to clone a repo, install dependencies, co
 
 ---
 
-## ✨ Features
+## Features
 
-### 🔍 Smart Discovery
+### Smart Discovery
 - Browse curated categories: AI Tools, Development, Media, Privacy, Self-hosting, and more
 - Full-text search across the entire app catalog
 - Featured apps and trending projects
 
-### 📦 One-Click Installation
+### One-Click Installation
 - **Automated ecosystem detection** — Node.js, Python, Rust, Go, Docker, and more
 - **Multiple install strategies** — Git clone, pre-built releases, Docker Compose, winget
 - **Prerequisites checking** — Automatically detects missing tools (Git, Node, Python, Docker)
 - **Real-time progress** — Live terminal output during installation
 
-### 🤖 AI-Powered Intelligence
+### AI-Powered Intelligence
 - **Groq AI integration** for analyzing unknown repositories
 - **Smart command resolution** — figures out install, build, and start commands
 - **Auto-healing** — when an install fails, AI diagnoses the issue and fixes it automatically
 
-### 🚀 App Lifecycle Management
+### App Lifecycle Management
 - Launch installed apps in the right mode (browser, IDE, terminal, or standalone)
 - Background service management with process tracking
 - Update detection and one-click updates
 - Clean uninstallation
 
-### 🎨 Beautiful Interface
+### Beautiful Interface
 - Modern, minimal design with glassmorphism effects
 - Dark and light themes with system-aware switching
 - Smooth animations powered by Framer Motion
 - Responsive sidebar navigation
 
-### 🔐 Local-First
+### Local-First
 - All installations happen on your machine
 - No accounts required for core functionality
 - Your data stays on your device
 
 ---
 
-## 📥 Download
+## Download
 
 > **Note:** OpenStore is currently in early development (v0.1.0). Pre-built binaries will be available soon.
 
 ### From Source (Recommended for now)
 
-See the [Quick Start](#-quick-start) section below.
+See the [Quick Start](#quick-start) section below.
 
 ### Pre-built Releases (Coming Soon)
 
@@ -92,15 +92,15 @@ See the [Quick Start](#-quick-start) section below.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
 | Tool | Version | Required |
 |------|---------|----------|
-| [Node.js](https://nodejs.org) | 20.x+ | ✅ |
-| [Git](https://git-scm.com) | 2.x+ | ✅ |
-| [Supabase](https://supabase.com) account | — | ✅ |
+| [Node.js](https://nodejs.org) | 20.x+ | Yes |
+| [Git](https://git-scm.com) | 2.x+ | Yes |
+| [Supabase](https://supabase.com) account | — | Yes |
 | [Groq](https://console.groq.com) API key | — | Optional (for AI features) |
 
 ### Setup
@@ -136,7 +136,7 @@ npm run electron:build
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 openstore/
@@ -175,7 +175,7 @@ openstore/
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Core desktop app with installation engine
 - [x] AI-powered repository analysis
@@ -193,7 +193,7 @@ See the [open issues](https://github.com/Charannsai/openstore/issues) for a full
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. **Any contributions you make are greatly appreciated.**
 
@@ -218,24 +218,24 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for detailed setup instructions, coding
 
 ---
 
-## 📄 License
+## License
 
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
 
 ---
 
-## 💬 Community & Support
+## Community & Support
 
-- 🐛 **Bug Reports** — [Open an issue](https://github.com/Charannsai/openstore/issues/new?template=bug_report.yml)
-- 💡 **Feature Requests** — [Request a feature](https://github.com/Charannsai/openstore/issues/new?template=feature_request.yml)
-- 💬 **Discussions** — [Join the conversation](https://github.com/Charannsai/openstore/discussions)
-- 🔒 **Security** — [Report a vulnerability](SECURITY.md)
+- **Bug Reports** — [Open an issue](https://github.com/Charannsai/openstore/issues/new?template=bug_report.yml)
+- **Feature Requests** — [Request a feature](https://github.com/Charannsai/openstore/issues/new?template=feature_request.yml)
+- **Discussions** — [Join the conversation](https://github.com/Charannsai/openstore/discussions)
+- **Security** — [Report a vulnerability](SECURITY.md)
 
 ---
 
-## ⭐ Star History
+## Star History
 
-If you find OpenStore useful, please consider giving it a star! It helps others discover the project.
+If you find OpenStore useful, please consider giving it a star. It helps others discover the project.
 
 [![Star History Chart](https://api.star-history.com/svg?repos=Charannsai/openstore&type=Date)](https://star-history.com/#Charannsai/openstore&Date)
 
@@ -243,8 +243,8 @@ If you find OpenStore useful, please consider giving it a star! It helps others 
 
 <div align="center">
 
-**Built with ❤️ for the open-source community**
+**Built for the open-source community**
 
-[⬆ Back to top](#-openstore)
+[Back to top](#openstore)
 
 </div>
