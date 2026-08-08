@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import Sidebar from '@/components/layout/Sidebar';
 import HomePage from '@/components/pages/HomePage';
