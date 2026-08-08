@@ -109,7 +109,7 @@ function registerAgentHandlers(ipcMain) {
     });
   });
 
-  // ── Robust Git Clone (Graceful Handling of Existing Folders) ─────────────
+  // ── Git Clone (Always ensures a valid, populated repository) ─────────────
   ipcMain.handle('agent:git-clone', async (_event, repoUrl, targetDir) => {
     if (!repoUrl || typeof repoUrl !== 'string') throw new Error('Invalid repository URL');
 
@@ -117,35 +117,32 @@ function registerAgentHandlers(ipcMain) {
 
     if (fs.existsSync(targetDir)) {
       const gitDir = path.join(targetDir, '.git');
+
       if (fs.existsSync(gitDir)) {
+        // Valid git repo exists — just pull latest changes
         try {
           await execPromise(`git -C "${targetDir}" pull`, { timeout: 120000 });
           logAudit('git-clone', 'renderer', 'git-pull-success', targetDir);
           return { success: true, targetDir, action: 'pulled' };
         } catch {
-          logAudit('git-clone', 'renderer', 'git-existing-used', targetDir);
+          // Pull failed but repo exists — still usable
+          logAudit('git-clone', 'renderer', 'git-pull-failed-using-existing', targetDir);
           return { success: true, targetDir, action: 'existing' };
         }
-      } else if (fs.readdirSync(targetDir).length > 0) {
-        logAudit('git-clone', 'renderer', 'existing-dir-used', targetDir);
-        return { success: true, targetDir, action: 'existing' };
+      } else {
+        // Directory exists but is NOT a git repo (empty or stale) — delete it
+        logAudit('git-clone', 'renderer', 'removing-stale-dir', targetDir);
+        fs.rmSync(targetDir, { recursive: true, force: true });
       }
     }
 
+    // Fresh clone
     const parentDir = path.dirname(targetDir);
     if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
 
-    try {
-      await execPromise(`git clone "${repoUrl}" "${targetDir}"`, { timeout: 300000 });
-      logAudit('git-clone', 'renderer', 'git-clone-success', targetDir);
-      return { success: true, targetDir, action: 'cloned' };
-    } catch (err) {
-      if (fs.existsSync(targetDir) && fs.readdirSync(targetDir).length > 0) {
-        logAudit('git-clone', 'renderer', 'git-clone-fallback', targetDir);
-        return { success: true, targetDir, action: 'existing' };
-      }
-      throw err;
-    }
+    await execPromise(`git clone "${repoUrl}" "${targetDir}"`, { timeout: 300000 });
+    logAudit('git-clone', 'renderer', 'git-clone-success', targetDir);
+    return { success: true, targetDir, action: 'cloned' };
   });
 
   // ── Universal Smart Ecosystem & Run Command Resolver ─────────────────────
