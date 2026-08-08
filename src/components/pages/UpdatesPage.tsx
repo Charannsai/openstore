@@ -58,14 +58,15 @@ export default function UpdatesPage() {
     setUpdatingAppIds((prev) => ({ ...prev, [installedId]: true }));
     await new Promise((resolve) => setTimeout(resolve, 1200));
 
+    const targetApp = installedApps.find((a) => a.id === installedId);
     updateAppVersion(installedId);
     addActivity({
       id: `act-${Date.now()}`,
       type: 'update',
-      title: `Updated ${appName}`,
-      description: `Upgraded to version ${newVersion}`,
+      application_name: appName,
+      application_icon: targetApp?.application.icon_url || '',
+      message: `Upgraded ${appName} to version ${newVersion}`,
       timestamp: new Date().toISOString(),
-      status: 'completed',
     });
 
     setUpdatingAppIds((prev) => {
@@ -84,15 +85,16 @@ export default function UpdatesPage() {
       await new Promise((resolve) => setTimeout(resolve, 600));
     }
 
+    const firstApp = appsWithUpdates[0]?.application;
     updateAllApps();
 
     addActivity({
       id: `act-${Date.now()}`,
       type: 'update',
-      title: 'Updated All Applications',
-      description: `Successfully upgraded ${appsWithUpdates.length} application(s)`,
+      application_name: 'All Applications',
+      application_icon: firstApp?.icon_url || '',
+      message: `Successfully upgraded ${appsWithUpdates.length} application(s)`,
       timestamp: new Date().toISOString(),
-      status: 'completed',
     });
 
     setUpdatingAppIds({});

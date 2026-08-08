@@ -24,6 +24,7 @@ export default function InstallPage() {
 
   const isBinary = app ? (app.installation_methods[0] === 'OFFICIAL_INSTALLER' && !app.repository_url?.includes('github.com')) : false;
 
+  const [runningWebUrls, setRunningWebUrls] = useState<Record<string, string>>({});
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: 'task-1',

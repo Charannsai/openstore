@@ -319,3 +319,9 @@ export const SidebarToggleIcon: React.FC<IconProps> = ({ size = 20, className = 
   </svg>
 );
 
+export const CheckIcon: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
+  <svg width={size} height={size} {...defaultProps} className={className} {...props}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
