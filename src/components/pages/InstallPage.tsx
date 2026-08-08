@@ -114,6 +114,7 @@ export default function InstallPage() {
     let isMounted = true;
 
     async function execute() {
+      if (!app) return;
       setStatus('running');
 
       try {

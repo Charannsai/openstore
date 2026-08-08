@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ─── Git, Terminal & Ecosystem Orchestrator ────────────────────────────
   gitClone: (repoUrl, targetDir) => ipcRenderer.invoke('agent:git-clone', repoUrl, targetDir),
   inspectRepoEcosystem: (repoPath) => ipcRenderer.invoke('agent:inspect-repo-ecosystem', repoPath),
+  groqAnalyzeRepo: (repoPath) => ipcRenderer.invoke('agent:groq-analyze-repo', repoPath),
+  groqAutoHeal: (repoPath, failedCommand, errorOutput) => ipcRenderer.invoke('agent:groq-auto-heal', repoPath, failedCommand, errorOutput),
   executeTerminalCommand: (command, cwd) => ipcRenderer.invoke('agent:execute-terminal-command', command, cwd),
   startBackgroundService: (command, cwd, appId) => ipcRenderer.invoke('agent:start-background-service', command, cwd, appId),
   stopBackgroundService: (appId) => ipcRenderer.invoke('agent:stop-background-service', appId),

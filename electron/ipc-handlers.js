@@ -6,6 +6,7 @@ const http = require('http');
 const https = require('https');
 const net = require('net');
 const { BrowserWindow, shell } = require('electron');
+const { analyzeRepositoryWithGroq, diagnoseFailureWithGroq } = require('./groq-agent');
 
 /**
  * Desktop Agent — Hands-Free Execution & Universal Auto-Run Resolver
@@ -130,9 +131,18 @@ function registerAgentHandlers(ipcMain) {
           return { success: true, targetDir, action: 'existing' };
         }
       } else {
-        // Directory exists but is NOT a git repo (empty or stale) — delete it
+        // Directory exists but is NOT a git repo (empty or stale) — delete it cleanly
         logAudit('git-clone', 'renderer', 'removing-stale-dir', targetDir);
-        fs.rmSync(targetDir, { recursive: true, force: true });
+        try {
+          if (os.platform() === 'win32') {
+            try { await execPromise(`attrib -R -H -S "${targetDir}\\*.*" /S /D`, { timeout: 15000 }); } catch {}
+            await execPromise(`rmdir /S /Q "${targetDir}"`, { timeout: 30000 });
+          } else {
+            fs.rmSync(targetDir, { recursive: true, force: true });
+          }
+        } catch {
+          try { fs.rmSync(targetDir, { recursive: true, force: true }); } catch {}
+        }
       }
     }
 
@@ -345,20 +355,47 @@ function registerAgentHandlers(ipcMain) {
       } catch {}
     }
 
-    // 3. Inspect README for port hints (always check root README)
-    try {
-      const readmeFile = fs.readdirSync(repoPath).find(f => f.toLowerCase().startsWith('readme'));
-      if (readmeFile) {
-        const readmeText = fs.readFileSync(path.join(repoPath, readmeFile), 'utf-8');
-        const portMatch = readmeText.match(/localhost:(\d{4,5})/i) || readmeText.match(/port\s*:?\s*(\d{4,5})/i);
-        if (portMatch) {
-          result.detected_port = parseInt(portMatch[1], 10);
+    // 3. Groq AI Agent Deep Analysis (Runs if static resolution is unknown or missing start command)
+    if (result.ecosystem === 'unknown' || !result.start_command) {
+      try {
+        logAudit('inspect-repo', 'renderer', 'groq-agent-invoked', repoPath);
+        const groqResult = await analyzeRepositoryWithGroq(repoPath);
+
+        if (groqResult && groqResult.ecosystem !== 'unknown') {
+          result.ecosystem = groqResult.ecosystem;
+          result.run_mode = groqResult.run_mode;
+          result.install_command = groqResult.install_commands.join(' && ') || result.install_command;
+          result.build_command = groqResult.build_commands.join(' && ') || result.build_command;
+          result.start_command = groqResult.start_command || result.start_command;
+          result.detected_port = groqResult.detected_port || result.detected_port;
+          result.is_web_app = groqResult.is_web_app;
+          result.resolved_cwd = path.join(repoPath, groqResult.resolved_cwd_relative || '.');
+          result.env_setup_required = groqResult.env_setup_required;
+          result.env_commands = groqResult.env_commands;
+          result.explanation = groqResult.explanation;
+          result.resolved_by_ai = true;
+          logAudit('inspect-repo', 'renderer', 'groq-agent-success', `Ecosystem: ${result.ecosystem}, Mode: ${result.run_mode}`);
         }
+      } catch (err) {
+        logAudit('inspect-repo', 'renderer', 'groq-agent-error', err.message);
       }
-    } catch {}
+    }
 
     logAudit('inspect-repo', 'renderer', 'success', `Ecosystem: ${result.ecosystem}, Mode: ${result.run_mode}, Run: "${result.start_command}" in "${result.resolved_cwd}" on port ${result.detected_port}`);
     return result;
+  });
+
+  // ── Explicit Groq Deep Analysis Handler ────────────────────────────────────
+  ipcMain.handle('agent:groq-analyze-repo', async (_event, repoPath) => {
+    if (!repoPath || !fs.existsSync(repoPath)) throw new Error('Repository directory does not exist');
+    logAudit('groq-analyze-repo', 'renderer', 'started', repoPath);
+    return await analyzeRepositoryWithGroq(repoPath);
+  });
+
+  // ── Groq Auto-Healing Setup Repair Handler ────────────────────────────────
+  ipcMain.handle('agent:groq-auto-heal', async (_event, repoPath, failedCommand, errorOutput) => {
+    logAudit('groq-auto-heal', 'renderer', 'started', `${failedCommand} in ${repoPath}`);
+    return await diagnoseFailureWithGroq(repoPath, failedCommand, errorOutput);
   });
 
   // ── Terminal Execution with Live Output Stream ────────────────────────────

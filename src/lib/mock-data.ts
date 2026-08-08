@@ -637,6 +637,7 @@ export const mockInstalledApps: InstalledApp[] = [
     installed_at: '2025-06-10T14:30:00Z',
     updated_at: '2025-06-10T14:30:00Z',
     status: 'stopped',
+    run_mode: 'executable',
   },
   {
     id: 'inst-2',
@@ -648,6 +649,7 @@ export const mockInstalledApps: InstalledApp[] = [
     installed_at: '2025-05-20T09:15:00Z',
     updated_at: '2025-07-01T10:00:00Z',
     status: 'running',
+    run_mode: 'ide',
   },
   {
     id: 'inst-3',
@@ -659,6 +661,7 @@ export const mockInstalledApps: InstalledApp[] = [
     installed_at: '2025-04-15T16:45:00Z',
     updated_at: '2025-04-15T16:45:00Z',
     status: 'stopped',
+    run_mode: 'executable',
   },
 ];
 

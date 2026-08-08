@@ -29,6 +29,48 @@ export const DIFFICULTY_LEVELS = {
   advanced: { label: 'Advanced' },
 } as const;
 
-// ─── Platforms ───────────────────────────────────────────────────────────────
+// ─── Platforms & Strategies ──────────────────────────────────────────────────
 export const PLATFORMS = ['windows', 'macos', 'linux'] as const;
 export const ARCHITECTURES = ['x64', 'arm64'] as const;
+
+export const INSTALL_STRATEGIES = [
+  'OFFICIAL_INSTALLER',
+  'PREBUILT_RELEASE',
+  'SOURCE_BUILD',
+  'CONTAINER',
+  'git-clone',
+  'release-download',
+  'docker-compose',
+  'script',
+  'command',
+] as const;
+
+export const TASK_STATES = [
+  'pending',
+  'running',
+  'completed',
+  'failed',
+  'paused',
+  'cancelled',
+  'LOCKED',
+  'RUNNING',
+  'COMPLETED',
+  'FAILED',
+] as const;
+
+export const TASK_TYPES = [
+  'git-clone',
+  'download',
+  'exec',
+  'service',
+  'extract',
+  'verify',
+  'CHECK',
+  'DOWNLOAD',
+  'VERIFY',
+  'LAUNCH',
+] as const;
+
+// ─── Supabase Configuration ──────────────────────────────────────────────────
+export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';

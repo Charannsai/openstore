@@ -150,20 +150,48 @@ export async function runRealInstallation(
 
   const runCwd = ecosystemInfo.resolved_cwd || finalInstallPath;
 
+  // Environment Setup Step (e.g. `copy .env.example .env`)
+  if (isElectron && Array.isArray(ecosystemInfo.env_commands) && ecosystemInfo.env_commands.length > 0 && typeof api?.executeTerminalCommand === 'function') {
+    for (const envCmd of ecosystemInfo.env_commands) {
+      callbacks.onLog(`[AGENT] Environment Setup: Executing "${envCmd}"...`);
+      try {
+        await api.executeTerminalCommand(envCmd, runCwd);
+        callbacks.onLog(`[AGENT] Environment file configured.`);
+      } catch (err: any) {
+        callbacks.onLog(`[AGENT] Environment setup note: ${err.message || err}`);
+      }
+    }
+  }
+
   // Real Dependency Installation (`npm install` / `pip install -r requirements.txt`)
   if (isElectron && ecosystemInfo.install_command && typeof api?.executeTerminalCommand === 'function') {
     callbacks.onLog(`[AGENT TERMINAL] Executing: "${ecosystemInfo.install_command}" in ${runCwd}...`);
 
     let termUnsub = () => {};
+    let lastErrorLog = '';
     if (typeof api.onTerminalOutput === 'function') {
       termUnsub = api.onTerminalOutput((data) => {
         callbacks.onLog(`[TERMINAL] ${data.text.trim()}`);
+        if (data.type === 'stderr') lastErrorLog += data.text;
       });
     }
 
     try {
       const cmdResult = await api.executeTerminalCommand(ecosystemInfo.install_command, runCwd);
-      callbacks.onLog(`[AGENT TERMINAL] Dependency installation ${cmdResult.success ? 'succeeded' : 'completed'}`);
+      if (cmdResult.success) {
+        callbacks.onLog(`[AGENT TERMINAL] Dependency installation succeeded.`);
+      } else if (typeof api.groqAutoHeal === 'function') {
+        callbacks.onLog(`[AGENT AI] Command failed. Requesting Groq AI Auto-Healing diagnosis...`);
+        const heal = await api.groqAutoHeal(runCwd, ecosystemInfo.install_command, lastErrorLog || cmdResult.output);
+        callbacks.onLog(`[AGENT AI] Cause: ${heal.cause}`);
+        callbacks.onLog(`[AGENT AI] Diagnosis: ${heal.explanation}`);
+        if (heal.fix_commands.length > 0) {
+          for (const fixCmd of heal.fix_commands) {
+            callbacks.onLog(`[AGENT AI] Running repair action: "${fixCmd}"...`);
+            await api.executeTerminalCommand(fixCmd, runCwd);
+          }
+        }
+      }
     } catch (cmdErr: any) {
       callbacks.onLog(`[AGENT TERMINAL] Dependency setup notice: ${cmdErr.message || cmdErr}`);
     } finally {

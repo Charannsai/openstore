@@ -278,6 +278,28 @@ export interface ElectronAPI {
     has_dockerfile: boolean;
     run_mode: RunMode;
     resolved_cwd: string;
+    env_setup_required?: boolean;
+    env_commands?: string[];
+    explanation?: string;
+    resolved_by_ai?: boolean;
+  }>;
+  groqAnalyzeRepo: (repoPath: string) => Promise<{
+    ecosystem: string;
+    run_mode: RunMode;
+    install_commands: string[];
+    build_commands: string[];
+    start_command: string;
+    detected_port: number;
+    is_web_app: boolean;
+    resolved_cwd_relative: string;
+    env_setup_required: boolean;
+    env_commands: string[];
+    explanation: string;
+  }>;
+  groqAutoHeal: (repoPath: string, failedCommand: string, errorOutput: string) => Promise<{
+    cause: string;
+    fix_commands: string[];
+    explanation: string;
   }>;
   executeTerminalCommand: (command: string, cwd?: string) => Promise<{ success: boolean; output: string; code?: number }>;
   startBackgroundService: (command: string, cwd: string, appId: string) => Promise<{ success: boolean; pid: number }>;
