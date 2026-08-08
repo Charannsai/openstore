@@ -34,7 +34,6 @@ Before you begin, ensure you have the following installed:
 Optional (for full feature testing):
 - **Python** 3.8+ — for testing Python ecosystem detection
 - **Docker** — for testing container-based installations
-- A **Supabase** project — [Create one free](https://supabase.com)
 - A **Groq API key** — [Get one free](https://console.groq.com)
 
 ### Development Setup
@@ -64,8 +63,6 @@ Optional (for full feature testing):
 
    Edit `.env.local` and fill in your values:
    ```
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    GROQ_API_KEY=your_groq_api_key
    ```
 
@@ -111,10 +108,8 @@ openstore/
 │   │   ├── types.ts     # TypeScript type definitions
 │   │   ├── github-api.ts    # GitHub API integration
 │   │   ├── installer-engine.ts  # Installation orchestrator
-│   │   ├── supabase.ts  # Supabase client
 │   │   └── utils.ts     # Utility functions
 │   └── store/           # Zustand state management
-├── supabase/            # Database schema
 └── package.json
 ```
 
@@ -122,7 +117,7 @@ openstore/
 
 - **Next.js App Router** — For the web UI and SSR capabilities
 - **Electron** — For desktop app packaging with system-level access
-- **Supabase** — Backend database for app catalog, categories, and releases
+- **GitHub API** — Live repository search and discovery
 - **Groq AI** — Intelligent repository analysis and auto-healing
 - **Zustand** — Lightweight, minimal state management
 - **Framer Motion** — Smooth, performant animations

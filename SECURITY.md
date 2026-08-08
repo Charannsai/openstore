@@ -43,7 +43,7 @@ The following are in scope for security reports:
 - The OpenStore desktop application (Electron)
 - The OpenStore web interface (Next.js)
 - IPC handlers and system-level operations
-- Data handling and storage (Supabase integration)
+- Data handling and local storage
 - Dependency vulnerabilities that affect OpenStore directly
 
 ### Out of Scope

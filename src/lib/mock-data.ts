@@ -1,8 +1,8 @@
 /**
- * Mock application catalog — 20+ real open-source projects.
+ * Built-in application catalog — 20+ real open-source projects.
  *
- * In production this will be fetched from Supabase. The mock
- * data lets us build and test the entire UI without a backend.
+ * This serves as the seed catalog that ships with the app.
+ * Live discovery is powered by the GitHub API.
  */
 
 import type { Application, Category, InstalledApp } from './types';

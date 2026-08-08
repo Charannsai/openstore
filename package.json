@@ -33,7 +33,6 @@
     "electron:start": "electron ."
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.2",
     "clsx": "^2.1.1",
     "framer-motion": "^13.0.0",
     "lucide-react": "^1.30.0",
@@ -56,5 +55,29 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.openstore.app",
+    "productName": "OpenStore",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "out/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "public/icon.png"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "public/icon.png"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "public/icon.png"
+    }
   }
 }

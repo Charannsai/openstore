@@ -100,7 +100,6 @@ See the [Quick Start](#quick-start) section below.
 |------|---------|----------|
 | [Node.js](https://nodejs.org) | 20.x+ | Yes |
 | [Git](https://git-scm.com) | 2.x+ | Yes |
-| [Supabase](https://supabase.com) account | — | Yes |
 | [Groq](https://console.groq.com) API key | — | Optional (for AI features) |
 
 ### Setup
@@ -115,7 +114,7 @@ npm install
 
 # 3. Set up environment variables
 cp .env.example .env.local
-# Edit .env.local with your Supabase URL, key, and Groq API key
+# Edit .env.local with your Groq API key (optional, for AI features)
 
 # 4. Run the development server
 npm run dev          # Web only
@@ -158,7 +157,7 @@ openstore/
 │   │   ├── types.ts              # TypeScript definitions
 │   │   └── constants.ts          # App configuration
 │   └── store/             # Zustand state management
-└── supabase/              # Database schema
+└── package.json
 ```
 
 ### Tech Stack
@@ -170,7 +169,7 @@ openstore/
 | **Styling** | Tailwind CSS 4 | Utility-first styling |
 | **Animations** | Framer Motion | Smooth transitions |
 | **State** | Zustand | Lightweight state management |
-| **Database** | Supabase (PostgreSQL) | App catalog & metadata |
+| **Data** | GitHub API + Local catalog | Live repo search + built-in seed catalog |
 | **AI** | Groq (LLaMA) | Repo analysis & auto-healing |
 
 ---

@@ -34,14 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Category System** — Organized browsing by category (AI Tools, Development, Media, etc.)
 - **Landing Page** — Web-facing landing page for project discovery
 - **Dark/Light Theme** — System-aware theme with manual override
-- **Supabase Backend** — Database schema for apps, categories, releases, and workflows
+- **Built-in App Catalog** — Seed catalog of 20+ real open-source projects with live GitHub API discovery
 - **Real-time Progress** — Live terminal output and download progress tracking
 - **Prerequisite Checking** — Automatic detection of Git, Node.js, Python, Docker, etc.
 
 ### Technical Stack
 - Next.js 16 with App Router
 - Electron 41 for desktop packaging
-- Supabase for backend database
+- GitHub API for live repository search
 - Groq AI for intelligent analysis
 - Framer Motion for animations
 - Zustand for state management
