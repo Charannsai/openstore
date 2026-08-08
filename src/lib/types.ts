@@ -202,6 +202,9 @@ export interface SystemInfo {
   cpu_cores: number;
 }
 
+// ─── Run Mode ────────────────────────────────────────────────────────────────
+export type RunMode = 'browser' | 'ide' | 'terminal' | 'executable' | 'folder';
+
 // ─── Installed App ───────────────────────────────────────────────────────────
 export interface InstalledApp {
   id: string;
@@ -213,6 +216,8 @@ export interface InstalledApp {
   installed_at: string;
   updated_at: string;
   status: 'running' | 'stopped' | 'error' | 'updating';
+  run_mode: RunMode;
+  start_command?: string;
   local_url?: string;
   process_id?: number;
 }
