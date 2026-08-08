@@ -30,6 +30,25 @@ export interface GitHubRepoItem {
 
 const searchCache = new Map<string, Application[]>();
 
+export function parseGitHubUrl(input: string): { owner: string; repo: string } | null {
+  if (!input) return null;
+  const clean = input.trim().replace(/\.git$/, '');
+
+  // Match full GitHub URLs: https://github.com/owner/repo or github.com/owner/repo
+  const urlMatch = clean.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)/i);
+  if (urlMatch) {
+    return { owner: urlMatch[1], repo: urlMatch[2] };
+  }
+
+  // Match owner/repo pattern (e.g. vercel/next.js)
+  const shortMatch = clean.match(/^([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)$/);
+  if (shortMatch && !clean.includes(' ')) {
+    return { owner: shortMatch[1], repo: shortMatch[2] };
+  }
+
+  return null;
+}
+
 export async function searchGitHubRepos(query: string): Promise<Application[]> {
   if (!query || query.trim().length === 0) {
     return getPopularGitHubRepos();
@@ -41,6 +60,25 @@ export async function searchGitHubRepos(query: string): Promise<Application[]> {
     return searchCache.get(cleanQuery)!;
   }
 
+  // 1. Direct GitHub Repository URL or owner/repo lookup
+  const parsedRepo = parseGitHubUrl(query);
+  if (parsedRepo) {
+    try {
+      const directRes = await fetch(`https://api.github.com/repos/${parsedRepo.owner}/${parsedRepo.repo}`, {
+        headers: { Accept: 'application/vnd.github.v3+json' },
+      });
+      if (directRes.ok) {
+        const item: GitHubRepoItem = await directRes.json();
+        const directApp = mapGitHubRepoToApp(item);
+        searchCache.set(cleanQuery, [directApp]);
+        return [directApp];
+      }
+    } catch (err) {
+      console.warn(`Direct GitHub repo fetch failed for ${parsedRepo.owner}/${parsedRepo.repo}:`, err);
+    }
+  }
+
+  // 2. Cache prefix matching for regular query words
   for (const [key, cachedApps] of searchCache.entries()) {
     if (key === cleanQuery || cleanQuery.startsWith(key)) {
       const filtered = cachedApps.filter(
@@ -55,6 +93,7 @@ export async function searchGitHubRepos(query: string): Promise<Application[]> {
     }
   }
 
+  // 3. Regular GitHub Search API query
   try {
     const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(
       cleanQuery
