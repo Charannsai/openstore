@@ -6,7 +6,7 @@ import { CATEGORIES } from '@/lib/constants';
 import AppCard from '@/components/store/AppCard';
 import type { Application } from '@/lib/types';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeftIcon, Loader2Icon } from '@/components/ui/hugeicons';
 import { useEffect, useState } from 'react';
 
 export default function CategoryPage() {
@@ -34,7 +34,7 @@ export default function CategoryPage() {
   if (!category) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <p className="text-xs text-zinc-500">Category not found.</p>
+        <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Category not found.</p>
       </div>
     );
   }
@@ -44,34 +44,43 @@ export default function CategoryPage() {
       {/* Back */}
       <button
         onClick={() => navigate('home')}
-        className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-5"
+        className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors mb-6 cursor-pointer"
       >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        <span>Back</span>
+        <ArrowLeftIcon className="w-4 h-4" />
+        <span>Back to Discover</span>
       </button>
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-lg font-bold text-zinc-100 tracking-tight">{category.name} Repositories</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Top open-source projects in {category.name.toLowerCase()}</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-extrabold text-slate-900 dark:text-zinc-100 tracking-tight">{category.name} Repositories</h1>
+          <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 mt-1">Top open-source projects in {category.name.toLowerCase()}</p>
+        </div>
+
+        {isLoading && (
+          <div className="flex items-center gap-2 text-xs font-semibold text-indigo-500">
+            <Loader2Icon className="w-4 h-4 animate-spin" />
+            <span>Fetching...</span>
+          </div>
+        )}
       </div>
 
       {/* Apps Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="h-36 rounded-xl bg-zinc-900/60 border border-white/[0.05] animate-pulse" />
+            <div key={n} className="h-40 rounded-2xl bg-slate-200/50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-white/10 animate-pulse" />
           ))}
         </div>
       ) : apps.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {apps.map((app, i) => (
             <AppCard key={app.id} app={app} index={i} />
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <p className="text-xs text-zinc-500">No applications found in this category.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center glass-card rounded-2xl border border-slate-200/80 dark:border-white/10">
+          <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">No applications found in this category.</p>
         </div>
       )}
     </motion.div>
