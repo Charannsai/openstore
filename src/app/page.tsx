@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useAppStore } from '@/store/app-store';
 import Sidebar from '@/components/layout/Sidebar';
 import HomePage from '@/components/pages/HomePage';
@@ -29,14 +29,14 @@ const pageComponents: Record<string, React.ComponentType> = {
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
+const subscribe = () => () => {};
+const getSnapshot = () => typeof window !== 'undefined' && !!window.electronAPI;
+const getServerSnapshot = () => false;
+
 export default function App() {
   const { currentView, isSidebarCollapsed } = useAppStore();
-  const [isElectron, setIsElectron] = useState<boolean | null>(null);
+  const isElectron = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [viewOverride, setViewOverride] = useState<'landing' | 'desktop' | null>(null);
-
-  useEffect(() => {
-    setIsElectron(typeof window !== 'undefined' && !!window.electronAPI);
-  }, []);
 
   const PageComponent = pageComponents[currentView] || HomePage;
 
@@ -45,11 +45,6 @@ export default function App() {
   // Electron -> Desktop App Dashboard
   const isWebMode = isElectron === false;
   const showLandingPage = viewOverride === 'landing' || (isWebMode && viewOverride !== 'desktop');
-
-  if (isElectron === null) {
-    // Initial mount hydration check
-    return <div className="min-h-screen bg-[var(--bg-app)]" suppressHydrationWarning />;
-  }
 
   if (showLandingPage) {
     return (
