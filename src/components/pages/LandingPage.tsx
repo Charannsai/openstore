@@ -19,6 +19,7 @@ import {
   MonitorIcon,
   CpuIcon,
   LayersIcon,
+  CompassIcon,
 } from '@/components/ui/hugeicons';
 import SearchBar from '@/components/store/SearchBar';
 import { motion } from 'framer-motion';
