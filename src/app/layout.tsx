@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { BRAND } from "@/lib/constants";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: `${BRAND.name} — ${BRAND.tagline}`,
@@ -13,10 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className={`dark ${inter.variable}`} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -35,7 +41,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased min-h-screen transition-colors duration-300">
+      <body className={`${inter.className} antialiased min-h-screen transition-colors duration-300 font-sans`}>
         {children}
       </body>
     </html>

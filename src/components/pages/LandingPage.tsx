@@ -37,9 +37,12 @@ export default function LandingPage({ onLaunchWebApp }: { onLaunchWebApp?: () =>
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-main)] transition-colors duration-300 font-sans selection:bg-zinc-800 selection:text-white">
+    <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-main)] transition-colors duration-300 font-sans selection:bg-zinc-800 selection:text-white relative overflow-hidden">
+      {/* Background Ambient Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-b from-zinc-200/40 to-transparent dark:from-zinc-800/20 blur-3xl pointer-events-none rounded-full" />
+
       {/* ─── Header / Navigation Bar ───────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-zinc-950/70 border-b border-zinc-200 dark:border-white/10">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-zinc-950/70 border-b border-zinc-200/80 dark:border-white/10">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* Brand Emblem */}
           <div className="flex items-center gap-3">
@@ -57,18 +60,15 @@ export default function LandingPage({ onLaunchWebApp }: { onLaunchWebApp?: () =>
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+          <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-zinc-600 dark:text-zinc-400">
             <a href="#features" className="hover:text-zinc-950 dark:hover:text-white transition-colors">
               Features
             </a>
             <a href="#search-sandbox" className="hover:text-zinc-950 dark:hover:text-white transition-colors">
               Search Sandbox
             </a>
-            <a href="#architecture" className="hover:text-zinc-950 dark:hover:text-white transition-colors">
-              Architecture
-            </a>
             <a href="#download" className="hover:text-zinc-950 dark:hover:text-white transition-colors">
-              Download
+              Download Agent
             </a>
           </nav>
 
@@ -88,7 +88,7 @@ export default function LandingPage({ onLaunchWebApp }: { onLaunchWebApp?: () =>
 
             <a
               href="#download"
-              className="btn-primary px-4 py-2 text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+              className="btn-primary px-4 py-2 text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <DownloadIcon className="w-4 h-4" />
               <span>Download Agent</span>
@@ -105,7 +105,7 @@ export default function LandingPage({ onLaunchWebApp }: { onLaunchWebApp?: () =>
           transition={{ duration: 0.4 }}
         >
           {/* Release Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-6">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-6 shadow-xs">
             <SparklesIcon className="w-3.5 h-3.5 text-zinc-800 dark:text-zinc-200" />
             <span>OpenStore Desktop Agent v0.1.0 Released</span>
           </div>
@@ -166,15 +166,15 @@ export default function LandingPage({ onLaunchWebApp }: { onLaunchWebApp?: () =>
               <div className="w-3 h-3 rounded-full bg-amber-500/80" />
               <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
             </div>
-            <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">OpenStore Agent — Windows x64</span>
+            <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">OpenStore Agent — Windows x64</span>
             <div className="w-12" />
           </div>
 
           {/* Window Mock Content */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-2">
             <div className="md:col-span-1 p-3 rounded-xl bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/10 space-y-2">
-              <div className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2 mb-2">
-                <div className="w-5 h-5 rounded bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center text-[10px]">OS</div>
+              <div className="text-xs font-semibold text-zinc-950 dark:text-white flex items-center gap-2 mb-2">
+                <div className="w-5 h-5 rounded bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center text-[10px] font-bold">OS</div>
                 <span>Navigation</span>
               </div>
               <div className="p-2 rounded-lg bg-zinc-200/70 dark:bg-white/[0.08] text-xs font-semibold text-zinc-950 dark:text-white flex items-center gap-2">
@@ -212,7 +212,7 @@ export default function LandingPage({ onLaunchWebApp }: { onLaunchWebApp?: () =>
       {/* ─── Interactive Search Sandbox ───────────────────────────────────── */}
       <section id="search-sandbox" className="py-16 px-6 border-t border-zinc-200 dark:border-white/10 bg-zinc-50/50 dark:bg-zinc-950/40">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-4 shadow-xs">
             <SearchIcon className="w-3.5 h-3.5" />
             <span>Try Live Repository Search</span>
           </div>
@@ -222,7 +222,7 @@ export default function LandingPage({ onLaunchWebApp }: { onLaunchWebApp?: () =>
           </h2>
 
           <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-8 max-w-xl mx-auto font-normal">
-            Test the search engine right here. Search keywords or paste full GitHub repository URLs (e.g., <code className="bg-zinc-200/80 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[11px]">https://github.com/facebook/react</code>).
+            Test the search engine right here. Search keywords or paste full GitHub repository URLs (e.g., <code className="bg-zinc-200/80 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono">https://github.com/facebook/react</code>).
           </p>
 
           <div className="max-w-2xl mx-auto text-left">
@@ -284,7 +284,7 @@ export default function LandingPage({ onLaunchWebApp }: { onLaunchWebApp?: () =>
       {/* ─── Download CTA Section ─────────────────────────────────────────── */}
       <section id="download" className="py-20 px-6 border-t border-zinc-200 dark:border-white/10 bg-zinc-100/50 dark:bg-zinc-950/60">
         <div className="max-w-4xl mx-auto glass-card rounded-3xl p-8 sm:p-12 text-center border border-zinc-200 dark:border-white/15 bg-white dark:bg-[#121215] shadow-2xl">
-          <div className="w-12 h-12 rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-extrabold text-base flex items-center justify-center mx-auto mb-5 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-bold text-base flex items-center justify-center mx-auto mb-5 shadow-xs">
             OS
           </div>
 
