@@ -552,6 +552,36 @@ function registerAgentHandlers(ipcMain) {
     throw new Error('Target path or URL not found');
   });
 
+  // ── Open Project in IDE (VS Code, Cursor, Zed, Sublime, or folder fallback) ──
+  ipcMain.handle('agent:open-in-ide', async (_event, projectPath) => {
+    if (!projectPath || !fs.existsSync(projectPath)) throw new Error('Project path not found');
+
+    // Try IDEs in priority order
+    const ideCommands = [
+      { name: 'VS Code', cmd: 'code' },
+      { name: 'Cursor', cmd: 'cursor' },
+      { name: 'Zed', cmd: 'zed' },
+      { name: 'Sublime Text', cmd: 'subl' },
+    ];
+
+    for (const ide of ideCommands) {
+      try {
+        await execPromise(`${ide.cmd} --version`, { timeout: 3000 });
+        // IDE found — open the project
+        exec(`${ide.cmd} "${projectPath}"`, { timeout: 10000 });
+        logAudit('open-in-ide', 'renderer', 'success', `${ide.name} -> ${projectPath}`);
+        return { success: true, ide: ide.name };
+      } catch {
+        // IDE not installed, try next
+      }
+    }
+
+    // Fallback: open folder in system file manager
+    shell.openPath(projectPath);
+    logAudit('open-in-ide', 'renderer', 'fallback-folder', projectPath);
+    return { success: true, ide: 'File Explorer' };
+  });
+
   // ── App Registry Persistence ──────────────────────────────────────────────
   ipcMain.handle('agent:get-installed-apps', async () => {
     const file = getInstalledAppsFile();
