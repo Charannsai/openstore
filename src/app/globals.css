@@ -40,6 +40,22 @@ button[disabled],
   cursor: not-allowed !important;
 }
 
+/* ─── Electron Desktop Window Dragging Utilities ────────────────────────── */
+.drag-region {
+  -webkit-app-region: drag !important;
+}
+
+.no-drag,
+button,
+a,
+input,
+select,
+textarea,
+[role="button"],
+.no-drag * {
+  -webkit-app-region: no-drag !important;
+}
+
 :root,
 html.dark {
   color-scheme: dark;

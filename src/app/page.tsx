@@ -35,7 +35,7 @@ const getSnapshot = () => typeof window !== 'undefined' && !!window.electronAPI;
 const getServerSnapshot = () => false;
 
 export default function App() {
-  const { currentView, isSidebarCollapsed } = useAppStore();
+  const { currentView, isSidebarCollapsed, navigate } = useAppStore();
   const isElectron = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [viewOverride, setViewOverride] = useState<'landing' | 'desktop' | null>(null);
 
@@ -62,6 +62,41 @@ export default function App() {
   const isWebMode = isElectron === false;
   const showLandingPage = viewOverride === 'landing' || (isWebMode && viewOverride !== 'desktop');
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+F / Cmd+F -> Focus Search
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        navigate('search');
+      }
+      // Ctrl+, / Cmd+, -> Settings
+      if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+        e.preventDefault();
+        navigate('settings');
+      }
+      // Ctrl+1..4 -> Quick View Navigation
+      if ((e.ctrlKey || e.metaKey) && e.key === '1') {
+        e.preventDefault();
+        navigate('home');
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === '2') {
+        e.preventDefault();
+        navigate('my-apps');
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === '3') {
+        e.preventDefault();
+        navigate('updates');
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === '4') {
+        e.preventDefault();
+        navigate('activity');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
   if (showLandingPage) {
     return (
       <ErrorBoundary>
@@ -72,16 +107,20 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex min-h-screen relative">
-        <div className="fixed top-0 left-0 right-0 h-10 drag-region z-40 pointer-events-auto" />
+      <div className="flex min-h-screen relative select-none">
+        {/* Top Window Drag Bar Header */}
+        <div
+          className="fixed top-0 left-0 right-0 h-10 drag-region z-30 flex items-center justify-between px-4"
+          onDoubleClick={() => window.electronAPI?.maximizeWindow?.()}
+        />
         <WindowControls />
         <Sidebar />
         <main
-          className={`flex-1 transition-all duration-300 ease-out ${
+          className={`flex-1 transition-all duration-300 ease-out pt-6 ${
             isSidebarCollapsed ? 'ml-[104px]' : 'ml-[280px]'
           }`}
         >
-          <div className="max-w-[1240px] mx-auto px-8 py-6">
+          <div className="max-w-[1240px] mx-auto px-8 py-4">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentView}
