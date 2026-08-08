@@ -99,8 +99,8 @@ export default function InstallPage() {
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [overallProgress, setOverallProgress] = useState(0);
-  const [status, setStatus] = useState<'running' | 'completed' | 'failed' | 'cancelled'>('running');
-  const [showDetails, setShowDetails] = useState(true);
+  const [status, setStatus] = useState<'running' | 'completed' | 'failed'>('running');
+  const [showDetails, setShowDetails] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [installedRecord, setInstalledRecord] = useState<InstalledApp | null>(null);
   const [isStartingServer, setIsStartingServer] = useState(false);
@@ -114,26 +114,22 @@ export default function InstallPage() {
 
     async function execute() {
       if (!app) return;
-      setStatus('running');
-
       try {
         const record = await runRealInstallation(app, {
-          onTaskChange: (idx, updatedTask) => {
+          onTaskChange: (idx: number, updated: Partial<Task>) => {
             if (!isMounted) return;
+            setCurrentIdx(idx);
             setTasks((prev) => {
               const copy = [...prev];
-              copy[idx] = { ...copy[idx], ...updatedTask };
+              copy[idx] = { ...copy[idx], ...updated };
               return copy;
             });
-            setCurrentIdx(idx);
           },
-          onLog: (msg) => {
-            if (!isMounted) return;
-            setLogs((prev) => [...prev, msg]);
+          onOverallProgress: (pct: number) => {
+            if (isMounted) setOverallProgress(pct);
           },
-          onOverallProgress: (percent) => {
-            if (!isMounted) return;
-            setOverallProgress(percent);
+          onLog: (line: string) => {
+            if (isMounted) setLogs((prev) => [...prev, line]);
           },
         });
 
@@ -165,7 +161,6 @@ export default function InstallPage() {
     };
   }, [app]);
 
-  // ── Context-Aware Post-Install Open Handler ──────────────────────────────
   const handleOpen = async () => {
     if (!installedRecord || !isElectron) return;
 
@@ -255,16 +250,16 @@ export default function InstallPage() {
       {/* Back */}
       <button
         onClick={() => navigate('app-detail', { slug: app.slug })}
-        className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors mb-6 cursor-pointer"
+        className="flex items-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors mb-5 cursor-pointer"
       >
         <ArrowLeftIcon className="w-4 h-4" />
         <span>Back</span>
       </button>
 
       {/* Header */}
-      <div className="glass-card rounded-2xl p-5 mb-5 border border-slate-200/80 dark:border-white/10">
+      <div className="glass-card rounded-xl p-5 mb-4 border border-zinc-200 dark:border-white/10">
         <div className="flex items-center gap-3.5 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-900 flex items-center justify-center border border-slate-200 dark:border-white/10 flex-shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center border border-zinc-200 dark:border-white/10 flex-shrink-0">
             <img
               src={app.icon_url}
               alt={app.name}
@@ -275,10 +270,10 @@ export default function InstallPage() {
             />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
+            <h1 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
               {status === 'completed' ? `${app.name} Ready` : `Installing ${app.name}`}
             </h1>
-            <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">
               {status === 'completed'
                 ? 'Dependencies installed & workspace configured'
                 : status === 'failed'
@@ -290,9 +285,9 @@ export default function InstallPage() {
 
         {/* Real Progress bar */}
         {status !== 'completed' && (
-          <div className="w-full h-2 bg-slate-200 dark:bg-zinc-900 rounded-full overflow-hidden mb-1 border border-slate-300/40 dark:border-white/[0.05]">
+          <div className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-900 rounded-full overflow-hidden mb-1 border border-zinc-300/40 dark:border-white/[0.05]">
             <motion.div
-              className="h-full bg-indigo-600 dark:bg-indigo-400 rounded-full"
+              className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full"
               animate={{ width: `${overallProgress}%` }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
             />
@@ -304,22 +299,22 @@ export default function InstallPage() {
       <AnimatePresence>
         {status === 'completed' && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
+            initial={{ opacity: 0, scale: 0.96, filter: 'blur(8px)' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-            className="glass-card rounded-2xl p-6 mb-5 text-center border border-indigo-500/30"
+            className="glass-card rounded-xl p-5 mb-4 text-center border border-zinc-300 dark:border-white/20"
           >
-            <CheckCircle2Icon className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-            <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100 mb-1">
+            <CheckCircleIcon className="w-8 h-8 text-zinc-800 dark:text-zinc-200 mx-auto mb-2" />
+            <h2 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
               Setup Complete
             </h2>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 mb-5 max-w-sm mx-auto font-medium">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 max-w-sm mx-auto font-normal">
               {isBinary ? 'Binary installer verified.' : 'Repository cloned directly via git clone and dependencies installed.'}
             </p>
-            <div className="flex justify-center gap-2.5">
+            <div className="flex justify-center gap-2">
               <button
                 onClick={handleOpen}
                 disabled={isStartingServer}
-                className="btn-primary px-6 py-2.5 text-xs font-semibold flex items-center gap-2 cursor-pointer"
+                className="btn-primary px-5 py-2 text-xs font-semibold flex items-center gap-2 cursor-pointer"
               >
                 {isStartingServer ? (
                   <>
@@ -351,7 +346,7 @@ export default function InstallPage() {
 
               <button
                 onClick={handleOpenFolder}
-                className="btn-secondary px-4 py-2.5 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+                className="btn-secondary px-3.5 py-2 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
                 title="Open project folder in Windows Explorer"
               >
                 <FolderOpenIcon className="w-3.5 h-3.5" />
@@ -360,7 +355,7 @@ export default function InstallPage() {
 
               <button
                 onClick={() => navigate('my-apps')}
-                className="btn-secondary px-4 py-2.5 text-xs font-medium cursor-pointer"
+                className="btn-secondary px-3.5 py-2 text-xs font-medium cursor-pointer"
               >
                 My Apps
               </button>
@@ -370,8 +365,8 @@ export default function InstallPage() {
       </AnimatePresence>
 
       {/* Task list */}
-      <div className="glass-card rounded-2xl p-4 mb-4 border border-slate-200/80 dark:border-white/10">
-        <div className="space-y-1">
+      <div className="glass-card rounded-xl p-3.5 mb-4 border border-zinc-200 dark:border-white/10">
+        <div className="space-y-0.5">
           {tasks.map((task, i) => (
             <TaskRow key={task.id} task={task} isCurrent={i === currentIdx && status === 'running'} />
           ))}
@@ -381,20 +376,20 @@ export default function InstallPage() {
       {/* Terminal Log */}
       <button
         onClick={() => setShowDetails(!showDetails)}
-        className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-zinc-200 transition-colors mb-3 cursor-pointer font-semibold"
+        className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors mb-3 cursor-pointer font-medium"
       >
-        <TerminalIcon className="w-4 h-4" />
-        <span>{showDetails ? 'Hide' : 'Show'} real terminal output</span>
-        <ChevronRightIcon className={`w-3.5 h-3.5 transition-transform ${showDetails ? 'rotate-90' : ''}`} />
+        <TerminalIcon className="w-3.5 h-3.5" />
+        <span>{showDetails ? 'Hide' : 'Show'} terminal output</span>
+        <ChevronRightIcon className={`w-3 h-3 transition-transform ${showDetails ? 'rotate-90' : ''}`} />
       </button>
 
       <AnimatePresence>
         {showDetails && (
           <motion.div
-            initial={{ opacity: 0, height: 0, filter: 'blur(10px)' }}
+            initial={{ opacity: 0, height: 0, filter: 'blur(8px)' }}
             animate={{ opacity: 1, height: 'auto', filter: 'blur(0px)' }}
-            exit={{ opacity: 0, height: 0, filter: 'blur(10px)' }}
-            className="glass-card rounded-xl p-3.5 mb-5 font-mono text-[11px] text-slate-800 dark:text-zinc-300 bg-slate-900 dark:bg-zinc-950/90 text-zinc-100 border border-slate-700 dark:border-white/10 overflow-x-auto max-h-56"
+            exit={{ opacity: 0, height: 0, filter: 'blur(8px)' }}
+            className="glass-card rounded-xl p-3 mb-4 font-mono text-[11px] text-zinc-800 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-950/90 border border-zinc-200 dark:border-white/10 overflow-x-auto max-h-56"
           >
             {logs.map((log, i) => (
               <p key={i} className="py-0.5 whitespace-pre-wrap">{log}</p>
@@ -409,32 +404,32 @@ export default function InstallPage() {
 function TaskRow({ task, isCurrent }: { task: Task; isCurrent: boolean }) {
   return (
     <div
-      className={`flex items-center gap-3 py-2.5 px-3 rounded-xl transition-colors ${
-        isCurrent ? 'bg-indigo-500/10 border border-indigo-500/20' : ''
+      className={`flex items-center gap-3 py-2 px-2.5 rounded-lg transition-colors ${
+        isCurrent ? 'bg-zinc-200/50 dark:bg-white/[0.04]' : ''
       }`}
     >
       {task.status === 'COMPLETED' ? (
-        <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
+        <CheckCircleIcon className="w-3.5 h-3.5 text-zinc-800 dark:text-zinc-200" />
       ) : task.status === 'RUNNING' ? (
-        <Loader2Icon className="w-4 h-4 text-indigo-500 animate-spin" />
+        <Loader2Icon className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100 animate-spin" />
       ) : (
-        <div className="w-4 h-4 rounded-full border border-slate-300 dark:border-zinc-700" />
+        <div className="w-3.5 h-3.5 rounded-full border border-zinc-300 dark:border-zinc-700" />
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
           <p
-            className={`text-xs font-semibold ${
+            className={`text-xs font-medium ${
               task.status === 'COMPLETED'
-                ? 'text-slate-500 dark:text-zinc-400'
+                ? 'text-zinc-500 dark:text-zinc-400'
                 : task.status === 'RUNNING'
-                ? 'text-slate-900 dark:text-zinc-100'
-                : 'text-slate-400 dark:text-zinc-500'
+                ? 'text-zinc-900 dark:text-zinc-100 font-semibold'
+                : 'text-zinc-400 dark:text-zinc-600'
             }`}
           >
             {task.title}
           </p>
           {task.status === 'RUNNING' && task.progress > 0 && (
-            <span className="text-[10px] text-indigo-500 font-mono font-bold">{task.progress}%</span>
+            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 font-mono">{task.progress}%</span>
           )}
         </div>
       </div>
