@@ -1,6 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter', var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-inter: 'Inter', var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, html, body, button, input, select, textarea {
+  font-family: 'Inter', var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
 
 :root,
 html.dark {
@@ -58,7 +68,6 @@ html.light {
 
 /* ─── Base Styles (Inter Font) ────────────────────────────────────────────── */
 body {
-  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg-app);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
