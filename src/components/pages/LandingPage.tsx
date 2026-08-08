@@ -69,9 +69,9 @@ export default function LandingPage({ onLaunchWebApp }: { onLaunchWebApp?: () =>
             <button
               onClick={toggleTheme}
               className="p-2 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-zinc-100 transition-all cursor-pointer"
-              title={mounted && theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
-              {mounted && theme === 'light' ? (
+              {theme === 'light' ? (
                 <SunIcon className="w-4 h-4 text-zinc-950" />
               ) : (
                 <MoonIcon className="w-4 h-4 text-zinc-200" />
