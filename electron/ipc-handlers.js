@@ -171,7 +171,7 @@ function registerAgentHandlers(ipcMain) {
       const dockerComposePath = path.join(dir, 'docker-compose.yml');
       const dockerfilePath = path.join(dir, 'Dockerfile');
 
-      // Node.js
+      // ── Node.js ──────────────────────────────────────────────────────
       if (fs.existsSync(packageJsonPath)) {
         result.has_package_json = true;
         result.ecosystem = 'node';
@@ -181,6 +181,9 @@ function registerAgentHandlers(ipcMain) {
         try {
           const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
           const scripts = pkg.scripts || {};
+          const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+          const depsStr = JSON.stringify(deps).toLowerCase();
+          const scriptStr = JSON.stringify(scripts).toLowerCase();
 
           if (scripts.build) result.build_command = 'npm run build';
 
@@ -192,25 +195,67 @@ function registerAgentHandlers(ipcMain) {
             result.start_command = 'npm run serve';
           } else if (scripts.preview) {
             result.start_command = 'npm run preview';
-          } else {
-            result.start_command = 'npx serve -p 3000';
           }
 
-          // Port hints from script definitions
-          const scriptStr = JSON.stringify(scripts);
-          if (scriptStr.includes('vite')) result.detected_port = 5173;
-          else if (scriptStr.includes('next')) result.detected_port = 3000;
-          else if (scriptStr.includes('nuxt')) result.detected_port = 3000;
-          else if (scriptStr.includes('angular')) result.detected_port = 4200;
-          else if (scriptStr.includes('svelte')) result.detected_port = 5173;
+          // ── Determine run_mode based on what the project actually is ──
+
+          // Desktop app (Electron, Tauri)
+          if (depsStr.includes('electron') || depsStr.includes('tauri')) {
+            result.run_mode = 'executable';
+            result.is_web_app = false;
+          }
+          // CLI tool (has bin field in package.json)
+          else if (pkg.bin) {
+            result.run_mode = 'terminal';
+            result.is_web_app = false;
+          }
+          // Web framework detected → browser mode
+          else if (
+            depsStr.includes('next') ||
+            depsStr.includes('vite') ||
+            depsStr.includes('react') ||
+            depsStr.includes('vue') ||
+            depsStr.includes('angular') ||
+            depsStr.includes('svelte') ||
+            depsStr.includes('nuxt') ||
+            depsStr.includes('express') ||
+            depsStr.includes('koa') ||
+            depsStr.includes('fastify') ||
+            depsStr.includes('hono') ||
+            scriptStr.includes('vite') ||
+            scriptStr.includes('next') ||
+            scriptStr.includes('webpack-dev-server')
+          ) {
+            result.run_mode = 'browser';
+            result.is_web_app = true;
+          }
+          // Has a dev/start script but no clear web framework → IDE project
+          else if (scripts.dev || scripts.start) {
+            result.run_mode = 'ide';
+            result.is_web_app = false;
+          }
+          // No runnable scripts at all → IDE project
+          else {
+            result.run_mode = 'ide';
+            result.is_web_app = false;
+            result.start_command = '';
+          }
+
+          // Port hints
+          if (scriptStr.includes('vite') || depsStr.includes('vite')) result.detected_port = 5173;
+          else if (scriptStr.includes('next') || depsStr.includes('next')) result.detected_port = 3000;
+          else if (depsStr.includes('nuxt')) result.detected_port = 3000;
+          else if (depsStr.includes('angular')) result.detected_port = 4200;
+          else if (depsStr.includes('svelte')) result.detected_port = 5173;
+
         } catch {
-          result.start_command = 'npx serve -p 3000';
+          result.run_mode = 'ide';
         }
 
         return true;
       }
 
-      // Python
+      // ── Python ───────────────────────────────────────────────────────
       if (fs.existsSync(requirementsPath)) {
         result.has_requirements_txt = true;
         result.ecosystem = 'python';
@@ -222,29 +267,44 @@ function registerAgentHandlers(ipcMain) {
         else if (pyFiles.includes('main.py')) result.start_command = 'python main.py';
         else if (pyFiles.includes('manage.py')) { result.start_command = 'python manage.py runserver'; result.detected_port = 8000; }
         else if (pyFiles.length > 0) result.start_command = `python ${pyFiles[0]}`;
-        else { result.start_command = 'python -m http.server 8000'; result.detected_port = 8000; }
 
         try {
-          const reqText = fs.readFileSync(requirementsPath, 'utf-8');
-          if (reqText.includes('streamlit')) { result.start_command = 'streamlit run app.py'; result.detected_port = 8501; }
-          else if (reqText.includes('flask')) { result.detected_port = 5000; }
-          else if (reqText.includes('fastapi') || reqText.includes('uvicorn')) { result.start_command = 'uvicorn main:app --reload'; result.detected_port = 8000; }
-          else if (reqText.includes('django')) { result.detected_port = 8000; }
-        } catch {}
+          const reqText = fs.readFileSync(requirementsPath, 'utf-8').toLowerCase();
+          if (reqText.includes('streamlit')) {
+            result.start_command = 'streamlit run app.py'; result.detected_port = 8501;
+            result.run_mode = 'browser'; result.is_web_app = true;
+          } else if (reqText.includes('flask')) {
+            result.detected_port = 5000;
+            result.run_mode = 'browser'; result.is_web_app = true;
+          } else if (reqText.includes('fastapi') || reqText.includes('uvicorn')) {
+            result.start_command = 'uvicorn main:app --reload'; result.detected_port = 8000;
+            result.run_mode = 'browser'; result.is_web_app = true;
+          } else if (reqText.includes('django')) {
+            result.detected_port = 8000;
+            result.run_mode = 'browser'; result.is_web_app = true;
+          } else {
+            // Python script without web framework → run in terminal or IDE
+            result.run_mode = pyFiles.length > 0 ? 'terminal' : 'ide';
+          }
+        } catch {
+          result.run_mode = 'terminal';
+        }
 
         return true;
       }
 
-      // Static HTML
+      // ── Static HTML ──────────────────────────────────────────────────
       if (fs.existsSync(path.join(dir, 'index.html'))) {
         result.ecosystem = 'static-html';
         result.start_command = 'npx serve -p 3000';
         result.detected_port = 3000;
         result.resolved_cwd = dir;
+        result.run_mode = 'browser';
+        result.is_web_app = true;
         return true;
       }
 
-      // Docker
+      // ── Docker ───────────────────────────────────────────────────────
       if (fs.existsSync(dockerComposePath) || fs.existsSync(dockerfilePath)) {
         result.has_dockerfile = true;
         result.ecosystem = 'docker';
@@ -252,6 +312,8 @@ function registerAgentHandlers(ipcMain) {
         result.start_command = fs.existsSync(dockerComposePath) ? 'docker compose up' : 'docker run -p 3000:3000 openstore-app';
         result.detected_port = 3000;
         result.resolved_cwd = dir;
+        result.run_mode = 'browser';
+        result.is_web_app = true;
         return true;
       }
 
