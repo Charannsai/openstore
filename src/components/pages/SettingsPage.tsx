@@ -131,10 +131,48 @@ export default function SettingsPage() {
           />
         </SettingsSection>
 
-        {/* About */}
-        <SettingsSection title="About" icon={<InfoIcon className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />}>
-          <SettingRow label="Version" value={BRAND.version} />
-          <SettingRow label="Architecture" value="Local Desktop App" />
+        {/* About OpenStore */}
+        <SettingsSection title="About OpenStore" icon={<InfoIcon className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />}>
+          <div className="space-y-4 py-1 text-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-white/5">
+              <div>
+                <p className="text-xs font-bold text-zinc-950 dark:text-zinc-100">{BRAND.name} Desktop Agent</p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Version {BRAND.version} • Open Source Platform</p>
+              </div>
+              <span className="px-2.5 py-1 text-[10px] font-bold rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 uppercase">
+                100% Local
+              </span>
+            </div>
+
+            {/* What is OpenStore */}
+            <div className="space-y-1">
+              <h3 className="font-bold text-zinc-950 dark:text-zinc-100">What is OpenStore?</h3>
+              <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
+                OpenStore is an open-source desktop application store that lets you discover, clone, and run open-source software and GitHub repositories locally on your computer with one click.
+              </p>
+            </div>
+
+            {/* How It Installs */}
+            <div className="space-y-1">
+              <h3 className="font-bold text-zinc-950 dark:text-zinc-100">How Installation Works</h3>
+              <ul className="list-disc list-inside space-y-1 text-zinc-600 dark:text-zinc-400 font-normal pl-0.5">
+                <li><strong className="text-zinc-800 dark:text-zinc-200 font-semibold">Direct Git Clone:</strong> Repository source code is cloned directly into your local machine directory (<code className="font-mono text-[11px] bg-zinc-100 dark:bg-zinc-800 px-1 py-0.5 rounded">Downloads/OpenStore</code>).</li>
+                <li><strong className="text-zinc-800 dark:text-zinc-200 font-semibold">Local Dependency Setup:</strong> Automatically detects project manifests (<code className="font-mono text-[11px]">package.json</code>, <code className="font-mono text-[11px]">requirements.txt</code>) and executes local package managers (<code className="font-mono text-[11px]">npm</code>, <code className="font-mono text-[11px]">pip</code>) on your system.</li>
+                <li><strong className="text-zinc-800 dark:text-zinc-200 font-semibold">Verified Binaries:</strong> Official desktop installers are retrieved directly from developer GitHub releases or Winget manifests with checksum validation.</li>
+              </ul>
+            </div>
+
+            {/* Privacy & Limitations */}
+            <div className="space-y-1 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-white/10">
+              <h3 className="font-bold text-zinc-950 dark:text-zinc-100 flex items-center gap-1.5">
+                <ShieldIcon className="w-3.5 h-3.5 text-zinc-500" />
+                <span>Privacy & Security Guarantees</span>
+              </h3>
+              <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed font-normal">
+                <strong className="text-zinc-800 dark:text-zinc-200 font-semibold">Zero User-End Data Access:</strong> OpenStore does NOT read, collect, or transmit any personal files, documents, or credentials from your computer. Everything runs completely locally on your system.
+              </p>
+            </div>
+          </div>
         </SettingsSection>
       </div>
     </motion.div>
