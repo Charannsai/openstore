@@ -127,25 +127,32 @@ export async function runRealInstallation(
     }
   }
 
-  let ecosystemInfo = {
+  let ecosystemInfo: any = {
     ecosystem: 'unknown',
     install_command: '',
     build_command: '',
     start_command: '',
     detected_port: 3000,
     is_web_app: false,
+    resolved_cwd: finalInstallPath,
   };
 
   if (isElectron && typeof api?.inspectRepoEcosystem === 'function') {
     try {
       ecosystemInfo = await api.inspectRepoEcosystem(finalInstallPath);
+      const runDir = ecosystemInfo.resolved_cwd || finalInstallPath;
       callbacks.onLog(`[AGENT] Ecosystem: ${ecosystemInfo.ecosystem.toUpperCase()} (Install: ${ecosystemInfo.install_command || 'None'}, Start: ${ecosystemInfo.start_command || 'None'})`);
+      if (runDir !== finalInstallPath) {
+        callbacks.onLog(`[AGENT] Monorepo detected — resolved runnable directory: ${runDir}`);
+      }
     } catch {}
   }
 
+  const runCwd = ecosystemInfo.resolved_cwd || finalInstallPath;
+
   // Real Dependency Installation (`npm install` / `pip install -r requirements.txt`)
   if (isElectron && ecosystemInfo.install_command && typeof api?.executeTerminalCommand === 'function') {
-    callbacks.onLog(`[AGENT TERMINAL] Executing hands-free setup: "${ecosystemInfo.install_command}" in ${finalInstallPath}...`);
+    callbacks.onLog(`[AGENT TERMINAL] Executing: "${ecosystemInfo.install_command}" in ${runCwd}...`);
 
     let termUnsub = () => {};
     if (typeof api.onTerminalOutput === 'function') {
@@ -155,8 +162,8 @@ export async function runRealInstallation(
     }
 
     try {
-      const cmdResult = await api.executeTerminalCommand(ecosystemInfo.install_command, finalInstallPath);
-      callbacks.onLog(`[AGENT TERMINAL] Dependency installation ${cmdResult.success ? 'succeeded ✓' : 'completed'}`);
+      const cmdResult = await api.executeTerminalCommand(ecosystemInfo.install_command, runCwd);
+      callbacks.onLog(`[AGENT TERMINAL] Dependency installation ${cmdResult.success ? 'succeeded' : 'completed'}`);
     } catch (cmdErr: any) {
       callbacks.onLog(`[AGENT TERMINAL] Dependency setup notice: ${cmdErr.message || cmdErr}`);
     } finally {
@@ -168,8 +175,8 @@ export async function runRealInstallation(
   if (isElectron && ecosystemInfo.build_command && typeof api?.executeTerminalCommand === 'function') {
     callbacks.onLog(`[AGENT TERMINAL] Executing build command: "${ecosystemInfo.build_command}"...`);
     try {
-      await api.executeTerminalCommand(ecosystemInfo.build_command, finalInstallPath);
-      callbacks.onLog(`[AGENT TERMINAL] Build completed successfully ✓`);
+      await api.executeTerminalCommand(ecosystemInfo.build_command, runCwd);
+      callbacks.onLog(`[AGENT TERMINAL] Build completed successfully`);
     } catch {}
   }
 
@@ -188,7 +195,7 @@ export async function runRealInstallation(
     application: app,
     version: app.latest_version || '1.0.0',
     install_method: isBinaryInstaller ? 'OFFICIAL_INSTALLER' : 'SOURCE_BUILD',
-    install_path: finalInstallPath,
+    install_path: runCwd,
     installed_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     status: 'stopped',
