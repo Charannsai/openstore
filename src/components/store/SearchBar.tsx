@@ -96,8 +96,14 @@ export default function SearchBar() {
           <input
             ref={inputRef}
             type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setQuery(val);
+              if (val.trim().length < 2) {
+                setSuggestions([]);
+                setIsLoading(false);
+              }
+            }}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
             placeholder={BRAND.searchPlaceholder}
