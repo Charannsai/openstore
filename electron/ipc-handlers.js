@@ -734,11 +734,18 @@ function registerAgentHandlers(ipcMain) {
 
   ipcMain.handle('agent:select-directory', async (_event, defaultPath) => {
     try {
-      const result = await dialog.showOpenDialog({
-        title: 'Select OpenStore Workspace Directory',
-        defaultPath: defaultPath || getDownloadsDir(),
-        properties: ['openDirectory', 'createDirectory'],
-      });
+      const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+      const result = win
+        ? await dialog.showOpenDialog(win, {
+            title: 'Select OpenStore Workspace Directory',
+            defaultPath: defaultPath || getDownloadsDir(),
+            properties: ['openDirectory', 'createDirectory'],
+          })
+        : await dialog.showOpenDialog({
+            title: 'Select OpenStore Workspace Directory',
+            defaultPath: defaultPath || getDownloadsDir(),
+            properties: ['openDirectory', 'createDirectory'],
+          });
 
       if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
         const selectedDir = result.filePaths[0];
@@ -749,6 +756,7 @@ function registerAgentHandlers(ipcMain) {
       }
       return { success: false, canceled: true };
     } catch (err) {
+      console.error('Error in agent:select-directory:', err);
       return { success: false, error: err.message };
     }
   });

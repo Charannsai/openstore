@@ -1,5 +1,6 @@
 import type { Application, InstalledApp, Task } from './types';
 import { getGitHubReleaseAssetUrl } from './github-api';
+import { useAppStore } from '@/store/app-store';
 
 export interface InstallationProgressCallback {
   onTaskChange: (taskIndex: number, updatedTask: Partial<Task>) => void;
@@ -58,9 +59,13 @@ export async function runRealInstallation(
   // Step 3: Download / Git Clone Repository
   callbacks.onTaskChange(2, { status: 'RUNNING', progress: 0 });
 
-  let downloadsDir = 'C:/Users/Public/Downloads/OpenStore';
-  if (isElectron && typeof api?.getDownloadsDir === 'function') {
+  const userConfiguredDir = useAppStore.getState().settings.installDir;
+  let downloadsDir = userConfiguredDir;
+  if (!downloadsDir && isElectron && typeof api?.getDownloadsDir === 'function') {
     try { downloadsDir = await api.getDownloadsDir(); } catch {}
+  }
+  if (!downloadsDir) {
+    downloadsDir = 'Downloads/OpenStore';
   }
 
   const sanitizeName = app.slug.replace(/[^a-zA-Z0-9-_]/g, '_');

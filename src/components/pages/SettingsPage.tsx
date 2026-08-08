@@ -21,29 +21,49 @@ type SettingsTab = 'appearance' | 'general' | 'privacy' | 'about';
 export default function SettingsPage() {
   const { theme, setTheme, settings, updateSetting } = useAppStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
+  const [isEditingPath, setIsEditingPath] = useState(false);
+  const [customPathInput, setCustomPathInput] = useState(settings.installDir);
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
 
   const handleSelectDirectory = async () => {
-    if (isElectron && window.electronAPI?.selectDirectory) {
-      const res = await window.electronAPI.selectDirectory(settings.installDir);
-      if (res.success && res.path) {
-        updateSetting('installDir', res.path);
+    if (typeof window !== 'undefined' && typeof window.electronAPI?.selectDirectory === 'function') {
+      try {
+        const res = await window.electronAPI.selectDirectory(settings.installDir);
+        if (res?.success && res.path) {
+          updateSetting('installDir', res.path);
+          setCustomPathInput(res.path);
+        }
+      } catch (err) {
+        console.error('Error opening file manager dialog:', err);
       }
     } else {
-      const customPath = prompt('Enter custom workspace path:', settings.installDir);
-      if (customPath && customPath.trim()) {
-        updateSetting('installDir', customPath.trim());
-      }
+      setCustomPathInput(settings.installDir);
+      setIsEditingPath(true);
     }
   };
 
+  const handleSaveCustomPath = () => {
+    if (customPathInput && customPathInput.trim()) {
+      updateSetting('installDir', customPathInput.trim());
+    }
+    setIsEditingPath(false);
+  };
+
   const handleResetDirectory = async () => {
-    if (isElectron && window.electronAPI?.getDownloadsDir) {
-      const defaultFolder = await window.electronAPI.getDownloadsDir();
-      updateSetting('installDir', defaultFolder);
+    if (isElectron && typeof window.electronAPI?.getDownloadsDir === 'function') {
+      try {
+        const defaultFolder = await window.electronAPI.getDownloadsDir();
+        updateSetting('installDir', defaultFolder);
+        setCustomPathInput(defaultFolder);
+      } catch {
+        updateSetting('installDir', 'Downloads/OpenStore');
+        setCustomPathInput('Downloads/OpenStore');
+      }
     } else {
       updateSetting('installDir', 'Downloads/OpenStore');
+      setCustomPathInput('Downloads/OpenStore');
     }
+    setIsEditingPath(false);
   };
 
   const tabs: { id: SettingsTab; label: string }[] = [
@@ -188,18 +208,11 @@ export default function SettingsPage() {
                       <div>
                         <p className="text-xs font-bold text-zinc-950 dark:text-zinc-100">Local Workspace Directory</p>
                         <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal leading-relaxed">
-                          Choose your custom location where cloned apps and binaries are installed (defaults to <code className="font-mono text-[10px]">Downloads/OpenStore</code>)
+                          Choose your custom location where cloned apps and binaries stay (defaults to <code className="font-mono text-[10px]">Downloads/OpenStore</code>)
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                          onClick={handleSelectDirectory}
-                          className="px-3.5 py-1.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
-                        >
-                          <FolderOpenIcon className="w-3.5 h-3.5" />
-                          <span>Browse...</span>
-                        </button>
                         <button
                           onClick={handleResetDirectory}
                           className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-500 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer"
@@ -210,10 +223,44 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/10 text-xs font-mono text-zinc-800 dark:text-zinc-200 overflow-x-auto">
-                      <FolderOpenIcon className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-                      <span className="truncate">{settings.installDir}</span>
-                    </div>
+                    {isEditingPath ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={customPathInput}
+                          onChange={(e) => setCustomPathInput(e.target.value)}
+                          placeholder="Enter custom path (e.g. C:\OpenSourceApps)..."
+                          className="flex-1 px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-white/20 text-xs font-mono text-zinc-950 dark:text-white focus:outline-none focus:ring-1 focus:ring-zinc-400"
+                        />
+                        <button
+                          onClick={handleSaveCustomPath}
+                          className="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 text-xs font-bold cursor-pointer transition-all"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setIsEditingPath(false)}
+                          className="px-3 py-2 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-medium cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/10 text-xs font-mono text-zinc-800 dark:text-zinc-200">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FolderOpenIcon className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+                          <span className="truncate">{settings.installDir}</span>
+                        </div>
+                        <button
+                          onClick={handleSelectDirectory}
+                          className="px-3 py-1.5 rounded-lg bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-100 font-sans font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all flex-shrink-0"
+                          title="Open File Explorer to select Desktop or any custom folder"
+                        >
+                          <FolderOpenIcon className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <SettingRow
                     label="Automatic Update Check"
