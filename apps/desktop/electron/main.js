@@ -5,7 +5,7 @@ const { registerAgentHandlers } = require('./ipc-handlers');
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 const isDev = process.env.NODE_ENV !== 'production';
-const DEV_URL = 'http://localhost:3000';
+const DEV_URL = 'http://localhost:3002';
 
 const fs = require('fs');
 
