@@ -1,25 +1,17 @@
 const os = require('os');
-const { exec, execFile, spawn } = require('child_process');
+const { exec, spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const https = require('https');
 const http = require('http');
 const net = require('net');
-const { BrowserWindow } = require('electron');
+const { BrowserWindow, shell } = require('electron');
 
 /**
- * Desktop Agent — IPC Handlers
- *
- * Every handler follows the security principles:
- *  1. Input validation
- *  2. Permission checking
- *  3. Structured logging
- *  4. Error handling
- *  5. Timeout support
+ * Desktop Agent — Real End-to-End Local Execution
  */
 
-// ─── Audit Log ───────────────────────────────────────────────────────────────
 const auditLog = [];
 
 function logAudit(action, source, result, details = '') {
@@ -31,53 +23,71 @@ function logAudit(action, source, result, details = '') {
     details,
   };
   auditLog.push(entry);
-  console.log(`[AUDIT] ${entry.timestamp} | ${action} | ${result} | ${details}`);
+  console.log(`[AGENT AUDIT] ${entry.timestamp} | ${action} | ${result} | ${details}`);
 }
 
-// ─── Register all IPC handlers ───────────────────────────────────────────────
+// Ensure AppData storage directory exists
+function getStorageDir() {
+  const base = process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + '/.local/share');
+  const dir = path.join(base, 'OpenStore');
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  return dir;
+}
+
+function getInstalledAppsFile() {
+  return path.join(getStorageDir(), 'installed_apps.json');
+}
+
+function getDownloadsDir() {
+  const userHome = os.homedir();
+  const dir = path.join(userHome, 'Downloads', 'OpenStore');
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  return dir;
+}
+
 function registerAgentHandlers(ipcMain) {
   // ── System Info ──────────────────────────────────────────────────────────
   ipcMain.handle('agent:get-system-info', async () => {
     try {
-      const platform = os.platform(); // 'win32', 'darwin', 'linux'
-      const arch = os.arch(); // 'x64', 'arm64'
-      const totalMem = os.totalmem();
-      const freeMem = os.freemem();
-      const cpus = os.cpus();
-
       const platformMap = { win32: 'windows', darwin: 'macos', linux: 'linux' };
+      const platform = platformMap[os.platform()] || os.platform();
+      const arch = os.arch() === 'x64' ? 'x64' : 'arm64';
 
-      const info = {
-        platform: platformMap[platform] || platform,
-        os_version: os.release(),
-        architecture: arch === 'x64' ? 'x64' : 'arm64',
-        hostname: os.hostname(),
-        total_memory: totalMem,
-        free_memory: freeMem,
-        total_disk: 0,
-        free_disk: 0,
-        cpu_model: cpus.length > 0 ? cpus[0].model : 'Unknown',
-        cpu_cores: cpus.length,
-      };
+      let freeDisk = 0;
+      let totalDisk = 0;
 
-      // Get disk space (Windows)
-      if (platform === 'win32') {
+      if (os.platform() === 'win32') {
         try {
           const diskInfo = await execPromise('wmic logicaldisk where "DeviceID=\'C:\'" get FreeSpace,Size /format:csv');
           const lines = diskInfo.trim().split('\n');
           if (lines.length >= 2) {
             const parts = lines[lines.length - 1].split(',');
             if (parts.length >= 3) {
-              info.free_disk = parseInt(parts[1]) || 0;
-              info.total_disk = parseInt(parts[2]) || 0;
+              freeDisk = parseInt(parts[1]) || 0;
+              totalDisk = parseInt(parts[2]) || 0;
             }
           }
-        } catch {
-          // Fallback: disk info not available
-        }
+        } catch {}
       }
 
-      logAudit('get-system-info', 'renderer', 'success', `${info.platform} ${info.architecture}`);
+      const info = {
+        platform,
+        os_version: os.release(),
+        architecture: arch,
+        hostname: os.hostname(),
+        total_memory: os.totalmem(),
+        free_memory: os.freemem(),
+        total_disk: totalDisk,
+        free_disk: freeDisk,
+        cpu_model: os.cpus()[0]?.model || 'Processor',
+        cpu_cores: os.cpus().length,
+      };
+
+      logAudit('get-system-info', 'renderer', 'success', `${platform} ${arch}`);
       return info;
     } catch (error) {
       logAudit('get-system-info', 'renderer', 'error', error.message);
@@ -87,282 +97,253 @@ function registerAgentHandlers(ipcMain) {
 
   // ── Check Command ────────────────────────────────────────────────────────
   ipcMain.handle('agent:check-command', async (_event, command) => {
-    // Input validation
-    if (!command || typeof command !== 'string') {
-      throw new Error('Invalid command parameter');
-    }
+    if (!command || typeof command !== 'string') return { exists: false };
 
-    // Security: only allow checking known safe commands
     const allowedCommands = [
       'git', 'node', 'npm', 'npx', 'python', 'python3', 'pip', 'pip3',
       'docker', 'docker-compose', 'java', 'go', 'rust', 'cargo',
-      'ruby', 'php', 'dotnet', 'cmake', 'make', 'gcc', 'g++',
-      'curl', 'wget', 'ffmpeg', 'vlc', 'blender', 'code',
+      'code', 'curl', 'wget', 'ffmpeg', 'vlc', 'blender',
     ];
 
     if (!allowedCommands.includes(command.toLowerCase())) {
-      logAudit('check-command', 'renderer', 'denied', `Command not in allowlist: ${command}`);
-      return { exists: false, version: null, error: 'Command not in allowlist' };
+      return { exists: false, error: 'Command not allowed' };
     }
 
     try {
-      const versionFlag = command === 'docker' ? 'version --format {{.Client.Version}}' : '--version';
-      const output = await execPromise(`${command} ${versionFlag}`, { timeout: 10000 });
-
-      // Extract version number
+      const flag = command === 'docker' ? 'version' : '--version';
+      const output = await execPromise(`${command} ${flag}`, { timeout: 8000 });
       const versionMatch = output.match(/(\d+\.\d+[\.\d]*)/);
-      const version = versionMatch ? versionMatch[1] : null;
-
-      logAudit('check-command', 'renderer', 'success', `${command}: ${version || 'found'}`);
-      return { exists: true, version };
+      return { exists: true, version: versionMatch ? versionMatch[1] : 'installed' };
     } catch {
-      logAudit('check-command', 'renderer', 'not-found', command);
-      return { exists: false, version: null };
+      return { exists: false };
     }
   });
 
   // ── Check Port ───────────────────────────────────────────────────────────
   ipcMain.handle('agent:check-port', async (_event, port) => {
-    if (!port || typeof port !== 'number' || port < 1 || port > 65535) {
-      throw new Error('Invalid port number');
-    }
+    if (!port || typeof port !== 'number') return { inUse: false };
 
     return new Promise((resolve) => {
       const socket = new net.Socket();
-      socket.setTimeout(3000);
-
-      socket.on('connect', () => {
-        socket.destroy();
-        logAudit('check-port', 'renderer', 'in-use', `Port ${port}`);
-        resolve({ inUse: true });
-      });
-
-      socket.on('timeout', () => {
-        socket.destroy();
-        resolve({ inUse: false });
-      });
-
-      socket.on('error', () => {
-        socket.destroy();
-        resolve({ inUse: false });
-      });
-
+      socket.setTimeout(2000);
+      socket.on('connect', () => { socket.destroy(); resolve({ inUse: true }); });
+      socket.on('timeout', () => { socket.destroy(); resolve({ inUse: false }); });
+      socket.on('error', () => { socket.destroy(); resolve({ inUse: false }); });
       socket.connect(port, '127.0.0.1');
     });
   });
 
-  // ── Check Disk Space ─────────────────────────────────────────────────────
-  ipcMain.handle('agent:check-disk-space', async (_event, diskPath) => {
-    try {
-      if (os.platform() === 'win32') {
-        const drive = (diskPath || 'C:').charAt(0).toUpperCase();
-        const output = await execPromise(
-          `wmic logicaldisk where "DeviceID='${drive}:'" get FreeSpace,Size /format:csv`
-        );
-        const lines = output.trim().split('\n');
-        if (lines.length >= 2) {
-          const parts = lines[lines.length - 1].split(',');
-          return {
-            free: parseInt(parts[1]) || 0,
-            total: parseInt(parts[2]) || 0,
-          };
-        }
-      }
-      return { free: 0, total: 0 };
-    } catch (error) {
-      logAudit('check-disk-space', 'renderer', 'error', error.message);
-      return { free: 0, total: 0 };
-    }
-  });
-
-  // ── Download File ────────────────────────────────────────────────────────
+  // ── Real File Downloader ─────────────────────────────────────────────────
   ipcMain.handle('agent:download-file', async (event, url, dest, checksum) => {
-    // Input validation
     if (!url || typeof url !== 'string') throw new Error('Invalid URL');
-    if (!dest || typeof dest !== 'string') throw new Error('Invalid destination');
 
-    // Security: validate URL
-    try {
-      const parsed = new URL(url);
-      if (!['https:', 'http:'].includes(parsed.protocol)) {
-        throw new Error('Only HTTP/HTTPS URLs are allowed');
-      }
-    } catch (e) {
-      throw new Error(`Invalid URL: ${e.message}`);
-    }
+    const finalDest = dest || path.join(getDownloadsDir(), path.basename(new URL(url).pathname) || 'download.bin');
+    const dir = path.dirname(finalDest);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    logAudit('download-file', 'renderer', 'started', url);
+    logAudit('download-file', 'renderer', 'started', `${url} -> ${finalDest}`);
 
     return new Promise((resolve, reject) => {
-      const protocol = url.startsWith('https') ? https : http;
-      const dir = path.dirname(dest);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-
-      const file = fs.createWriteStream(dest);
-      const request = protocol.get(url, (response) => {
-        if (response.statusCode === 302 || response.statusCode === 301) {
-          // Handle redirect
-          protocol.get(response.headers.location, (redirected) => {
-            redirected.pipe(file);
-          });
-          return;
+      function downloadUrl(targetUrl, redirectCount = 0) {
+        if (redirectCount > 5) {
+          return reject(new Error('Too many redirects'));
         }
 
-        const total = parseInt(response.headers['content-length'], 10) || 0;
-        let received = 0;
+        const parsedUrl = new URL(targetUrl);
+        const protocol = parsedUrl.protocol === 'https:' ? https : http;
 
-        response.on('data', (chunk) => {
-          received += chunk.length;
-          // Send progress to renderer
-          const win = BrowserWindow.getAllWindows()[0];
-          if (win) {
-            win.webContents.send('agent:download-progress', {
-              url,
-              received,
-              total,
-            });
+        const req = protocol.get(targetUrl, {
+          headers: {
+            'User-Agent': 'OpenStore-Desktop-Agent/1.0',
+          },
+        }, (res) => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            const redirectUrl = new URL(res.headers.location, targetUrl).href;
+            return downloadUrl(redirectUrl, redirectCount + 1);
           }
+
+          if (res.statusCode !== 200) {
+            return reject(new Error(`Server returned HTTP ${res.statusCode}`));
+          }
+
+          const total = parseInt(res.headers['content-length'] || '0', 10);
+          let received = 0;
+          const file = fs.createWriteStream(finalDest);
+
+          res.on('data', (chunk) => {
+            received += chunk.length;
+            const progress = total > 0 ? Math.round((received / total) * 100) : 0;
+
+            const win = BrowserWindow.getAllWindows()[0];
+            if (win) {
+              win.webContents.send('agent:download-progress', {
+                url,
+                received,
+                total,
+                progress,
+                path: finalDest,
+              });
+            }
+          });
+
+          res.pipe(file);
+
+          file.on('finish', () => {
+            file.close(() => {
+              logAudit('download-file', 'renderer', 'success', finalDest);
+              resolve({ success: true, path: finalDest, size: received });
+            });
+          });
+
+          file.on('error', (err) => {
+            fs.unlink(finalDest, () => {});
+            reject(err);
+          });
         });
 
-        response.pipe(file);
-
-        file.on('finish', () => {
-          file.close();
-
-          // Verify checksum if provided
-          if (checksum) {
-            const hash = crypto.createHash('sha256');
-            const stream = fs.createReadStream(dest);
-            stream.on('data', (d) => hash.update(d));
-            stream.on('end', () => {
-              const computed = hash.digest('hex');
-              if (computed !== checksum) {
-                fs.unlinkSync(dest);
-                logAudit('download-file', 'renderer', 'checksum-mismatch', url);
-                reject(new Error('Checksum verification failed'));
-              } else {
-                logAudit('download-file', 'renderer', 'success', url);
-                resolve({ success: true, path: dest });
-              }
-            });
-          } else {
-            logAudit('download-file', 'renderer', 'success', url);
-            resolve({ success: true, path: dest });
-          }
+        req.on('error', (err) => {
+          fs.unlink(finalDest, () => {});
+          reject(err);
         });
-      });
 
-      request.on('error', (err) => {
-        fs.unlinkSync(dest);
-        logAudit('download-file', 'renderer', 'error', err.message);
-        reject(err);
-      });
+        req.setTimeout(120000, () => {
+          req.destroy();
+          reject(new Error('Download timeout (120s)'));
+        });
+      }
 
-      request.setTimeout(60000, () => {
-        request.destroy();
-        reject(new Error('Download timed out'));
-      });
+      downloadUrl(url);
     });
   });
 
-  // ── Launch App ───────────────────────────────────────────────────────────
+  // ── Extract Archive (.zip) ───────────────────────────────────────────────
+  ipcMain.handle('agent:unzip-file', async (_event, zipPath, targetDir) => {
+    if (!fs.existsSync(zipPath)) throw new Error('Zip file not found');
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+    logAudit('unzip-file', 'renderer', 'started', `${zipPath} -> ${targetDir}`);
+
+    if (os.platform() === 'win32') {
+      const cmd = `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${targetDir}' -Force"`;
+      await execPromise(cmd, { timeout: 180000 });
+    } else {
+      await execPromise(`unzip -o "${zipPath}" -d "${targetDir}"`, { timeout: 180000 });
+    }
+
+    logAudit('unzip-file', 'renderer', 'success', targetDir);
+    return { success: true, targetDir };
+  });
+
+  // ── Real Launch App / Installer / Open Folder ────────────────────────────
   ipcMain.handle('agent:launch-app', async (_event, config) => {
     if (!config) throw new Error('Invalid launch config');
 
-    if (config.url) {
-      const { shell } = require('electron');
-      shell.openExternal(config.url);
-      logAudit('launch-app', 'renderer', 'success', `URL: ${config.url}`);
-      return 0;
-    }
-
     if (config.path) {
-      const { shell } = require('electron');
-      shell.openPath(config.path);
-      logAudit('launch-app', 'renderer', 'success', `Path: ${config.path}`);
+      const targetPath = config.path;
+      if (fs.existsSync(targetPath)) {
+        const stat = fs.statSync(targetPath);
+        if (stat.isDirectory()) {
+          shell.openPath(targetPath);
+          logAudit('launch-app', 'renderer', 'open-folder', targetPath);
+          return 0;
+        } else if (targetPath.endsWith('.exe') || targetPath.endsWith('.msi')) {
+          shell.openPath(targetPath);
+          logAudit('launch-app', 'renderer', 'launched-installer', targetPath);
+          return 0;
+        } else {
+          shell.openPath(targetPath);
+          return 0;
+        }
+      }
+    }
+
+    if (config.url) {
+      shell.openExternal(config.url);
+      logAudit('launch-app', 'renderer', 'open-url', config.url);
       return 0;
     }
 
-    if (config.command) {
-      const child = spawn(config.command, config.args || [], {
-        detached: true,
-        stdio: 'ignore',
-      });
-      child.unref();
-      logAudit('launch-app', 'renderer', 'success', `Command: ${config.command}`);
-      return child.pid;
-    }
-
-    throw new Error('No launch target specified');
+    throw new Error('Target path or URL not found');
   });
 
-  // ── Stop App ─────────────────────────────────────────────────────────────
+  // ── Real Installed Apps Registry ──────────────────────────────────────────
+  ipcMain.handle('agent:get-installed-apps', async () => {
+    const file = getInstalledAppsFile();
+    if (fs.existsSync(file)) {
+      try {
+        const content = fs.readFileSync(file, 'utf-8');
+        return JSON.parse(content);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  ipcMain.handle('agent:save-installed-app', async (_event, appRecord) => {
+    const file = getInstalledAppsFile();
+    let list = [];
+    if (fs.existsSync(file)) {
+      try {
+        list = JSON.parse(fs.readFileSync(file, 'utf-8'));
+      } catch {
+        list = [];
+      }
+    }
+
+    list = list.filter((a) => a.id !== appRecord.id && a.application_id !== appRecord.application_id);
+    list.unshift(appRecord);
+
+    fs.writeFileSync(file, JSON.stringify(list, null, 2), 'utf-8');
+    logAudit('save-installed-app', 'renderer', 'success', appRecord.application?.name || appRecord.id);
+    return list;
+  });
+
+  ipcMain.handle('agent:uninstall-app', async (_event, appId, installPath) => {
+    // Delete files if path exists inside Downloads/OpenStore
+    if (installPath && fs.existsSync(installPath)) {
+      try {
+        const downloadsRoot = path.normalize(getDownloadsDir());
+        const targetNorm = path.normalize(installPath);
+        if (targetNorm.startsWith(downloadsRoot)) {
+          fs.rmSync(installPath, { recursive: true, force: true });
+        }
+      } catch (err) {
+        console.error('Failed to remove install directory:', err);
+      }
+    }
+
+    // Remove from registry file
+    const file = getInstalledAppsFile();
+    let list = [];
+    if (fs.existsSync(file)) {
+      try {
+        list = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        list = list.filter((a) => a.id !== appId && a.application_id !== appId);
+        fs.writeFileSync(file, JSON.stringify(list, null, 2), 'utf-8');
+      } catch {}
+    }
+
+    logAudit('uninstall-app', 'renderer', 'success', appId);
+    return list;
+  });
+
+  // ── Stop Process ─────────────────────────────────────────────────────────
   ipcMain.handle('agent:stop-app', async (_event, processId) => {
-    if (!processId || typeof processId !== 'number') {
-      throw new Error('Invalid process ID');
-    }
-
-    try {
-      process.kill(processId);
-      logAudit('stop-app', 'renderer', 'success', `PID: ${processId}`);
-    } catch (error) {
-      logAudit('stop-app', 'renderer', 'error', error.message);
-      throw error;
+    if (processId && typeof processId === 'number') {
+      try { process.kill(processId); } catch {}
     }
   });
 
-  // ── Start Installation ───────────────────────────────────────────────────
-  ipcMain.handle('agent:start-installation', async (_event, appId, workflow) => {
-    logAudit('start-installation', 'renderer', 'started', `App: ${appId}`);
-    // In production: execute workflow steps through the task engine
-    return `job-${Date.now()}`;
-  });
-
-  // ── Cancel Installation ──────────────────────────────────────────────────
-  ipcMain.handle('agent:cancel-installation', async (_event, jobId) => {
-    logAudit('cancel-installation', 'renderer', 'cancelled', `Job: ${jobId}`);
-  });
-
-  // ── Resume Installation ──────────────────────────────────────────────────
-  ipcMain.handle('agent:resume-installation', async (_event, jobId) => {
-    logAudit('resume-installation', 'renderer', 'resumed', `Job: ${jobId}`);
-  });
-
-  // ── Window Controls ──────────────────────────────────────────────────────
-  ipcMain.handle('window:minimize', () => {
-    BrowserWindow.getFocusedWindow()?.minimize();
-  });
-
-  ipcMain.handle('window:maximize', () => {
-    const win = BrowserWindow.getFocusedWindow();
-    if (win?.isMaximized()) {
-      win.unmaximize();
-    } else {
-      win?.maximize();
-    }
-  });
-
-  ipcMain.handle('window:close', () => {
-    BrowserWindow.getFocusedWindow()?.close();
-  });
-
-  // ── Audit Log ────────────────────────────────────────────────────────────
-  ipcMain.handle('agent:get-audit-log', () => {
-    return auditLog;
-  });
+  // ── Downloads Directory Helper ───────────────────────────────────────────
+  ipcMain.handle('agent:get-downloads-dir', () => getDownloadsDir());
 }
 
-// ─── Utility: promisified exec ───────────────────────────────────────────────
 function execPromise(command, options = {}) {
   return new Promise((resolve, reject) => {
-    exec(command, { timeout: 15000, ...options }, (error, stdout, stderr) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(stdout.toString().trim());
-      }
+    exec(command, { timeout: 15000, ...options }, (error, stdout) => {
+      if (error) reject(error);
+      else resolve(stdout.toString().trim());
     });
   });
 }

@@ -258,31 +258,28 @@ export interface ElectronAPI {
   getSystemInfo: () => Promise<SystemInfo>;
   checkCommand: (command: string) => Promise<{ exists: boolean; version?: string }>;
   checkPort: (port: number) => Promise<{ inUse: boolean; process?: string }>;
-  checkDiskSpace: (path: string) => Promise<{ free: number; total: number }>;
 
-  // Installation
-  startInstallation: (appId: string, workflow: InstallationWorkflow) => Promise<string>;
-  cancelInstallation: (jobId: string) => Promise<void>;
-  resumeInstallation: (jobId: string) => Promise<void>;
-
-  // Downloads
+  // Downloads & Files
   downloadFile: (
     url: string,
-    dest: string,
+    dest?: string,
     checksum?: string
-  ) => Promise<{ success: boolean; path: string }>;
+  ) => Promise<{ success: boolean; path: string; size: number }>;
+  unzipFile: (zipPath: string, targetDir: string) => Promise<{ success: boolean; targetDir: string }>;
+  getDownloadsDir: () => Promise<string>;
 
   // App lifecycle
   launchApp: (config: { path?: string; url?: string; command?: string }) => Promise<number>;
   stopApp: (processId: number) => Promise<void>;
 
+  // Installed Registry
+  getInstalledApps: () => Promise<InstalledApp[]>;
+  saveInstalledApp: (appRecord: InstalledApp) => Promise<InstalledApp[]>;
+  uninstallApp: (appId: string, installPath?: string) => Promise<InstalledApp[]>;
+
   // Events
-  onInstallProgress: (
-    callback: (data: { jobId: string; step: number; total: number; progress: number }) => void
-  ) => () => void;
-  onTaskUpdate: (callback: (data: { jobId: string; task: Task }) => void) => () => void;
   onDownloadProgress: (
-    callback: (data: { url: string; received: number; total: number }) => void
+    callback: (data: { url: string; received: number; total: number; progress: number; path: string }) => void
   ) => () => void;
 }
 

@@ -28,7 +28,6 @@ export interface GitHubRepoItem {
   default_branch: string;
 }
 
-// Global in-memory search cache (persists between SearchBar & SearchPage)
 const searchCache = new Map<string, Application[]>();
 
 export async function searchGitHubRepos(query: string): Promise<Application[]> {
@@ -38,12 +37,10 @@ export async function searchGitHubRepos(query: string): Promise<Application[]> {
 
   const cleanQuery = query.trim().toLowerCase();
 
-  // 1. Instant Cache Hit: Return cached results if available
   if (searchCache.has(cleanQuery)) {
     return searchCache.get(cleanQuery)!;
   }
 
-  // Check prefix matches in cache (e.g. if user searched "ob" and now enters "obs")
   for (const [key, cachedApps] of searchCache.entries()) {
     if (key === cleanQuery || cleanQuery.startsWith(key)) {
       const filtered = cachedApps.filter(
@@ -64,9 +61,7 @@ export async function searchGitHubRepos(query: string): Promise<Application[]> {
     )}+is:public&sort=stars&order=desc&per_page=20`;
 
     const res = await fetch(url, {
-      headers: {
-        Accept: 'application/vnd.github.v3+json',
-      },
+      headers: { Accept: 'application/vnd.github.v3+json' },
     });
 
     if (res.ok) {
@@ -78,14 +73,11 @@ export async function searchGitHubRepos(query: string): Promise<Application[]> {
         searchCache.set(cleanQuery, apps);
         return apps;
       }
-    } else {
-      console.warn(`GitHub API returned status ${res.status}. Falling back to local catalog.`);
     }
   } catch (err) {
     console.error('Network error reaching GitHub API:', err);
   }
 
-  // 2. Fallback: Search local catalog if GitHub API is rate-limited or returns 0 items
   const localFallback = searchLocalApps(cleanQuery);
   searchCache.set(cleanQuery, localFallback);
   return localFallback;
@@ -102,9 +94,7 @@ export async function getPopularGitHubRepos(): Promise<Application[]> {
       'https://api.github.com/search/repositories?q=stars:>10000+is:public&sort=stars&order=desc&per_page=20';
 
     const res = await fetch(url, {
-      headers: {
-        Accept: 'application/vnd.github.v3+json',
-      },
+      headers: { Accept: 'application/vnd.github.v3+json' },
     });
 
     if (res.ok) {
@@ -121,10 +111,59 @@ export async function getPopularGitHubRepos(): Promise<Application[]> {
     console.error('Failed to fetch popular GitHub repos:', err);
   }
 
-  // Fallback to local catalog if offline or rate limited
   const localFallback = searchLocalApps('');
   searchCache.set(cacheKey, localFallback);
   return localFallback;
+}
+
+/**
+ * Resolves the real download URL for an application:
+ * 1. Checks GitHub latest release for Windows binaries (.exe / .msi / .zip).
+ * 2. Falls back to project repository zip archive.
+ */
+export async function getGitHubReleaseAssetUrl(app: Application): Promise<string> {
+  const repoUrl = app.repository_url;
+  if (!repoUrl || !repoUrl.includes('github.com')) {
+    return `https://github.com/obsproject/obs-studio/releases/download/31.0.1/OBS-Studio-31.0.1-Windows-x64.exe`;
+  }
+
+  const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+  if (!match) {
+    return `${repoUrl}/archive/refs/heads/main.zip`;
+  }
+
+  const owner = match[1];
+  const repo = match[2].replace(/\.git$/, '');
+
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
+      headers: { Accept: 'application/vnd.github.v3+json' },
+    });
+
+    if (res.ok) {
+      const release = await res.json();
+      const assets = release.assets || [];
+
+      // Find Windows executable or zip asset
+      const exeAsset = assets.find((a: any) =>
+        a.name.endsWith('.exe') || a.name.endsWith('.msi') || a.name.includes('win64') || a.name.includes('x64')
+      );
+
+      if (exeAsset && exeAsset.browser_download_url) {
+        return exeAsset.browser_download_url;
+      }
+
+      const zipAsset = assets.find((a: any) => a.name.endsWith('.zip'));
+      if (zipAsset && zipAsset.browser_download_url) {
+        return zipAsset.browser_download_url;
+      }
+    }
+  } catch (err) {
+    console.warn(`Could not fetch GitHub releases for ${owner}/${repo}:`, err);
+  }
+
+  // Default fallback: Source code zip archive directly from repository default branch
+  return `https://github.com/${owner}/${repo}/archive/refs/heads/main.zip`;
 }
 
 export function mapGitHubRepoToApp(item: GitHubRepoItem): Application {

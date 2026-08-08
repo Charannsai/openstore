@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -8,81 +8,70 @@ import {
   Check,
   Circle,
   Loader2,
-  AlertCircle,
   ChevronDown,
   ChevronUp,
-  X,
   CheckCircle2,
   Terminal,
+  FolderOpen,
 } from 'lucide-react';
-import type { Task, TaskState } from '@/lib/types';
+import type { Task, InstalledApp } from '@/lib/types';
+import { runRealInstallation } from '@/lib/installer-engine';
 
-function generateTasks(appName: string, installMethod: string): Task[] {
-  return [
+export default function InstallPage() {
+  const { selectedAppSlug, navigate, applications, addInstalledApp, addActivity } = useAppStore();
+  const app = applications.find((a) => a.slug === selectedAppSlug);
+
+  const [tasks, setTasks] = useState<Task[]>([
     {
-      id: 'detect-system',
-      title: 'Detect system & architecture',
-      description: 'Checking local OS version, CPU architecture, and available disk space',
+      id: 'task-1',
+      title: 'Detect System Environment',
+      description: 'Checking local OS, architecture, and disk space',
       type: 'CHECK',
       status: 'RUNNING',
       prerequisites: [],
-      actions: [{ capability: 'detect_os', params: {} }],
-      estimated_duration: 2,
-      requires_user_interaction: false,
-      requires_elevation: false,
-      documentation: '',
-      progress: 0,
-    },
-    {
-      id: 'check-compatibility',
-      title: 'Verify requirements',
-      description: 'Confirming system meets prerequisite dependencies',
-      type: 'CHECK',
-      status: 'LOCKED',
-      prerequisites: ['detect-system'],
-      actions: [{ capability: 'check_disk_space', params: {} }],
-      estimated_duration: 3,
-      requires_user_interaction: false,
-      requires_elevation: false,
-      documentation: '',
-      progress: 0,
-    },
-    {
-      id: 'find-release',
-      title: 'Resolve official release',
-      description: 'Locating compatible binary from official release source',
-      type: 'CHECK',
-      status: 'LOCKED',
-      prerequisites: ['check-compatibility'],
       actions: [],
-      estimated_duration: 3,
+      estimated_duration: 1,
       requires_user_interaction: false,
       requires_elevation: false,
       documentation: '',
       progress: 0,
     },
     {
-      id: 'download',
-      title: `Download ${appName}`,
-      description: 'Fetching release package from official source',
+      id: 'task-2',
+      title: 'Check Prerequisites',
+      description: 'Verifying Git, Node, and runtime dependencies',
+      type: 'CHECK',
+      status: 'LOCKED',
+      prerequisites: [],
+      actions: [],
+      estimated_duration: 1,
+      requires_user_interaction: false,
+      requires_elevation: false,
+      documentation: '',
+      progress: 0,
+    },
+    {
+      id: 'task-3',
+      title: `Download ${app?.name || 'Package'}`,
+      description: 'Downloading release asset from GitHub to Downloads/OpenStore',
       type: 'DOWNLOAD',
       status: 'LOCKED',
-      prerequisites: ['find-release'],
-      actions: [{ capability: 'download_file', params: {} }],
-      estimated_duration: 15,
+      prerequisites: [],
+      actions: [],
+      estimated_duration: 10,
       requires_user_interaction: false,
       requires_elevation: false,
       documentation: '',
       progress: 0,
     },
     {
-      id: 'verify-file',
-      title: 'Verify file checksum',
-      description: 'Calculating SHA-256 hash to confirm package integrity',
+      id: 'task-4',
+      title: 'Extract & Verify Integrity',
+      description: 'Unzipping archive or validating binary executable',
       type: 'VERIFY',
       status: 'LOCKED',
-      prerequisites: ['download'],
-      actions: [{ capability: 'verify_checksum', params: {} }],
+      prerequisites: [],
+      actions: [],
       estimated_duration: 2,
       requires_user_interaction: false,
       requires_elevation: false,
@@ -90,92 +79,84 @@ function generateTasks(appName: string, installMethod: string): Task[] {
       progress: 0,
     },
     {
-      id: 'install',
-      title: `Execute installer for ${appName}`,
-      description: 'Running controlled installation process',
-      type: 'INSTALL',
+      id: 'task-5',
+      title: 'Launch & Register Application',
+      description: 'Opening workspace directory or launching installer executable',
+      type: 'LAUNCH',
       status: 'LOCKED',
-      prerequisites: ['verify-file'],
-      actions: [{ capability: 'launch_installer', params: {} }],
-      estimated_duration: 15,
+      prerequisites: [],
+      actions: [],
+      estimated_duration: 1,
       requires_user_interaction: true,
-      requires_elevation: true,
-      documentation: '',
-      progress: 0,
-    },
-    {
-      id: 'verify-install',
-      title: 'Verify application state',
-      description: 'Confirming application service and local files respond',
-      type: 'VERIFY',
-      status: 'LOCKED',
-      prerequisites: ['install'],
-      actions: [{ capability: 'check_file', params: {} }],
-      estimated_duration: 3,
-      requires_user_interaction: false,
       requires_elevation: false,
       documentation: '',
       progress: 0,
     },
-  ];
-}
+  ]);
 
-export default function InstallPage() {
-  const { selectedAppSlug, navigate, applications } = useAppStore();
-  const app = applications.find((a) => a.slug === selectedAppSlug);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [overallProgress, setOverallProgress] = useState(0);
   const [status, setStatus] = useState<'running' | 'completed' | 'failed' | 'cancelled'>('running');
-  const [showDetails, setShowDetails] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showDetails, setShowDetails] = useState(true);
   const [logs, setLogs] = useState<string[]>([]);
+  const [installedRecord, setInstalledRecord] = useState<InstalledApp | null>(null);
 
   useEffect(() => {
-    if (app) {
-      const t = generateTasks(app.name, app.installation_methods[0] || 'OFFICIAL_INSTALLER');
-      setTasks(t);
-      setLogs([`[${new Date().toLocaleTimeString()}] Agent initialized. Starting installation for ${app.name}...`]);
-    }
-  }, [app]);
+    if (!app) return;
 
-  const advanceTask = useCallback(() => {
-    setTasks((prev) => {
-      const next = [...prev];
-      const running = next.findIndex((t) => t.status === 'RUNNING');
-      if (running === -1) return next;
+    let isMounted = true;
 
-      next[running] = { ...next[running], status: 'COMPLETED' as TaskState, progress: 100 };
+    async function execute() {
+      setStatus('running');
 
-      const nextIdx = running + 1;
-      if (nextIdx < next.length) {
-        next[nextIdx] = { ...next[nextIdx], status: 'RUNNING' as TaskState };
-        setCurrentIdx(nextIdx);
-      } else {
-        setStatus('completed');
+      try {
+        const record = await runRealInstallation(app, {
+          onTaskChange: (idx, updatedTask) => {
+            if (!isMounted) return;
+            setTasks((prev) => {
+              const copy = [...prev];
+              copy[idx] = { ...copy[idx], ...updatedTask };
+              return copy;
+            });
+            setCurrentIdx(idx);
+          },
+          onLog: (msg) => {
+            if (!isMounted) return;
+            setLogs((prev) => [...prev, msg]);
+          },
+          onOverallProgress: (percent) => {
+            if (!isMounted) return;
+            setOverallProgress(percent);
+          },
+        });
+
+        if (isMounted) {
+          setInstalledRecord(record);
+          setStatus('completed');
+          addInstalledApp(record);
+          addActivity({
+            id: `act-${Date.now()}`,
+            type: 'install',
+            application_name: app.name,
+            application_icon: app.icon_url,
+            message: `Installed ${app.name} (${app.latest_version})`,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      } catch (err: any) {
+        if (isMounted) {
+          setStatus('failed');
+          setLogs((prev) => [...prev, `[ERROR] Real installation failed: ${err.message || err}`]);
+        }
       }
+    }
 
-      const completed = next.filter((t) => t.status === 'COMPLETED').length;
-      setOverallProgress(Math.round((completed / next.length) * 100));
+    execute();
 
-      return next;
-    });
-
-    setLogs((prev) => [
-      ...prev,
-      `[${new Date().toLocaleTimeString()}] Task step passed verification.`,
-    ]);
-  }, []);
-
-  useEffect(() => {
-    if (status !== 'running') return;
-    const runningTask = tasks.find((t) => t.status === 'RUNNING');
-    if (!runningTask) return;
-
-    const delay = (runningTask.estimated_duration || 2) * 200;
-    const timer = setTimeout(advanceTask, delay);
-    return () => clearTimeout(timer);
-  }, [tasks, status, advanceTask]);
+    return () => {
+      isMounted = false;
+    };
+  }, [app]);
 
   if (!app) {
     return (
@@ -185,7 +166,11 @@ export default function InstallPage() {
     );
   }
 
-  const completedCount = tasks.filter((t) => t.status === 'COMPLETED').length;
+  const handleOpenApp = async () => {
+    if (installedRecord?.install_path && window.electronAPI) {
+      await window.electronAPI.launchApp({ path: installedRecord.install_path });
+    }
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-xl mx-auto">
@@ -217,19 +202,21 @@ export default function InstallPage() {
             </h1>
             <p className="text-[11px] text-zinc-500">
               {status === 'completed'
-                ? 'System state verified'
-                : `Step ${completedCount + 1} of ${tasks.length}`}
+                ? 'Real installation & verification complete'
+                : status === 'failed'
+                ? 'Installation encountered an error'
+                : `Task ${currentIdx + 1} of 5 running`}
             </p>
           </div>
         </div>
 
-        {/* Minimal Progress bar */}
+        {/* Real Progress bar */}
         {status !== 'completed' && (
           <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden mb-1 border border-white/[0.05]">
             <motion.div
               className="h-full bg-zinc-100 rounded-full"
               animate={{ width: `${overallProgress}%` }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             />
           </div>
         )}
@@ -247,18 +234,24 @@ export default function InstallPage() {
             <h2 className="text-sm font-semibold text-zinc-100 mb-1">
               Installation Complete
             </h2>
-            <p className="text-xs text-zinc-400 mb-5">
-              {app.name} is verified and running on your system.
+            <p className="text-xs text-zinc-400 mb-2">
+              {app.name} has been downloaded and processed on your hard drive.
             </p>
+            {installedRecord?.install_path && (
+              <p className="text-[10px] font-mono text-zinc-500 mb-5 truncate px-4">
+                Location: {installedRecord.install_path}
+              </p>
+            )}
             <div className="flex justify-center gap-2.5">
-              <button className="btn-primary px-6 py-2 text-xs font-semibold">
-                Open Application
+              <button onClick={handleOpenApp} className="btn-primary px-6 py-2 text-xs font-semibold flex items-center gap-1.5">
+                <FolderOpen className="w-3.5 h-3.5" />
+                Open Application / Directory
               </button>
               <button
                 onClick={() => navigate('my-apps')}
                 className="btn-secondary px-5 py-2 text-xs"
               >
-                My Apps
+                View My Apps
               </button>
             </div>
           </motion.div>
@@ -274,7 +267,7 @@ export default function InstallPage() {
         </div>
       </div>
 
-      {/* Technical details toggle */}
+      {/* Real Agent Logs Toggle */}
       <button
         onClick={() => setShowDetails(!showDetails)}
         className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-3"
@@ -290,59 +283,12 @@ export default function InstallPage() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="glass-card rounded-lg p-3.5 mb-5 font-mono text-[11px] text-zinc-400 bg-zinc-950/80 border border-white/10"
+            className="glass-card rounded-lg p-3.5 mb-5 font-mono text-[11px] text-zinc-400 bg-zinc-950/90 border border-white/10 overflow-x-auto max-h-48"
           >
             {logs.map((log, i) => (
-              <p key={i} className="py-0.5">{log}</p>
+              <p key={i} className="py-0.5 whitespace-pre-wrap">{log}</p>
             ))}
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Cancel */}
-      {status === 'running' && (
-        <div className="text-center">
-          <button
-            onClick={() => setShowCancelDialog(true)}
-            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            Cancel installation
-          </button>
-        </div>
-      )}
-
-      {/* Cancel dialog */}
-      <AnimatePresence>
-        {showCancelDialog && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <motion.div
-              initial={{ scale: 0.96 }}
-              animate={{ scale: 1 }}
-              className="glass-card rounded-xl p-5 max-w-sm w-full border border-white/15"
-            >
-              <h3 className="text-sm font-semibold text-zinc-100 mb-2">Cancel installation?</h3>
-              <p className="text-xs text-zinc-400 mb-4">
-                Completed changes will remain in their verified state.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setStatus('cancelled');
-                    setShowCancelDialog(false);
-                  }}
-                  className="flex-1 py-2 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-medium hover:bg-zinc-700 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setShowCancelDialog(false)}
-                  className="flex-1 py-2 rounded-lg btn-primary text-xs font-semibold"
-                >
-                  Continue
-                </button>
-              </div>
-            </motion.div>
-          </div>
         )}
       </AnimatePresence>
     </motion.div>
@@ -364,17 +310,22 @@ function TaskRow({ task, isCurrent }: { task: Task; isCurrent: boolean }) {
         <Circle className="w-3.5 h-3.5 text-zinc-700" />
       )}
       <div className="flex-1 min-w-0">
-        <p
-          className={`text-xs font-medium ${
-            task.status === 'COMPLETED'
-              ? 'text-zinc-500'
-              : task.status === 'RUNNING'
-              ? 'text-zinc-100'
-              : 'text-zinc-600'
-          }`}
-        >
-          {task.title}
-        </p>
+        <div className="flex items-center justify-between">
+          <p
+            className={`text-xs font-medium ${
+              task.status === 'COMPLETED'
+                ? 'text-zinc-500'
+                : task.status === 'RUNNING'
+                ? 'text-zinc-100'
+                : 'text-zinc-600'
+            }`}
+          >
+            {task.title}
+          </p>
+          {task.status === 'RUNNING' && task.progress > 0 && (
+            <span className="text-[10px] text-zinc-400 font-mono">{task.progress}%</span>
+          )}
+        </div>
       </div>
     </div>
   );

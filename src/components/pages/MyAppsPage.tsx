@@ -1,14 +1,50 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
-import { Play, Square, RotateCw, Trash2, ExternalLink, Package } from 'lucide-react';
-import { useState } from 'react';
+import { Play, Square, RotateCw, Trash2, FolderOpen, Package } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils';
+import type { InstalledApp } from '@/lib/types';
 
 export default function MyAppsPage() {
   const { installedApps, navigate, updateInstalledAppStatus, removeInstalledApp } = useAppStore();
   const [uninstallTarget, setUninstallTarget] = useState<string | null>(null);
+  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+
+  // Sync installed apps from native AppData storage on mount
+  useEffect(() => {
+    async function syncRegistry() {
+      if (isElectron) {
+        try {
+          const list: InstalledApp[] = await window.electronAPI!.getInstalledApps();
+          if (list && list.length > 0) {
+            useAppStore.setState({ installedApps: list });
+          }
+        } catch (err) {
+          console.error('Error reading installed apps registry:', err);
+        }
+      }
+    }
+    syncRegistry();
+  }, [isElectron]);
+
+  const handleOpen = async (installed: InstalledApp) => {
+    if (installed.install_path && isElectron) {
+      await window.electronAPI!.launchApp({ path: installed.install_path });
+    } else if (installed.local_url) {
+      window.open(installed.local_url, '_blank');
+    }
+  };
+
+  const handleConfirmUninstall = async (id: string) => {
+    const target = installedApps.find((a) => a.id === id);
+    if (isElectron && target) {
+      await window.electronAPI!.uninstallApp(target.id, target.install_path);
+    }
+    removeInstalledApp(id);
+    setUninstallTarget(null);
+  };
 
   if (installedApps.length === 0) {
     return (
@@ -30,7 +66,7 @@ export default function MyAppsPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <h1 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">
+      <h1 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">
         Installed Applications ({installedApps.length})
       </h1>
 
@@ -66,44 +102,28 @@ export default function MyAppsPage() {
                     <h3 className="text-xs font-semibold text-zinc-100 truncate">{app.name}</h3>
                     <div className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-zinc-100 pulse-dot' : 'bg-zinc-700'}`} />
                     <span className="text-[10px] text-zinc-500">
-                      {isRunning ? 'Running' : 'Stopped'}
+                      {isRunning ? 'Installed' : 'Stopped'}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="text-[10px] text-zinc-500">v{installed.version}</span>
-                    <span className="text-[10px] text-zinc-600">
-                      Installed {formatRelativeTime(installed.installed_at)}
+                    <span className="text-[10px] text-zinc-600 truncate max-w-[250px]">
+                      {installed.install_path || 'Installed'}
                     </span>
                   </div>
                 </div>
 
-                {/* Controls */}
-                <div className="flex items-center gap-1">
-                  {installed.local_url && (
-                    <button className="p-1.5 rounded-lg hover:bg-white/[0.06] text-zinc-400 hover:text-zinc-200 transition-colors">
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  {isRunning ? (
-                    <button
-                      onClick={() => updateInstalledAppStatus(installed.id, 'stopped')}
-                      className="p-1.5 rounded-lg hover:bg-white/[0.06] text-zinc-400 hover:text-zinc-200 transition-colors"
-                      title="Stop"
-                    >
-                      <Square className="w-3.5 h-3.5" />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => updateInstalledAppStatus(installed.id, 'running')}
-                      className="p-1.5 rounded-lg hover:bg-white/[0.06] text-zinc-400 hover:text-zinc-200 transition-colors"
-                      title="Start"
-                    >
-                      <Play className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <button className="p-1.5 rounded-lg hover:bg-white/[0.06] text-zinc-400 hover:text-zinc-200 transition-colors" title="Restart">
-                    <RotateCw className="w-3.5 h-3.5" />
+                {/* Actions */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleOpen(installed)}
+                    className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1"
+                    title="Open app or directory"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    <span>Open</span>
                   </button>
+
                   <button
                     onClick={() => setUninstallTarget(installed.id)}
                     className="p-1.5 rounded-lg hover:bg-white/[0.06] text-zinc-500 hover:text-zinc-300 transition-colors"
@@ -126,18 +146,15 @@ export default function MyAppsPage() {
             animate={{ scale: 1 }}
             className="glass-card rounded-xl p-5 max-w-sm w-full border border-white/15"
           >
-            <h3 className="text-sm font-semibold text-zinc-100 mb-3">
+            <h3 className="text-sm font-semibold text-zinc-100 mb-2">
               Uninstall {installedApps.find((a) => a.id === uninstallTarget)?.application.name}?
             </h3>
             <p className="text-xs text-zinc-400 mb-4">
-              Local user data will be preserved by default.
+              This will remove the downloaded files and workspace from your hard drive.
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => {
-                  removeInstalledApp(uninstallTarget);
-                  setUninstallTarget(null);
-                }}
+                onClick={() => handleConfirmUninstall(uninstallTarget)}
                 className="flex-1 py-2 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-medium hover:bg-zinc-700 transition-colors"
               >
                 Uninstall
