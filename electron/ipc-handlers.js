@@ -357,7 +357,7 @@ function registerAgentHandlers(ipcMain) {
       }
     } catch {}
 
-    logAudit('inspect-repo', 'renderer', 'success', `Ecosystem: ${result.ecosystem}, Run: "${result.start_command}" in "${result.resolved_cwd}" on port ${result.detected_port}`);
+    logAudit('inspect-repo', 'renderer', 'success', `Ecosystem: ${result.ecosystem}, Mode: ${result.run_mode}, Run: "${result.start_command}" in "${result.resolved_cwd}" on port ${result.detected_port}`);
     return result;
   });
 
