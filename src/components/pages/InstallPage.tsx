@@ -316,19 +316,34 @@ export default function InstallPage() {
             </p>
             <div className="flex justify-center gap-2.5">
               <button
-                onClick={handleRunAndOpen}
+                onClick={handleOpen}
                 disabled={isStartingServer}
                 className="btn-primary px-6 py-2.5 text-xs font-semibold flex items-center gap-2"
               >
                 {isStartingServer ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Starting Server...</span>
+                    <span>Starting...</span>
+                  </>
+                ) : installedRecord?.run_mode === 'browser' ? (
+                  <>
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Run Server & Open</span>
+                  </>
+                ) : installedRecord?.run_mode === 'ide' ? (
+                  <>
+                    <Code2 className="w-3.5 h-3.5" />
+                    <span>Open in IDE</span>
+                  </>
+                ) : installedRecord?.run_mode === 'terminal' ? (
+                  <>
+                    <Terminal className="w-3.5 h-3.5" />
+                    <span>Open Terminal</span>
                   </>
                 ) : (
                   <>
-                    <Globe className="w-3.5 h-3.5" />
-                    <span>Run Server & Open App</span>
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    <span>Open</span>
                   </>
                 )}
               </button>
