@@ -24,7 +24,7 @@ export default function AppDetailPage() {
   if (!app) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-3">
-        <p className="text-sm font-semibold text-slate-500 dark:text-zinc-400">Repository metadata not found.</p>
+        <p className="text-xs text-zinc-500">Repository metadata not found.</p>
         <button
           onClick={() => navigate('home')}
           className="btn-secondary px-4 py-2 text-xs flex items-center gap-2 cursor-pointer"
@@ -49,33 +49,33 @@ export default function AppDetailPage() {
       initial={{ opacity: 0, scale: 0.97, filter: 'blur(12px)' }}
       animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
       exit={{ opacity: 0, scale: 1.02, filter: 'blur(12px)' }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="space-y-8"
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      className="space-y-6"
     >
       {/* Back Button */}
       <button
         onClick={() => navigate('home')}
-        className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+        className="flex items-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
       >
         <ArrowLeftIcon className="w-4 h-4" />
         <span>Back to Discover</span>
       </button>
 
       {/* Header Banner Card */}
-      <div className="glass-card rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 relative overflow-hidden">
+      <div className="glass-card rounded-2xl p-6 border border-zinc-200/80 dark:border-white/10 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-start sm:items-center gap-5">
+          <div className="flex items-start sm:items-center gap-4">
             {/* App Icon */}
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-zinc-900 flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-200 dark:border-white/10 shadow-lg">
+            <div className="w-14 h-14 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center overflow-hidden flex-shrink-0 border border-zinc-200 dark:border-white/10">
               <img
                 src={app.icon_url}
                 alt={app.name}
-                className="w-11 h-11 object-contain rounded-lg"
+                className="w-10 h-10 object-contain rounded-md"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                   const parent = (e.target as HTMLImageElement).parentElement;
                   if (parent) {
-                    parent.innerHTML = `<span class="text-xl font-extrabold text-slate-800 dark:text-zinc-200">${app.name.substring(0, 2).toUpperCase()}</span>`;
+                    parent.innerHTML = `<span class="text-lg font-bold text-zinc-800 dark:text-zinc-200">${app.name.substring(0, 2).toUpperCase()}</span>`;
                   }
                 }}
               />
@@ -83,22 +83,22 @@ export default function AppDetailPage() {
 
             {/* App Details */}
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">{app.name}</h1>
-                <span className="badge-minimal capitalize font-semibold">{app.difficulty}</span>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">{app.name}</h1>
+                <span className="badge-minimal capitalize font-medium">{app.difficulty}</span>
               </div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 mt-1">{app.developer}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal">{app.developer}</p>
               
-              <div className="flex items-center gap-4 mt-3 text-xs text-slate-500 dark:text-zinc-400 font-semibold">
+              <div className="flex items-center gap-4 mt-2.5 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
                 {app.star_count > 0 && (
-                  <div className="flex items-center gap-1.5 text-amber-500">
-                    <StarIcon className="w-4 h-4" />
-                    <span className="text-slate-800 dark:text-zinc-200">{formatCount(app.star_count)} stars</span>
+                  <div className="flex items-center gap-1.5">
+                    <StarIcon className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
+                    <span className="text-zinc-800 dark:text-zinc-200">{formatCount(app.star_count)} stars</span>
                   </div>
                 )}
                 {app.download_count > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <DownloadIcon className="w-4 h-4 text-indigo-500" />
+                    <DownloadIcon className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
                     <span>{formatCount(app.download_count)} downloads</span>
                   </div>
                 )}
@@ -107,19 +107,19 @@ export default function AppDetailPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
             {isInstalled ? (
               <button
                 disabled
-                className="flex-1 sm:flex-initial px-6 py-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2"
+                className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-zinc-200/80 dark:bg-zinc-800/80 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-semibold text-xs flex items-center justify-center gap-2"
               >
-                <CheckCircleIcon className="w-4 h-4" />
+                <CheckCircleIcon className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
                 <span>Installed</span>
               </button>
             ) : (
               <button
                 onClick={() => startInstallation(app.id)}
-                className="flex-1 sm:flex-initial btn-primary px-7 py-3 rounded-2xl text-xs flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 sm:flex-initial btn-primary px-6 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer font-semibold"
               >
                 <DownloadIcon className="w-4 h-4" />
                 <span>Install App</span>
@@ -131,64 +131,64 @@ export default function AppDetailPage() {
                 href={app.repository_url}
                 target="_blank"
                 rel="noreferrer"
-                className="btn-secondary p-3 rounded-2xl text-xs flex items-center justify-center"
+                className="btn-secondary p-2.5 rounded-xl text-xs flex items-center justify-center"
                 title="View Repository"
               >
-                <ExternalLinkIcon className="w-4.5 h-4.5" />
+                <ExternalLinkIcon className="w-4 h-4" />
               </a>
             )}
           </div>
         </div>
       </div>
 
-      {/* Grid: Description & System Requirements */}
+      {/* Grid: Description & Specs */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="glass-card rounded-3xl p-6 border border-slate-200/80 dark:border-white/10">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3">About</h2>
-            <p className="text-xs text-slate-600 dark:text-zinc-300 leading-relaxed font-medium">
+          <div className="glass-card rounded-2xl p-6 border border-zinc-200/80 dark:border-white/10">
+            <h2 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider mb-3">About</h2>
+            <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-normal">
               {app.long_description || app.description}
             </p>
           </div>
         </div>
 
-        {/* Sidebar Info Panel */}
+        {/* Sidebar Specs Panel */}
         <div className="space-y-6">
-          <div className="glass-card rounded-3xl p-6 border border-slate-200/80 dark:border-white/10 space-y-4">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2">Specifications</h2>
+          <div className="glass-card rounded-2xl p-6 border border-zinc-200/80 dark:border-white/10 space-y-3.5">
+            <h2 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider mb-2">Specifications</h2>
 
-            <div className="flex items-center justify-between text-xs py-2 border-b border-slate-200/50 dark:border-white/[0.06]">
-              <span className="text-slate-500 dark:text-zinc-400 font-medium flex items-center gap-2">
-                <GlobeIcon className="w-4 h-4 text-indigo-500" /> Platform
+            <div className="flex items-center justify-between text-xs py-2 border-b border-zinc-200/50 dark:border-white/[0.06]">
+              <span className="text-zinc-500 dark:text-zinc-400 font-normal flex items-center gap-2">
+                <GlobeIcon className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" /> Platform
               </span>
-              <span className="font-bold text-slate-800 dark:text-zinc-200">Windows x64</span>
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200">Windows x64</span>
             </div>
 
             {app.license && (
-              <div className="flex items-center justify-between text-xs py-2 border-b border-slate-200/50 dark:border-white/[0.06]">
-                <span className="text-slate-500 dark:text-zinc-400 font-medium flex items-center gap-2">
-                  <ShieldCheckIcon className="w-4 h-4 text-indigo-500" /> License
+              <div className="flex items-center justify-between text-xs py-2 border-b border-zinc-200/50 dark:border-white/[0.06]">
+                <span className="text-zinc-500 dark:text-zinc-400 font-normal flex items-center gap-2">
+                  <ShieldCheckIcon className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" /> License
                 </span>
-                <span className="font-bold text-slate-800 dark:text-zinc-200">{app.license}</span>
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">{app.license}</span>
               </div>
             )}
 
             {app.latest_version && (
-              <div className="flex items-center justify-between text-xs py-2 border-b border-slate-200/50 dark:border-white/[0.06]">
-                <span className="text-slate-500 dark:text-zinc-400 font-medium flex items-center gap-2">
-                  <HardDriveIcon className="w-4 h-4 text-indigo-500" /> Latest Version
+              <div className="flex items-center justify-between text-xs py-2 border-b border-zinc-200/50 dark:border-white/[0.06]">
+                <span className="text-zinc-500 dark:text-zinc-400 font-normal flex items-center gap-2">
+                  <HardDriveIcon className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" /> Latest Version
                 </span>
-                <span className="font-bold text-slate-800 dark:text-zinc-200">v{app.latest_version}</span>
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">v{app.latest_version}</span>
               </div>
             )}
 
             {app.updated_at && (
               <div className="flex items-center justify-between text-xs py-2">
-                <span className="text-slate-500 dark:text-zinc-400 font-medium flex items-center gap-2">
-                  <InfoIcon className="w-4 h-4 text-indigo-500" /> Last Updated
+                <span className="text-zinc-500 dark:text-zinc-400 font-normal flex items-center gap-2">
+                  <InfoIcon className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" /> Last Updated
                 </span>
-                <span className="font-bold text-slate-800 dark:text-zinc-200">{formatRelativeTime(app.updated_at)}</span>
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">{formatRelativeTime(app.updated_at)}</span>
               </div>
             )}
           </div>
