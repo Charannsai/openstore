@@ -33,9 +33,11 @@ interface AppStoreState {
   systemInfo: SystemInfo | null;
   isElectron: boolean;
 
-  // Theme
+  // Theme & Layout
   theme: 'dark' | 'light' | 'system';
   setTheme: (theme: 'dark' | 'light' | 'system') => void;
+  isSidebarCollapsed: boolean;
+  toggleSidebar: () => void;
 
   // Actions
   navigate: (view: AppStoreState['currentView'], params?: { slug?: string; categoryId?: string }) => void;
@@ -101,10 +103,12 @@ export const useAppStore = create<AppStoreState>((set) => ({
     logs: [],
   },
 
-  // ─── System & Theme ──────────────────────────────────────────────────────
+  // ─── System, Theme & Layout ──────────────────────────────────────────────
   systemInfo: null,
   isElectron: typeof window !== 'undefined' && !!window.electronAPI,
   theme: 'dark',
+  isSidebarCollapsed: false,
+  toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
 
   // ─── Actions ─────────────────────────────────────────────────────────────
   setTheme: (theme) => {

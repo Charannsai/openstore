@@ -26,13 +26,17 @@ const pageComponents: Record<string, React.ComponentType> = {
 };
 
 export default function App() {
-  const { currentView } = useAppStore();
+  const { currentView, isSidebarCollapsed } = useAppStore();
   const PageComponent = pageComponents[currentView] || HomePage;
 
   return (
     <div className="flex min-h-screen relative">
       <Sidebar />
-      <main className="flex-1 ml-[280px]">
+      <main
+        className={`flex-1 transition-all duration-300 ease-out ${
+          isSidebarCollapsed ? 'ml-[104px]' : 'ml-[280px]'
+        }`}
+      >
         <div className="max-w-[1240px] mx-auto px-8 py-6">
           <AnimatePresence mode="wait">
             <motion.div
