@@ -186,19 +186,19 @@ export default function Sidebar() {
               className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-900/60 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-white/10 transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-2 text-xs font-medium text-zinc-900 dark:text-zinc-200">
-                {mounted && theme === 'light' ? (
+                {theme === 'light' ? (
                   <SunIcon className="w-4 h-4 text-zinc-950" />
                 ) : (
                   <MoonIcon className="w-4 h-4 text-zinc-300" />
                 )}
                 <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-200">
-                  {mounted && theme === 'light' ? 'Light Mode' : 'Dark Mode'}
+                  {theme === 'light' ? 'Light Mode' : 'Dark Mode'}
                 </span>
               </div>
 
               <div className="w-7 h-4 rounded-full bg-zinc-300 dark:bg-zinc-700 p-0.5 relative transition-colors">
                 <motion.div
-                  animate={{ x: mounted && theme === 'light' ? 12 : 0 }}
+                  animate={{ x: theme === 'light' ? 12 : 0 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   className="w-3 h-3 rounded-full bg-zinc-950 dark:bg-white shadow-xs"
                 />
@@ -208,9 +208,9 @@ export default function Sidebar() {
             <button
               onClick={toggleTheme}
               className="w-full flex justify-center p-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-900/60 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-white/10 transition-all cursor-pointer"
-              title={mounted && theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
-              {mounted && theme === 'light' ? (
+              {theme === 'light' ? (
                 <SunIcon className="w-4 h-4 text-zinc-950" />
               ) : (
                 <MoonIcon className="w-4 h-4 text-zinc-300" />
