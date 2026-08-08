@@ -276,6 +276,8 @@ export interface ElectronAPI {
     has_package_json: boolean;
     has_requirements_txt: boolean;
     has_dockerfile: boolean;
+    run_mode: RunMode;
+    resolved_cwd: string;
   }>;
   executeTerminalCommand: (command: string, cwd?: string) => Promise<{ success: boolean; output: string; code?: number }>;
   startBackgroundService: (command: string, cwd: string, appId: string) => Promise<{ success: boolean; pid: number }>;
@@ -292,6 +294,7 @@ export interface ElectronAPI {
 
   // App lifecycle
   launchApp: (config: { path?: string; url?: string; command?: string }) => Promise<number>;
+  openInIDE: (projectPath: string) => Promise<{ success: boolean; ide: string }>;
 
   // Installed Registry
   getInstalledApps: () => Promise<InstalledApp[]>;
