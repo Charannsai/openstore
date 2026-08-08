@@ -6,17 +6,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkCommand: (command) => ipcRenderer.invoke('agent:check-command', command),
   checkPort: (port) => ipcRenderer.invoke('agent:check-port', port),
 
-  // ─── Git & File Operations ──────────────────────────────────────────────
+  // ─── Git, Terminal & Ecosystem Orchestrator ────────────────────────────
   gitClone: (repoUrl, targetDir) => ipcRenderer.invoke('agent:git-clone', repoUrl, targetDir),
-  downloadFile: (url, dest, checksum) =>
-    ipcRenderer.invoke('agent:download-file', url, dest, checksum),
-  unzipFile: (zipPath, targetDir) =>
-    ipcRenderer.invoke('agent:unzip-file', zipPath, targetDir),
+  inspectRepoEcosystem: (repoPath) => ipcRenderer.invoke('agent:inspect-repo-ecosystem', repoPath),
+  executeTerminalCommand: (command, cwd) => ipcRenderer.invoke('agent:execute-terminal-command', command, cwd),
+  startBackgroundService: (command, cwd, appId) => ipcRenderer.invoke('agent:start-background-service', command, cwd, appId),
+  stopBackgroundService: (appId) => ipcRenderer.invoke('agent:stop-background-service', appId),
+
+  // ─── Downloads & Files ──────────────────────────────────────────────────
+  downloadFile: (url, dest, checksum) => ipcRenderer.invoke('agent:download-file', url, dest, checksum),
+  unzipFile: (zipPath, targetDir) => ipcRenderer.invoke('agent:unzip-file', zipPath, targetDir),
   getDownloadsDir: () => ipcRenderer.invoke('agent:get-downloads-dir'),
 
-  // ─── App Lifecycle & Folder Opening ────────────────────────────────────
+  // ─── App Lifecycle ─────────────────────────────────────────────────────
   launchApp: (config) => ipcRenderer.invoke('agent:launch-app', config),
-  stopApp: (processId) => ipcRenderer.invoke('agent:stop-app', processId),
 
   // ─── Registry & Persistence ────────────────────────────────────────────
   getInstalledApps: () => ipcRenderer.invoke('agent:get-installed-apps'),
@@ -28,6 +31,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('agent:download-progress', handler);
     return () => ipcRenderer.removeListener('agent:download-progress', handler);
+  },
+  onTerminalOutput: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('agent:terminal-output', handler);
+    return () => ipcRenderer.removeListener('agent:terminal-output', handler);
+  },
+  onServiceOutput: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('agent:service-output', handler);
+    return () => ipcRenderer.removeListener('agent:service-output', handler);
   },
 
   // ─── Window Controls ──────────────────────────────────────────────────

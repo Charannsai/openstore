@@ -259,8 +259,24 @@ export interface ElectronAPI {
   checkCommand: (command: string) => Promise<{ exists: boolean; version?: string }>;
   checkPort: (port: number) => Promise<{ inUse: boolean; process?: string }>;
 
-  // Git, Downloads & Files
+  // Git, Terminal & Ecosystem Orchestrator
   gitClone: (repoUrl: string, targetDir: string) => Promise<{ success: boolean; targetDir: string; action: string }>;
+  inspectRepoEcosystem: (repoPath: string) => Promise<{
+    ecosystem: string;
+    install_command: string;
+    build_command: string;
+    start_command: string;
+    detected_port: number;
+    is_web_app: boolean;
+    has_package_json: boolean;
+    has_requirements_txt: boolean;
+    has_dockerfile: boolean;
+  }>;
+  executeTerminalCommand: (command: string, cwd?: string) => Promise<{ success: boolean; output: string; code?: number }>;
+  startBackgroundService: (command: string, cwd: string, appId: string) => Promise<{ success: boolean; pid: number }>;
+  stopBackgroundService: (appId: string) => Promise<{ success: boolean }>;
+
+  // Downloads & Files
   downloadFile: (
     url: string,
     dest?: string,
@@ -271,7 +287,6 @@ export interface ElectronAPI {
 
   // App lifecycle
   launchApp: (config: { path?: string; url?: string; command?: string }) => Promise<number>;
-  stopApp: (processId: number) => Promise<void>;
 
   // Installed Registry
   getInstalledApps: () => Promise<InstalledApp[]>;
@@ -281,6 +296,12 @@ export interface ElectronAPI {
   // Events
   onDownloadProgress: (
     callback: (data: { url: string; received: number; total: number; progress: number; path: string }) => void
+  ) => () => void;
+  onTerminalOutput: (
+    callback: (data: { command: string; text: string; type: 'stdout' | 'stderr' }) => void
+  ) => () => void;
+  onServiceOutput: (
+    callback: (data: { appId: string; text: string }) => void
   ) => () => void;
 }
 
