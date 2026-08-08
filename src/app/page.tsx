@@ -37,6 +37,7 @@ export default function App() {
     }
     return null;
   });
+  const [viewOverride, setViewOverride] = useState<'landing' | 'desktop' | null>(null);
 
   const PageComponent = pageComponents[currentView] || HomePage;
 
