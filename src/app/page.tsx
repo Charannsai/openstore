@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useAppStore } from '@/store/app-store';
-import Sidebar from '@/components/layout/Sidebar';
-import WindowControls from '@/components/layout/WindowControls';
+import TopNav from '@/components/layout/TopNav';
 import HomePage from '@/components/pages/HomePage';
 import AppDetailPage from '@/components/pages/AppDetailPage';
 import InstallPage from '@/components/pages/InstallPage';
@@ -35,7 +34,7 @@ const getSnapshot = () => typeof window !== 'undefined' && !!window.electronAPI;
 const getServerSnapshot = () => false;
 
 export default function App() {
-  const { currentView, isSidebarCollapsed, navigate } = useAppStore();
+  const { currentView, navigate } = useAppStore();
   const isElectron = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [viewOverride, setViewOverride] = useState<'landing' | 'desktop' | null>(null);
 
@@ -107,27 +106,17 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="flex min-h-screen relative select-none">
-        {/* Top Window Drag Bar Header */}
-        <div
-          className="fixed top-0 left-0 right-0 h-10 drag-region z-30 flex items-center justify-between px-4"
-          onDoubleClick={() => window.electronAPI?.maximizeWindow?.()}
-        />
-        <WindowControls />
-        <Sidebar />
-        <main
-          className={`flex-1 transition-all duration-300 ease-out pt-6 ${
-            isSidebarCollapsed ? 'ml-[104px]' : 'ml-[280px]'
-          }`}
-        >
-          <div className="max-w-[1240px] mx-auto px-8 py-4">
+      <div className="min-h-screen relative select-none bg-zinc-50 dark:bg-[#0a0a0c]">
+        <TopNav />
+        <main className="pt-16 pb-12">
+          <div className="max-w-[1280px] mx-auto px-6 py-4">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentView}
-                initial={{ opacity: 0, scale: 0.97, filter: 'blur(12px)' }}
+                initial={{ opacity: 0, scale: 0.98, filter: 'blur(8px)' }}
                 animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, scale: 1.02, filter: 'blur(12px)' }}
-                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                exit={{ opacity: 0, scale: 1.01, filter: 'blur(8px)' }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               >
                 <PageComponent />
               </motion.div>

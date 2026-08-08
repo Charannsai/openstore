@@ -23,7 +23,7 @@ export default function WindowControls() {
   };
 
   return (
-    <div className="fixed top-2.5 right-4 z-50 flex items-center gap-1 select-none no-drag">
+    <div className="flex items-center gap-1 select-none no-drag">
       {/* Minimize Button */}
       <button
         onClick={handleMinimize}
