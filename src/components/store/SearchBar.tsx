@@ -76,14 +76,14 @@ export default function SearchBar() {
             relative flex items-center rounded-xl transition-all duration-200 backdrop-blur-xl
             ${
               isFocused
-                ? 'bg-zinc-100 dark:bg-zinc-900 border border-zinc-400 dark:border-zinc-500 shadow-lg'
-                : 'bg-zinc-100/70 dark:bg-zinc-900/80 border border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
+                ? 'bg-white dark:bg-zinc-900 border-2 border-zinc-950 dark:border-white shadow-md'
+                : 'bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 shadow-sm'
             }
           `}
         >
           <SearchIcon
             className={`absolute left-3.5 w-4 h-4 transition-colors ${
-              isFocused ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'
+              isFocused ? 'text-zinc-950 dark:text-white' : 'text-zinc-500 dark:text-zinc-400'
             }`}
           />
           <input
@@ -94,11 +94,11 @@ export default function SearchBar() {
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
             placeholder={BRAND.searchPlaceholder}
-            className="w-full pl-10 pr-10 py-2.5 bg-transparent text-xs font-medium text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none"
+            className="w-full pl-10 pr-10 py-3 bg-transparent text-xs font-semibold text-zinc-950 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 outline-none"
           />
 
           {isLoading ? (
-            <Loader2Icon className="absolute right-3.5 w-4 h-4 text-zinc-500 animate-spin" />
+            <Loader2Icon className="absolute right-3.5 w-4 h-4 text-zinc-600 dark:text-zinc-400 animate-spin" />
           ) : query ? (
             <button
               type="button"
@@ -107,7 +107,7 @@ export default function SearchBar() {
                 setSearchQuery('');
                 setSuggestions([]);
               }}
-              className="absolute right-3.5 text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+              className="absolute right-3.5 text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
             >
               <XIcon className="w-4 h-4" />
             </button>
@@ -123,9 +123,9 @@ export default function SearchBar() {
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
             exit={{ opacity: 0, y: -4, filter: 'blur(8px)', scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-2 rounded-xl overflow-hidden z-50 glass-panel border border-zinc-200 dark:border-white/10 shadow-xl"
+            className="absolute top-full left-0 right-0 mt-2 rounded-xl overflow-hidden z-50 glass-panel bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-2xl"
           >
-            <div className="px-3.5 py-2 text-[10px] uppercase font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/[0.06] tracking-wider flex items-center justify-between">
+            <div className="px-3.5 py-2 text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-white/[0.06] tracking-wider flex items-center justify-between">
               <span>GitHub Repositories & Apps</span>
             </div>
 
@@ -133,10 +133,10 @@ export default function SearchBar() {
               <button
                 key={app.id}
                 onClick={() => handleSuggestionClick(app)}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-white/[0.05] transition-colors border-b border-zinc-200/50 dark:border-white/[0.04] last:border-0 cursor-pointer"
+                className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs text-zinc-800 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors border-b border-zinc-200/60 dark:border-white/[0.04] last:border-0 cursor-pointer"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-6 h-6 rounded bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 border border-zinc-300/60 dark:border-white/10">
+                  <div className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 border border-zinc-200 dark:border-white/10">
                     <img
                       src={app.icon_url}
                       alt={app.name}
@@ -147,26 +147,26 @@ export default function SearchBar() {
                     />
                   </div>
                   <div className="text-left truncate">
-                    <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate tracking-tight">{app.name}</p>
+                    <p className="font-bold text-zinc-950 dark:text-zinc-100 truncate tracking-tight">{app.name}</p>
                     <p className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">{app.developer}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 flex-shrink-0 text-zinc-500 font-medium">
+                <div className="flex items-center gap-3 flex-shrink-0 text-zinc-500 dark:text-zinc-400 font-semibold">
                   {app.star_count > 0 && (
                     <span className="flex items-center gap-1 text-[11px]">
-                      <StarIcon className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
+                      <StarIcon className="w-3 h-3 text-amber-500" />
                       {(app.star_count / 1000).toFixed(1)}k
                     </span>
                   )}
-                  <ArrowUpRightIcon className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
+                  <ArrowUpRightIcon className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
                 </div>
               </button>
             ))}
 
             <button
               onClick={handleSubmit}
-              className="w-full flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] transition-colors bg-zinc-100 dark:bg-zinc-950/60 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-bold text-zinc-950 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors bg-zinc-50 dark:bg-zinc-950/60 cursor-pointer"
             >
               <SearchIcon className="w-3.5 h-3.5" />
               <span>See all results for &quot;{query}&quot;</span>

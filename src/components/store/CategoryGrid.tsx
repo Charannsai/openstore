@@ -41,12 +41,12 @@ export default function CategoryGrid() {
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
             transition={{ duration: 0.2, delay: i * 0.02 }}
             onClick={() => navigate('category', { categoryId: cat.id })}
-            className="glass-card p-3 rounded-xl text-left group cursor-pointer border border-zinc-200/80 dark:border-white/10 hover:border-zinc-400 dark:hover:border-white/20 transition-all flex items-center gap-2.5"
+            className="glass-card p-3 rounded-xl text-left group cursor-pointer border border-zinc-200 dark:border-white/10 hover:border-zinc-400 dark:hover:border-white/20 transition-all flex items-center gap-2.5 shadow-sm"
           >
-            <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center border border-zinc-200 dark:border-white/10 group-hover:border-zinc-400 dark:group-hover:border-white/20 flex-shrink-0 transition-colors">
-              <Icon className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
+            <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center border border-zinc-200 dark:border-white/10 group-hover:bg-zinc-950 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-zinc-950 flex-shrink-0 transition-colors">
+              <Icon className="w-4 h-4 text-zinc-800 dark:text-zinc-200 group-hover:text-white dark:group-hover:text-zinc-950 transition-colors" />
             </div>
-            <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-950 dark:group-hover:text-zinc-100 transition-colors truncate tracking-tight">
+            <p className="text-xs font-bold text-zinc-900 dark:text-zinc-200 group-hover:text-zinc-950 dark:group-hover:text-white transition-colors truncate tracking-tight">
               {cat.name}
             </p>
           </motion.button>
