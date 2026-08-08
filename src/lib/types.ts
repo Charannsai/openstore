@@ -326,6 +326,7 @@ export interface ElectronAPI {
   ) => Promise<{ success: boolean; path: string; size: number }>;
   unzipFile: (zipPath: string, targetDir: string) => Promise<{ success: boolean; targetDir: string }>;
   getDownloadsDir: () => Promise<string>;
+  selectDirectory: (defaultPath?: string) => Promise<{ success: boolean; path?: string; canceled?: boolean; error?: string }>;
 
   // App lifecycle
   launchApp: (config: { path?: string; url?: string; command?: string }) => Promise<number>;

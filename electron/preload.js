@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   downloadFile: (url, dest, checksum) => ipcRenderer.invoke('agent:download-file', url, dest, checksum),
   unzipFile: (zipPath, targetDir) => ipcRenderer.invoke('agent:unzip-file', zipPath, targetDir),
   getDownloadsDir: () => ipcRenderer.invoke('agent:get-downloads-dir'),
+  selectDirectory: (defaultPath) => ipcRenderer.invoke('agent:select-directory', defaultPath),
 
   // ─── App Lifecycle ─────────────────────────────────────────────────────
   launchApp: (config) => ipcRenderer.invoke('agent:launch-app', config),

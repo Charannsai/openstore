@@ -6,7 +6,7 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const net = require('net');
-const { BrowserWindow, shell } = require('electron');
+const { BrowserWindow, shell, dialog } = require('electron');
 const { analyzeRepositoryWithGroq, diagnoseFailureWithGroq } = require('./groq-agent');
 
 /**
@@ -727,6 +727,27 @@ function registerAgentHandlers(ipcMain) {
         return { success: true };
       }
       return { success: false, error: 'Path does not exist' };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('agent:select-directory', async (_event, defaultPath) => {
+    try {
+      const result = await dialog.showOpenDialog({
+        title: 'Select OpenStore Workspace Directory',
+        defaultPath: defaultPath || getDownloadsDir(),
+        properties: ['openDirectory', 'createDirectory'],
+      });
+
+      if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+        const selectedDir = result.filePaths[0];
+        if (!fs.existsSync(selectedDir)) {
+          fs.mkdirSync(selectedDir, { recursive: true });
+        }
+        return { success: true, path: selectedDir };
+      }
+      return { success: false, canceled: true };
     } catch (err) {
       return { success: false, error: err.message };
     }

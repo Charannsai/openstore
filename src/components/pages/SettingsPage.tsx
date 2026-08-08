@@ -13,6 +13,7 @@ import {
   LockIcon,
   Code2Icon,
   PackageIcon,
+  FolderOpenIcon,
 } from '@/components/ui/hugeicons';
 
 type SettingsTab = 'appearance' | 'general' | 'privacy' | 'about';
@@ -20,6 +21,30 @@ type SettingsTab = 'appearance' | 'general' | 'privacy' | 'about';
 export default function SettingsPage() {
   const { theme, setTheme, settings, updateSetting } = useAppStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
+  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+
+  const handleSelectDirectory = async () => {
+    if (isElectron && window.electronAPI?.selectDirectory) {
+      const res = await window.electronAPI.selectDirectory(settings.installDir);
+      if (res.success && res.path) {
+        updateSetting('installDir', res.path);
+      }
+    } else {
+      const customPath = prompt('Enter custom workspace path:', settings.installDir);
+      if (customPath && customPath.trim()) {
+        updateSetting('installDir', customPath.trim());
+      }
+    }
+  };
+
+  const handleResetDirectory = async () => {
+    if (isElectron && window.electronAPI?.getDownloadsDir) {
+      const defaultFolder = await window.electronAPI.getDownloadsDir();
+      updateSetting('installDir', defaultFolder);
+    } else {
+      updateSetting('installDir', 'Downloads/OpenStore');
+    }
+  };
 
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'appearance', label: 'Appearance' },
@@ -157,11 +182,39 @@ export default function SettingsPage() {
               <div className="rounded-2xl bg-white dark:bg-[#121215] border border-zinc-200 dark:border-white/10 p-6 shadow-xs space-y-2">
                 <h2 className="text-xs font-bold text-zinc-950 dark:text-white uppercase tracking-wider mb-2">Workspace & Updates</h2>
                 <div className="divide-y divide-zinc-100 dark:divide-white/5">
-                  <SettingRow
-                    label="Local Workspace Path"
-                    description="Default directory where repositories and local packages are installed"
-                    value={settings.installDir}
-                  />
+                  {/* Local Workspace Directory Selector */}
+                  <div className="py-3.5 space-y-2.5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-zinc-950 dark:text-zinc-100">Local Workspace Directory</p>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal leading-relaxed">
+                          Choose your custom location where cloned apps and binaries are installed (defaults to <code className="font-mono text-[10px]">Downloads/OpenStore</code>)
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={handleSelectDirectory}
+                          className="px-3.5 py-1.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                        >
+                          <FolderOpenIcon className="w-3.5 h-3.5" />
+                          <span>Browse...</span>
+                        </button>
+                        <button
+                          onClick={handleResetDirectory}
+                          className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-500 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer"
+                          title="Reset to default Downloads/OpenStore directory"
+                        >
+                          Reset Default
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/10 text-xs font-mono text-zinc-800 dark:text-zinc-200 overflow-x-auto">
+                      <FolderOpenIcon className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+                      <span className="truncate">{settings.installDir}</span>
+                    </div>
+                  </div>
                   <SettingRow
                     label="Automatic Update Check"
                     description="Periodically check open-source releases for version updates"
