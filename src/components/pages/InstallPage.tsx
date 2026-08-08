@@ -14,6 +14,8 @@ import {
   FolderOpenIcon,
   Code2Icon,
   XIcon,
+  ShieldCheckIcon,
+  DownloadIcon,
 } from '@/components/ui/hugeicons';
 import type { Task, InstalledApp } from '@/lib/types';
 import { runRealInstallation } from '@/lib/installer-engine';
@@ -41,7 +43,7 @@ export default function InstallPage() {
     },
     {
       id: 'task-2',
-      title: 'Check Prerequisites',
+      title: 'Check Prerequisites & Tooling',
       description: 'Verifying Git, Node.js, and runtime dependencies',
       type: 'CHECK',
       status: 'LOCKED',
@@ -105,7 +107,40 @@ export default function InstallPage() {
   const [installedRecord, setInstalledRecord] = useState<InstalledApp | null>(null);
   const [isStartingServer, setIsStartingServer] = useState(false);
 
+  // Prerequisite Auto-Fixer State
+  const [prereqs, setPrereqs] = useState<{ git: boolean; node: boolean }>({ git: true, node: true });
+  const [wingetAvailable, setWingetAvailable] = useState(false);
+  const [isInstallingWinget, setIsInstallingWinget] = useState<string | null>(null);
+
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+
+  useEffect(() => {
+    async function initCheck() {
+      if (isElectron && window.electronAPI) {
+        try {
+          const [prereqCheck, wingetCheck] = await Promise.all([
+            window.electronAPI.checkPrerequisites(),
+            window.electronAPI.checkWinget(),
+          ]);
+
+          setPrereqs({
+            git: prereqCheck.git.installed,
+            node: prereqCheck.node.installed,
+          });
+          setWingetAvailable(wingetCheck.available);
+        } catch {}
+      }
+    }
+    initCheck();
+  }, [isElectron]);
+
+  useEffect(() => {
+    if (!isElectron || !window.electronAPI?.onWingetProgress) return;
+    const cleanup = window.electronAPI.onWingetProgress((text) => {
+      setLogs((prev) => [...prev, text]);
+    });
+    return cleanup;
+  }, [isElectron]);
 
   useEffect(() => {
     if (!app) return;
@@ -160,6 +195,30 @@ export default function InstallPage() {
       isMounted = false;
     };
   }, [app]);
+
+  const handleAutoFixPrerequisite = async (packageId: string) => {
+    if (!isElectron || !window.electronAPI?.installWingetPackage) return;
+    setIsInstallingWinget(packageId);
+    setShowDetails(true);
+    setLogs((prev) => [...prev, `[AUTO-FIX] 🛠️ Launching Winget 1-click install for ${packageId}...`]);
+
+    try {
+      const res = await window.electronAPI.installWingetPackage(packageId);
+      if (res.success) {
+        setLogs((prev) => [...prev, `[AUTO-FIX] ✓ Successfully installed ${packageId} via Winget!`]);
+        if (window.electronAPI.checkPrerequisites) {
+          const updated = await window.electronAPI.checkPrerequisites();
+          setPrereqs({ git: updated.git.installed, node: updated.node.installed });
+        }
+      } else {
+        setLogs((prev) => [...prev, `[AUTO-FIX] Winget exit code: ${res.code}`]);
+      }
+    } catch (err: any) {
+      setLogs((prev) => [...prev, `[AUTO-FIX ERROR] ${err.message}`]);
+    } finally {
+      setIsInstallingWinget(null);
+    }
+  };
 
   const handleOpen = async () => {
     if (!installedRecord || !isElectron) return;
@@ -294,6 +353,61 @@ export default function InstallPage() {
           </div>
         )}
       </div>
+
+      {/* Prerequisite Missing Auto-Fixer Card */}
+      {(!prereqs.git || !prereqs.node) && (
+        <div className="glass-card rounded-xl p-4 mb-4 border border-amber-500/40 bg-amber-500/5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                <ShieldCheckIcon className="w-4 h-4" />
+                <span>Prerequisites Missing</span>
+              </h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+                {!prereqs.git && !prereqs.node
+                  ? 'Git CLI & Node.js are missing on your system.'
+                  : !prereqs.git
+                  ? 'Git CLI is not installed on your system.'
+                  : 'Node.js runtime is not installed on your system.'}
+              </p>
+            </div>
+
+            {wingetAvailable && (
+              <div className="flex items-center gap-2">
+                {!prereqs.git && (
+                  <button
+                    onClick={() => handleAutoFixPrerequisite('Git.Git')}
+                    disabled={!!isInstallingWinget}
+                    className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    {isInstallingWinget === 'Git.Git' ? (
+                      <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <DownloadIcon className="w-3.5 h-3.5" />
+                    )}
+                    <span>1-Click Fix Git</span>
+                  </button>
+                )}
+
+                {!prereqs.node && (
+                  <button
+                    onClick={() => handleAutoFixPrerequisite('OpenJS.NodeJS')}
+                    disabled={!!isInstallingWinget}
+                    className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    {isInstallingWinget === 'OpenJS.NodeJS' ? (
+                      <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <DownloadIcon className="w-3.5 h-3.5" />
+                    )}
+                    <span>1-Click Fix Node</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Success State */}
       <AnimatePresence>

@@ -259,10 +259,23 @@ export interface SearchFilters {
 
 // ─── Electron IPC ────────────────────────────────────────────────────────────
 export interface ElectronAPI {
-  // System
+  // System detection & Prerequisites
   getSystemInfo: () => Promise<SystemInfo>;
   checkCommand: (command: string) => Promise<{ exists: boolean; version?: string }>;
-  checkPort: (port: number) => Promise<{ inUse: boolean; process?: string }>;
+  checkPort: (port: number) => Promise<{ port: number; inUse: boolean }>;
+  checkPrerequisites: () => Promise<{
+    git: { installed: boolean; version: string | null };
+    node: { installed: boolean; version: string | null };
+    npm: { installed: boolean; version: string | null };
+    python: { installed: boolean; version: string | null };
+    docker: { installed: boolean; version: string | null };
+  }>;
+
+  // Winget Package Manager Integration
+  checkWinget: () => Promise<{ available: boolean; version?: string }>;
+  searchWinget: (query: string) => Promise<Array<{ name: string; id: string; version: string }>>;
+  installWingetPackage: (packageId: string) => Promise<{ success: boolean; code?: number }>;
+  onWingetProgress: (callback: (text: string) => void) => () => void;
 
   // Git, Terminal & Ecosystem Orchestrator
   gitClone: (repoUrl: string, targetDir: string) => Promise<{ success: boolean; targetDir: string; action: string }>;
