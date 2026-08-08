@@ -34,7 +34,7 @@ export default function CategoryPage() {
   if (!category) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">Category not found.</p>
+        <p className="text-xs text-zinc-500 font-medium">Category not found.</p>
       </div>
     );
   }
@@ -44,22 +44,22 @@ export default function CategoryPage() {
       {/* Back */}
       <button
         onClick={() => navigate('home')}
-        className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors mb-6 cursor-pointer"
+        className="flex items-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors mb-5 cursor-pointer"
       >
         <ArrowLeftIcon className="w-4 h-4" />
         <span>Back to Discover</span>
       </button>
 
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 dark:text-zinc-100 tracking-tight">{category.name} Repositories</h1>
-          <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400 mt-1">Top open-source projects in {category.name.toLowerCase()}</p>
+          <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">{category.name} Repositories</h1>
+          <p className="text-xs font-normal text-zinc-500 dark:text-zinc-400 mt-0.5">Top open-source projects in {category.name.toLowerCase()}</p>
         </div>
 
         {isLoading && (
-          <div className="flex items-center gap-2 text-xs font-semibold text-indigo-500">
-            <Loader2Icon className="w-4 h-4 animate-spin" />
+          <div className="flex items-center gap-2 text-xs text-zinc-500 font-medium">
+            <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
             <span>Fetching...</span>
           </div>
         )}
@@ -67,20 +67,20 @@ export default function CategoryPage() {
 
       {/* Apps Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="h-40 rounded-2xl bg-slate-200/50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-white/10 animate-pulse" />
+            <div key={n} className="h-36 rounded-xl bg-zinc-200/50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/10 animate-pulse" />
           ))}
         </div>
       ) : apps.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {apps.map((app, i) => (
             <AppCard key={app.id} app={app} index={i} />
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-center glass-card rounded-2xl border border-slate-200/80 dark:border-white/10">
-          <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">No applications found in this category.</p>
+        <div className="flex flex-col items-center justify-center py-16 text-center glass-card rounded-xl border border-zinc-200 dark:border-white/10">
+          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">No applications found in this category.</p>
         </div>
       )}
     </motion.div>
