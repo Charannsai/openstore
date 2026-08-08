@@ -66,7 +66,7 @@ export default function Sidebar() {
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => navigate('home')}
-                  className="flex items-center gap-3 p-1 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-all group text-left flex-1 min-w-0"
+                  className="flex items-center gap-3 p-1 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-all group text-left flex-1 min-w-0 cursor-pointer"
                 >
                   <div className="w-8 h-8 rounded-lg bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-semibold text-xs flex items-center justify-center flex-shrink-0 shadow-xs">
                     OS
