@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
-import { Play, Square, FolderOpen, Package, ExternalLink, Loader2, Globe, Trash2 } from 'lucide-react';
-import { formatRelativeTime } from '@/lib/utils';
+import { Play, Square, FolderOpen, Package, Loader2, Globe, Trash2, Code2, Terminal } from 'lucide-react';
 import type { InstalledApp } from '@/lib/types';
 
 export default function MyAppsPage() {
@@ -30,60 +29,84 @@ export default function MyAppsPage() {
     syncRegistry();
   }, [isElectron]);
 
-  const handleStartAndLaunch = async (installed: InstalledApp) => {
-    if (!isElectron) {
-      if (installed.local_url) window.open(installed.local_url, '_blank');
-      return;
-    }
+  // ── Context-Aware Open Handler ─────────────────────────────────────────
+  const handleOpen = async (installed: InstalledApp) => {
+    if (!isElectron) return;
 
-    setStartingAppId(installed.id);
+    const mode = installed.run_mode || 'folder';
+    const path = installed.install_path;
 
-    try {
-      const path = installed.install_path;
+    switch (mode) {
+      case 'browser': {
+        // Web app: start dev server → wait for port → open browser
+        setStartingAppId(installed.id);
 
-      // 1. If executable or directory without start script, open directly
-      if (path && (path.endsWith('.exe') || path.endsWith('.msi'))) {
-        await window.electronAPI!.launchApp({ path });
-        updateInstalledAppStatus(installed.id, 'running');
-        setStartingAppId(null);
-        return;
-      }
+        try {
+          const eco = await window.electronAPI!.inspectRepoEcosystem(path);
+          const startCmd = installed.start_command || eco.start_command;
 
-      // 2. Hands-Free Web Repository Launch: Inspect repo ecosystem
-      const eco = await window.electronAPI!.inspectRepoEcosystem(path);
+          if (startCmd) {
+            await window.electronAPI!.startBackgroundService(startCmd, path, installed.id);
+            const targetPort = eco.detected_port || 3000;
+            const webUrl = `http://localhost:${targetPort}`;
 
-      if (eco.start_command) {
-        // Start background dev server service (npm run dev / npm start / python app.py)
-        await window.electronAPI!.startBackgroundService(eco.start_command, path, installed.id);
+            let retries = 0;
+            const interval = setInterval(async () => {
+              retries++;
+              const check = await window.electronAPI!.checkPort(targetPort);
 
-        const targetPort = eco.detected_port || 3000;
-        const webUrl = `http://localhost:${targetPort}`;
-
-        // Poll for server port availability up to 15 seconds
-        let retries = 0;
-        const interval = setInterval(async () => {
-          retries++;
-          const check = await window.electronAPI!.checkPort(targetPort);
-
-          if (check.inUse || retries > 15) {
-            clearInterval(interval);
-            updateInstalledAppStatus(installed.id, 'running');
-            setRunningWebUrls((prev) => ({ ...prev, [installed.id]: webUrl }));
-            setStartingAppId(null);
-
-            // Automatically open browser to localhost port
-            await window.electronAPI!.launchApp({ url: webUrl });
+              if (check.inUse || retries >= 15) {
+                clearInterval(interval);
+                updateInstalledAppStatus(installed.id, 'running');
+                setRunningWebUrls((prev) => ({ ...prev, [installed.id]: webUrl }));
+                setStartingAppId(null);
+                await window.electronAPI!.launchApp({ url: webUrl });
+              }
+            }, 1000);
           }
-        }, 1000);
-      } else {
-        // Fallback: Open directory in File Explorer
+        } catch {
+          setStartingAppId(null);
+        }
+        break;
+      }
+
+      case 'ide': {
+        // IDE project: open in VS Code / Cursor / available IDE
+        try {
+          const result = await window.electronAPI!.openInIDE(path);
+          updateInstalledAppStatus(installed.id, 'running');
+        } catch {
+          // Fallback: open folder
+          await window.electronAPI!.launchApp({ path });
+        }
+        break;
+      }
+
+      case 'terminal': {
+        // CLI tool: open terminal at project directory
+        try {
+          if (typeof window.electronAPI!.executeTerminalCommand === 'function') {
+            // Open Windows Terminal / cmd at the project path
+            await window.electronAPI!.executeTerminalCommand(`start cmd /k "cd /d ${path}"`, path);
+          }
+        } catch {
+          await window.electronAPI!.launchApp({ path });
+        }
+        break;
+      }
+
+      case 'executable': {
+        // Desktop app / binary: launch the executable
         await window.electronAPI!.launchApp({ path });
         updateInstalledAppStatus(installed.id, 'running');
-        setStartingAppId(null);
+        break;
       }
-    } catch (err) {
-      console.error('Failed to start service:', err);
-      setStartingAppId(null);
+
+      default: {
+        // Folder: just open in Explorer
+        await window.electronAPI!.launchApp({ path });
+        break;
+      }
     }
   };
 
@@ -117,6 +140,22 @@ export default function MyAppsPage() {
     setUninstallTarget(null);
   };
 
+  // ── Run Mode Label & Icon Mapping ──────────────────────────────────────
+  function getRunModeInfo(mode: string) {
+    switch (mode) {
+      case 'browser':
+        return { label: 'Run Server & Open', icon: Globe, actionLabel: 'Open Browser' };
+      case 'ide':
+        return { label: 'Open in IDE', icon: Code2, actionLabel: 'Open in IDE' };
+      case 'terminal':
+        return { label: 'Open Terminal', icon: Terminal, actionLabel: 'Open Terminal' };
+      case 'executable':
+        return { label: 'Launch', icon: Play, actionLabel: 'Launch' };
+      default:
+        return { label: 'Open Folder', icon: FolderOpen, actionLabel: 'Open' };
+    }
+  }
+
   if (installedApps.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] text-center">
@@ -144,9 +183,12 @@ export default function MyAppsPage() {
       <div className="space-y-2.5">
         {installedApps.map((installed, i) => {
           const app = installed.application;
+          const mode = installed.run_mode || 'folder';
           const isRunning = installed.status === 'running';
           const isStarting = startingAppId === installed.id;
           const webUrl = runningWebUrls[installed.id] || installed.local_url;
+          const modeInfo = getRunModeInfo(mode);
+          const ModeIcon = modeInfo.icon;
 
           return (
             <motion.div
@@ -175,25 +217,28 @@ export default function MyAppsPage() {
                     <h3 className="text-xs font-semibold text-zinc-100 truncate">{app.name}</h3>
                     <div className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-zinc-100 pulse-dot' : 'bg-zinc-700'}`} />
                     <span className="text-[10px] text-zinc-500">
-                      {isStarting ? 'Starting dev server...' : isRunning ? 'Service Active' : 'Stopped'}
+                      {isStarting ? 'Starting...' : isRunning ? 'Active' : 'Ready'}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mt-0.5">
                     <span className="text-[10px] text-zinc-500">v{installed.version}</span>
-                    <span className="text-[10px] text-zinc-600 truncate max-w-[220px]">
-                      {installed.install_path || 'Installed'}
+                    <span className="text-[10px] text-zinc-600 px-1.5 py-0.5 rounded bg-zinc-900 border border-white/5">
+                      {mode === 'browser' ? 'Web App' : mode === 'ide' ? 'IDE Project' : mode === 'terminal' ? 'CLI Tool' : mode === 'executable' ? 'Desktop App' : 'Folder'}
+                    </span>
+                    <span className="text-[10px] text-zinc-600 truncate max-w-[180px]">
+                      {installed.install_path}
                     </span>
                   </div>
                 </div>
 
-                {/* Hands-Free Actions */}
+                {/* Context-Aware Actions */}
                 <div className="flex items-center gap-1.5">
                   {isStarting ? (
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 rounded-lg text-xs text-zinc-400 border border-white/10">
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-200" />
                       <span>Starting...</span>
                     </div>
-                  ) : isRunning ? (
+                  ) : isRunning && mode === 'browser' ? (
                     <>
                       {webUrl && (
                         <button
@@ -204,7 +249,6 @@ export default function MyAppsPage() {
                           <span>Open Browser</span>
                         </button>
                       )}
-
                       <button
                         onClick={() => handleStopService(installed)}
                         className="btn-secondary px-3 py-1.5 text-xs font-medium flex items-center gap-1"
@@ -216,12 +260,12 @@ export default function MyAppsPage() {
                     </>
                   ) : (
                     <button
-                      onClick={() => handleStartAndLaunch(installed)}
+                      onClick={() => handleOpen(installed)}
                       className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1"
-                      title="Run automated dev server & open browser"
+                      title={modeInfo.label}
                     >
-                      <Play className="w-3.5 h-3.5" />
-                      <span>Run & Open</span>
+                      <ModeIcon className="w-3.5 h-3.5" />
+                      <span>{modeInfo.label}</span>
                     </button>
                   )}
 
@@ -259,7 +303,7 @@ export default function MyAppsPage() {
               Uninstall {installedApps.find((a) => a.id === uninstallTarget)?.application.name}?
             </h3>
             <p className="text-xs text-zinc-400 mb-4">
-              This will stop any background server processes and remove project files from your drive.
+              This will stop any background processes and remove project files from your drive.
             </p>
             <div className="flex gap-2">
               <button
