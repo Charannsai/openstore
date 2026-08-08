@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ─── App Lifecycle ─────────────────────────────────────────────────────
   launchApp: (config) => ipcRenderer.invoke('agent:launch-app', config),
   openInIDE: (projectPath) => ipcRenderer.invoke('agent:open-in-ide', projectPath),
+  openFolder: (folderPath) => ipcRenderer.invoke('agent:open-folder', folderPath),
 
   // ─── Registry & Persistence ────────────────────────────────────────────
   getInstalledApps: () => ipcRenderer.invoke('agent:get-installed-apps'),

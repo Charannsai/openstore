@@ -330,6 +330,7 @@ export interface ElectronAPI {
   // App lifecycle
   launchApp: (config: { path?: string; url?: string; command?: string }) => Promise<number>;
   openInIDE: (projectPath: string) => Promise<{ success: boolean; ide: string }>;
+  openFolder: (folderPath: string) => Promise<{ success: boolean; error?: string }>;
 
   // Installed Registry
   getInstalledApps: () => Promise<InstalledApp[]>;

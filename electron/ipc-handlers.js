@@ -720,6 +720,18 @@ function registerAgentHandlers(ipcMain) {
     return { success: true, ide: 'File Explorer' };
   });
 
+  ipcMain.handle('agent:open-folder', async (_event, folderPath) => {
+    try {
+      if (folderPath && fs.existsSync(folderPath)) {
+        await shell.openPath(folderPath);
+        return { success: true };
+      }
+      return { success: false, error: 'Path does not exist' };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
   // ── App Registry Persistence ──────────────────────────────────────────────
   ipcMain.handle('agent:get-installed-apps', async () => {
     const file = getInstalledAppsFile();
