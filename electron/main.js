@@ -14,11 +14,11 @@ function createWindow() {
     height: 900,
     minWidth: 1000,
     minHeight: 700,
-    backgroundColor: '#0d0d0f',
+    backgroundColor: '#09090b',
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#111114',
-      symbolColor: '#8a8a96',
+      color: '#0c0c0e',
+      symbolColor: '#a1a1aa',
       height: 36,
     },
     webPreferences: {
@@ -37,8 +37,6 @@ function createWindow() {
 
   if (isDev) {
     mainWindow.loadURL(DEV_URL);
-    // Open DevTools in dev mode
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
     mainWindow.loadFile(path.join(__dirname, '../out/index.html'));
   }
@@ -68,7 +66,7 @@ app.on('window-all-closed', () => {
   }
 });
 
-// ─── Security: prevent new window creation ───────────────────────────────────
+// ─── Security: prevent unhandled new window creation ──────────────────────────
 app.on('web-contents-created', (event, contents) => {
   contents.setWindowOpenHandler(() => {
     return { action: 'deny' };
