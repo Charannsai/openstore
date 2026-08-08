@@ -146,6 +146,7 @@ function registerAgentHandlers(ipcMain) {
   });
 
   // ── Universal Smart Ecosystem & Run Command Resolver ─────────────────────
+  // Handles standard repos AND monorepos (scans subdirs when root has no clear entry)
   ipcMain.handle('agent:inspect-repo-ecosystem', async (_event, repoPath) => {
     if (!fs.existsSync(repoPath)) throw new Error('Repository directory does not exist');
 
@@ -159,83 +160,129 @@ function registerAgentHandlers(ipcMain) {
       has_package_json: false,
       has_requirements_txt: false,
       has_dockerfile: false,
+      resolved_cwd: repoPath, // The actual directory to run commands in (may differ for monorepos)
     };
 
-    const packageJsonPath = path.join(repoPath, 'package.json');
-    const requirementsPath = path.join(repoPath, 'requirements.txt');
-    const dockerComposePath = path.join(repoPath, 'docker-compose.yml');
-    const dockerfilePath = path.join(repoPath, 'Dockerfile');
+    // Helper: Try to resolve ecosystem from a given directory
+    function resolveFromDir(dir) {
+      const packageJsonPath = path.join(dir, 'package.json');
+      const requirementsPath = path.join(dir, 'requirements.txt');
+      const dockerComposePath = path.join(dir, 'docker-compose.yml');
+      const dockerfilePath = path.join(dir, 'Dockerfile');
 
-    // 1. Node.js Ecosystem
-    if (fs.existsSync(packageJsonPath)) {
-      result.has_package_json = true;
-      result.ecosystem = 'node';
-      result.install_command = 'npm install';
+      // Node.js
+      if (fs.existsSync(packageJsonPath)) {
+        result.has_package_json = true;
+        result.ecosystem = 'node';
+        result.install_command = 'npm install';
+        result.resolved_cwd = dir;
 
-      try {
-        const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-        const scripts = pkg.scripts || {};
+        try {
+          const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+          const scripts = pkg.scripts || {};
 
-        if (scripts.build) result.build_command = 'npm run build';
+          if (scripts.build) result.build_command = 'npm run build';
 
-        if (scripts.dev) {
-          result.start_command = 'npm run dev';
-        } else if (scripts.start) {
-          result.start_command = 'npm start';
-        } else if (scripts.serve) {
-          result.start_command = 'npm run serve';
-        } else if (scripts.preview) {
-          result.start_command = 'npm run preview';
-        } else {
+          if (scripts.dev) {
+            result.start_command = 'npm run dev';
+          } else if (scripts.start) {
+            result.start_command = 'npm start';
+          } else if (scripts.serve) {
+            result.start_command = 'npm run serve';
+          } else if (scripts.preview) {
+            result.start_command = 'npm run preview';
+          } else {
+            result.start_command = 'npx serve -p 3000';
+          }
+
+          // Port hints from script definitions
+          const scriptStr = JSON.stringify(scripts);
+          if (scriptStr.includes('vite')) result.detected_port = 5173;
+          else if (scriptStr.includes('next')) result.detected_port = 3000;
+          else if (scriptStr.includes('nuxt')) result.detected_port = 3000;
+          else if (scriptStr.includes('angular')) result.detected_port = 4200;
+          else if (scriptStr.includes('svelte')) result.detected_port = 5173;
+        } catch {
           result.start_command = 'npx serve -p 3000';
         }
 
-        // Port detection from Vite / Next / React config
-        if (JSON.stringify(scripts).includes('vite')) result.detected_port = 5173;
-        else if (JSON.stringify(scripts).includes('next')) result.detected_port = 3000;
-      } catch {
+        return true;
+      }
+
+      // Python
+      if (fs.existsSync(requirementsPath)) {
+        result.has_requirements_txt = true;
+        result.ecosystem = 'python';
+        result.install_command = 'pip install -r requirements.txt';
+        result.resolved_cwd = dir;
+
+        const pyFiles = fs.readdirSync(dir).filter(f => f.endsWith('.py'));
+        if (pyFiles.includes('app.py')) result.start_command = 'python app.py';
+        else if (pyFiles.includes('main.py')) result.start_command = 'python main.py';
+        else if (pyFiles.includes('manage.py')) { result.start_command = 'python manage.py runserver'; result.detected_port = 8000; }
+        else if (pyFiles.length > 0) result.start_command = `python ${pyFiles[0]}`;
+        else { result.start_command = 'python -m http.server 8000'; result.detected_port = 8000; }
+
+        try {
+          const reqText = fs.readFileSync(requirementsPath, 'utf-8');
+          if (reqText.includes('streamlit')) { result.start_command = 'streamlit run app.py'; result.detected_port = 8501; }
+          else if (reqText.includes('flask')) { result.detected_port = 5000; }
+          else if (reqText.includes('fastapi') || reqText.includes('uvicorn')) { result.start_command = 'uvicorn main:app --reload'; result.detected_port = 8000; }
+          else if (reqText.includes('django')) { result.detected_port = 8000; }
+        } catch {}
+
+        return true;
+      }
+
+      // Static HTML
+      if (fs.existsSync(path.join(dir, 'index.html'))) {
+        result.ecosystem = 'static-html';
         result.start_command = 'npx serve -p 3000';
-      }
-    }
-    // 2. Python Ecosystem
-    else if (fs.existsSync(requirementsPath)) {
-      result.has_requirements_txt = true;
-      result.ecosystem = 'python';
-      result.install_command = 'pip install -r requirements.txt';
-
-      const pyFiles = fs.readdirSync(repoPath).filter(f => f.endsWith('.py'));
-      if (pyFiles.includes('app.py')) {
-        result.start_command = 'python app.py';
-      } else if (pyFiles.includes('main.py')) {
-        result.start_command = 'python main.py';
-      } else if (pyFiles.length > 0) {
-        result.start_command = `python ${pyFiles[0]}`;
-      } else {
-        result.start_command = 'python -m http.server 8000';
-        result.detected_port = 8000;
+        result.detected_port = 3000;
+        result.resolved_cwd = dir;
+        return true;
       }
 
-      if (fs.readFileSync(requirementsPath, 'utf-8').includes('streamlit')) {
-        result.start_command = 'streamlit run app.py';
-        result.detected_port = 8501;
+      // Docker
+      if (fs.existsSync(dockerComposePath) || fs.existsSync(dockerfilePath)) {
+        result.has_dockerfile = true;
+        result.ecosystem = 'docker';
+        result.install_command = fs.existsSync(dockerComposePath) ? 'docker compose build' : 'docker build -t openstore-app .';
+        result.start_command = fs.existsSync(dockerComposePath) ? 'docker compose up' : 'docker run -p 3000:3000 openstore-app';
+        result.detected_port = 3000;
+        result.resolved_cwd = dir;
+        return true;
       }
-    }
-    // 3. Static HTML Web Page
-    else if (fs.existsSync(path.join(repoPath, 'index.html'))) {
-      result.ecosystem = 'static-html';
-      result.start_command = 'npx serve -p 3000';
-      result.detected_port = 3000;
-    }
-    // 4. Docker Container
-    else if (fs.existsSync(dockerComposePath) || fs.existsSync(dockerfilePath)) {
-      result.has_dockerfile = true;
-      result.ecosystem = 'docker';
-      result.install_command = fs.existsSync(dockerComposePath) ? 'docker compose build' : 'docker build -t openstore-app .';
-      result.start_command = fs.existsSync(dockerComposePath) ? 'docker compose up' : 'docker run -p 3000:3000 openstore-app';
-      result.detected_port = 3000;
+
+      return false;
     }
 
-    // Inspect README for port hints
+    // 1. Try root directory first
+    const foundAtRoot = resolveFromDir(repoPath);
+
+    // 2. If root is unknown (monorepo), scan immediate subdirectories
+    if (!foundAtRoot) {
+      try {
+        const subdirs = fs.readdirSync(repoPath, { withFileTypes: true })
+          .filter(d => d.isDirectory() && !d.name.startsWith('.') && d.name !== 'node_modules')
+          .map(d => d.name);
+
+        // Prioritize common runnable subdirectory names
+        const priority = ['app', 'apps', 'web', 'frontend', 'client', 'packages', 'src', 'server', 'api', 'backend'];
+        const sorted = subdirs.sort((a, b) => {
+          const ai = priority.indexOf(a.toLowerCase());
+          const bi = priority.indexOf(b.toLowerCase());
+          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+        });
+
+        for (const sub of sorted) {
+          const subPath = path.join(repoPath, sub);
+          if (resolveFromDir(subPath)) break;
+        }
+      } catch {}
+    }
+
+    // 3. Inspect README for port hints (always check root README)
     try {
       const readmeFile = fs.readdirSync(repoPath).find(f => f.toLowerCase().startsWith('readme'));
       if (readmeFile) {
@@ -247,7 +294,7 @@ function registerAgentHandlers(ipcMain) {
       }
     } catch {}
 
-    logAudit('inspect-repo', 'renderer', 'success', `Ecosystem: ${result.ecosystem}, Run: "${result.start_command}" on port ${result.detected_port}`);
+    logAudit('inspect-repo', 'renderer', 'success', `Ecosystem: ${result.ecosystem}, Run: "${result.start_command}" in "${result.resolved_cwd}" on port ${result.detected_port}`);
     return result;
   });
 
