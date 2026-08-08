@@ -22,9 +22,9 @@ export function formatRelativeTime(dateString: string): string {
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-  return `${Math.floor(diffDays / 365)} years ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
+  return `${Math.floor(diffDays / 365)}y ago`;
 }
 
 export function slugify(text: string): string {
@@ -41,28 +41,18 @@ export function truncate(text: string, maxLength: number): string {
 
 export function getDifficultyInfo(difficulty: 'easy' | 'moderate' | 'advanced') {
   const map = {
-    easy: { label: 'Easy', emoji: '🟢', color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-    moderate: { label: 'Moderate', emoji: '🟡', color: 'text-amber-400', bg: 'bg-amber-400/10' },
-    advanced: { label: 'Advanced', emoji: '🔴', color: 'text-rose-400', bg: 'bg-rose-400/10' },
+    easy: { label: 'Easy' },
+    moderate: { label: 'Moderate' },
+    advanced: { label: 'Advanced' },
   };
-  return map[difficulty];
+  return map[difficulty] || { label: 'Easy' };
 }
 
-export function getPlatformIcon(platform: string): string {
+export function getPlatformName(platform: string): string {
   const map: Record<string, string> = {
-    windows: '🪟',
-    macos: '🍎',
-    linux: '🐧',
+    windows: 'Windows',
+    macos: 'macOS',
+    linux: 'Linux',
   };
-  return map[platform] || '💻';
-}
-
-export function getStatusColor(status: string): string {
-  const map: Record<string, string> = {
-    running: 'text-emerald-400',
-    stopped: 'text-zinc-500',
-    error: 'text-rose-400',
-    updating: 'text-amber-400',
-  };
-  return map[status] || 'text-zinc-500';
+  return map[platform] || platform;
 }

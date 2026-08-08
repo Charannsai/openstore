@@ -2,31 +2,29 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/store/app-store';
-import { applications } from '@/lib/mock-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
-  CheckCircle2,
+  Check,
   Circle,
   Loader2,
   AlertCircle,
   ChevronDown,
   ChevronUp,
   X,
-  ExternalLink,
-  PartyPopper,
+  CheckCircle2,
+  Terminal,
 } from 'lucide-react';
 import type { Task, TaskState } from '@/lib/types';
 
-// Simulated tasks for demo
 function generateTasks(appName: string, installMethod: string): Task[] {
-  const baseTasks: Task[] = [
+  return [
     {
       id: 'detect-system',
-      title: 'Detect system',
-      description: 'Checking your operating system and architecture',
+      title: 'Detect system & architecture',
+      description: 'Checking local OS version, CPU architecture, and available disk space',
       type: 'CHECK',
-      status: 'READY',
+      status: 'RUNNING',
       prerequisites: [],
       actions: [{ capability: 'detect_os', params: {} }],
       estimated_duration: 2,
@@ -37,8 +35,8 @@ function generateTasks(appName: string, installMethod: string): Task[] {
     },
     {
       id: 'check-compatibility',
-      title: 'Check compatibility',
-      description: 'Verifying system meets requirements',
+      title: 'Verify requirements',
+      description: 'Confirming system meets prerequisite dependencies',
       type: 'CHECK',
       status: 'LOCKED',
       prerequisites: ['detect-system'],
@@ -49,161 +47,81 @@ function generateTasks(appName: string, installMethod: string): Task[] {
       documentation: '',
       progress: 0,
     },
+    {
+      id: 'find-release',
+      title: 'Resolve official release',
+      description: 'Locating compatible binary from official release source',
+      type: 'CHECK',
+      status: 'LOCKED',
+      prerequisites: ['check-compatibility'],
+      actions: [],
+      estimated_duration: 3,
+      requires_user_interaction: false,
+      requires_elevation: false,
+      documentation: '',
+      progress: 0,
+    },
+    {
+      id: 'download',
+      title: `Download ${appName}`,
+      description: 'Fetching release package from official source',
+      type: 'DOWNLOAD',
+      status: 'LOCKED',
+      prerequisites: ['find-release'],
+      actions: [{ capability: 'download_file', params: {} }],
+      estimated_duration: 15,
+      requires_user_interaction: false,
+      requires_elevation: false,
+      documentation: '',
+      progress: 0,
+    },
+    {
+      id: 'verify-file',
+      title: 'Verify file checksum',
+      description: 'Calculating SHA-256 hash to confirm package integrity',
+      type: 'VERIFY',
+      status: 'LOCKED',
+      prerequisites: ['download'],
+      actions: [{ capability: 'verify_checksum', params: {} }],
+      estimated_duration: 2,
+      requires_user_interaction: false,
+      requires_elevation: false,
+      documentation: '',
+      progress: 0,
+    },
+    {
+      id: 'install',
+      title: `Execute installer for ${appName}`,
+      description: 'Running controlled installation process',
+      type: 'INSTALL',
+      status: 'LOCKED',
+      prerequisites: ['verify-file'],
+      actions: [{ capability: 'launch_installer', params: {} }],
+      estimated_duration: 15,
+      requires_user_interaction: true,
+      requires_elevation: true,
+      documentation: '',
+      progress: 0,
+    },
+    {
+      id: 'verify-install',
+      title: 'Verify application state',
+      description: 'Confirming application service and local files respond',
+      type: 'VERIFY',
+      status: 'LOCKED',
+      prerequisites: ['install'],
+      actions: [{ capability: 'check_file', params: {} }],
+      estimated_duration: 3,
+      requires_user_interaction: false,
+      requires_elevation: false,
+      documentation: '',
+      progress: 0,
+    },
   ];
-
-  if (installMethod === 'CONTAINER') {
-    baseTasks.push(
-      {
-        id: 'check-docker',
-        title: 'Check Docker',
-        description: 'Verifying Docker Desktop is installed and running',
-        type: 'CHECK',
-        status: 'LOCKED',
-        prerequisites: ['check-compatibility'],
-        actions: [{ capability: 'check_command', params: { command: 'docker' } }],
-        estimated_duration: 3,
-        requires_user_interaction: false,
-        requires_elevation: false,
-        documentation: '',
-        progress: 0,
-      },
-      {
-        id: 'pull-image',
-        title: `Download ${appName}`,
-        description: 'Pulling the official Docker image',
-        type: 'DOWNLOAD',
-        status: 'LOCKED',
-        prerequisites: ['check-docker'],
-        actions: [{ capability: 'run_process', params: { command: 'docker pull' } }],
-        estimated_duration: 60,
-        requires_user_interaction: false,
-        requires_elevation: false,
-        documentation: '',
-        progress: 0,
-      },
-      {
-        id: 'configure',
-        title: 'Configure environment',
-        description: 'Setting up container configuration',
-        type: 'CONFIGURATION',
-        status: 'LOCKED',
-        prerequisites: ['pull-image'],
-        actions: [{ capability: 'write_config', params: {} }],
-        estimated_duration: 5,
-        requires_user_interaction: false,
-        requires_elevation: false,
-        documentation: '',
-        progress: 0,
-      },
-      {
-        id: 'start',
-        title: `Start ${appName}`,
-        description: 'Starting the application container',
-        type: 'LAUNCH',
-        status: 'LOCKED',
-        prerequisites: ['configure'],
-        actions: [{ capability: 'run_process', params: { command: 'docker run' } }],
-        estimated_duration: 10,
-        requires_user_interaction: false,
-        requires_elevation: false,
-        documentation: '',
-        progress: 0,
-      },
-      {
-        id: 'verify',
-        title: 'Verify',
-        description: 'Checking that the application is responding',
-        type: 'VERIFY',
-        status: 'LOCKED',
-        prerequisites: ['start'],
-        actions: [{ capability: 'check_port', params: { port: 3000 } }],
-        estimated_duration: 5,
-        requires_user_interaction: false,
-        requires_elevation: false,
-        documentation: '',
-        progress: 0,
-      }
-    );
-  } else {
-    baseTasks.push(
-      {
-        id: 'find-release',
-        title: 'Find compatible release',
-        description: 'Locating the best official release for your system',
-        type: 'CHECK',
-        status: 'LOCKED',
-        prerequisites: ['check-compatibility'],
-        actions: [],
-        estimated_duration: 3,
-        requires_user_interaction: false,
-        requires_elevation: false,
-        documentation: '',
-        progress: 0,
-      },
-      {
-        id: 'download',
-        title: `Download ${appName}`,
-        description: 'Downloading official installer from release source',
-        type: 'DOWNLOAD',
-        status: 'LOCKED',
-        prerequisites: ['find-release'],
-        actions: [{ capability: 'download_file', params: {} }],
-        estimated_duration: 30,
-        requires_user_interaction: false,
-        requires_elevation: false,
-        documentation: '',
-        progress: 0,
-      },
-      {
-        id: 'verify-file',
-        title: 'Verify download',
-        description: 'Checking file integrity with checksum',
-        type: 'VERIFY',
-        status: 'LOCKED',
-        prerequisites: ['download'],
-        actions: [{ capability: 'verify_checksum', params: {} }],
-        estimated_duration: 3,
-        requires_user_interaction: false,
-        requires_elevation: false,
-        documentation: '',
-        progress: 0,
-      },
-      {
-        id: 'install',
-        title: `Install ${appName}`,
-        description: 'Running official installer',
-        type: 'INSTALL',
-        status: 'LOCKED',
-        prerequisites: ['verify-file'],
-        actions: [{ capability: 'launch_installer', params: {} }],
-        estimated_duration: 30,
-        requires_user_interaction: true,
-        requires_elevation: true,
-        documentation: '',
-        progress: 0,
-      },
-      {
-        id: 'verify-install',
-        title: 'Verify installation',
-        description: 'Confirming the application was installed successfully',
-        type: 'VERIFY',
-        status: 'LOCKED',
-        prerequisites: ['install'],
-        actions: [{ capability: 'check_file', params: {} }],
-        estimated_duration: 3,
-        requires_user_interaction: false,
-        requires_elevation: false,
-        documentation: '',
-        progress: 0,
-      }
-    );
-  }
-
-  return baseTasks;
 }
 
 export default function InstallPage() {
-  const { selectedAppSlug, navigate, currentInstallation } = useAppStore();
+  const { selectedAppSlug, navigate, applications } = useAppStore();
   const app = applications.find((a) => a.slug === selectedAppSlug);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -213,27 +131,22 @@ export default function InstallPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
 
-  // Initialize tasks
   useEffect(() => {
     if (app) {
-      const t = generateTasks(app.name, app.installation_methods[0]);
-      t[0].status = 'RUNNING';
+      const t = generateTasks(app.name, app.installation_methods[0] || 'OFFICIAL_INSTALLER');
       setTasks(t);
-      setLogs([`[${new Date().toLocaleTimeString()}] Starting installation of ${app.name}...`]);
+      setLogs([`[${new Date().toLocaleTimeString()}] Agent initialized. Starting installation for ${app.name}...`]);
     }
   }, [app]);
 
-  // Simulate task progression
   const advanceTask = useCallback(() => {
     setTasks((prev) => {
       const next = [...prev];
       const running = next.findIndex((t) => t.status === 'RUNNING');
       if (running === -1) return next;
 
-      // Complete current task
       next[running] = { ...next[running], status: 'COMPLETED' as TaskState, progress: 100 };
 
-      // Find and start next
       const nextIdx = running + 1;
       if (nextIdx < next.length) {
         next[nextIdx] = { ...next[nextIdx], status: 'RUNNING' as TaskState };
@@ -242,7 +155,6 @@ export default function InstallPage() {
         setStatus('completed');
       }
 
-      // Calculate progress
       const completed = next.filter((t) => t.status === 'COMPLETED').length;
       setOverallProgress(Math.round((completed / next.length) * 100));
 
@@ -251,17 +163,16 @@ export default function InstallPage() {
 
     setLogs((prev) => [
       ...prev,
-      `[${new Date().toLocaleTimeString()}] Task completed successfully`,
+      `[${new Date().toLocaleTimeString()}] Task step passed verification.`,
     ]);
   }, []);
 
-  // Auto-advance simulation
   useEffect(() => {
     if (status !== 'running') return;
     const runningTask = tasks.find((t) => t.status === 'RUNNING');
     if (!runningTask) return;
 
-    const delay = (runningTask.estimated_duration || 2) * 300; // Faster for demo
+    const delay = (runningTask.estimated_duration || 2) * 200;
     const timer = setTimeout(advanceTask, delay);
     return () => clearTimeout(timer);
   }, [tasks, status, advanceTask]);
@@ -269,7 +180,7 @@ export default function InstallPage() {
   if (!app) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <p className="text-zinc-500">No application selected.</p>
+        <p className="text-xs text-zinc-500">No application selected.</p>
       </div>
     );
   }
@@ -277,85 +188,77 @@ export default function InstallPage() {
   const completedCount = tasks.filter((t) => t.status === 'COMPLETED').length;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="max-w-2xl mx-auto"
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-xl mx-auto">
       {/* Back */}
       <button
         onClick={() => navigate('app-detail', { slug: app.slug })}
-        className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors mb-6"
+        className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-6"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-3.5 h-3.5" />
         <span>Back</span>
       </button>
 
       {/* Header */}
-      <div className="glass-card rounded-2xl p-6 mb-6">
-        <div className="flex items-center gap-4 mb-5">
-          <div className="w-12 h-12 rounded-xl bg-white/[0.06] flex items-center justify-center border border-white/[0.06]">
+      <div className="glass-card rounded-xl p-5 mb-5 border border-white/[0.08]">
+        <div className="flex items-center gap-3.5 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-zinc-900 flex items-center justify-center border border-white/10 flex-shrink-0">
             <img
               src={app.icon_url}
               alt={app.name}
-              className="w-8 h-8 object-contain"
+              className="w-6 h-6 object-contain rounded"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
-                (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-xl">${app.name.charAt(0)}</span>`;
               }}
             />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">
-              {status === 'completed' ? `${app.name} is ready!` : `Installing ${app.name}`}
+            <h1 className="text-sm font-semibold text-zinc-100">
+              {status === 'completed' ? `${app.name} installed` : `Installing ${app.name}`}
             </h1>
-            <p className="text-xs text-zinc-500">
+            <p className="text-[11px] text-zinc-500">
               {status === 'completed'
-                ? 'Installation completed successfully'
-                : `${completedCount} of ${tasks.length} tasks complete`}
+                ? 'System state verified'
+                : `Step ${completedCount + 1} of ${tasks.length}`}
             </p>
           </div>
         </div>
 
-        {/* Progress bar */}
+        {/* Minimal Progress bar */}
         {status !== 'completed' && (
-          <div className="relative w-full h-2 bg-white/[0.06] rounded-full overflow-hidden mb-1">
+          <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden mb-1 border border-white/[0.05]">
             <motion.div
-              className="absolute left-0 top-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full progress-bar"
+              className="h-full bg-zinc-100 rounded-full"
               animate={{ width: `${overallProgress}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
             />
           </div>
         )}
-        {status !== 'completed' && (
-          <p className="text-[11px] text-zinc-600 text-right">{overallProgress}%</p>
-        )}
       </div>
 
-      {/* Success state */}
+      {/* Success State */}
       <AnimatePresence>
         {status === 'completed' && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-card rounded-2xl p-8 mb-6 text-center glow-success"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card rounded-xl p-6 mb-5 text-center border border-white/15"
           >
-            <PartyPopper className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-white mb-2">
-              🎉 {app.name} is ready
+            <CheckCircle2 className="w-8 h-8 text-zinc-100 mx-auto mb-3" />
+            <h2 className="text-sm font-semibold text-zinc-100 mb-1">
+              Installation Complete
             </h2>
-            <p className="text-sm text-zinc-400 mb-6">
-              The application was installed successfully.
+            <p className="text-xs text-zinc-400 mb-5">
+              {app.name} is verified and running on your system.
             </p>
-            <div className="flex justify-center gap-3">
-              <button className="btn-install px-6 py-2.5 rounded-xl text-white font-medium text-sm">
-                Open {app.name}
+            <div className="flex justify-center gap-2.5">
+              <button className="btn-primary px-6 py-2 text-xs font-semibold">
+                Open Application
               </button>
               <button
                 onClick={() => navigate('my-apps')}
-                className="px-6 py-2.5 rounded-xl bg-white/[0.06] text-zinc-300 font-medium text-sm hover:bg-white/[0.1] transition-colors"
+                className="btn-secondary px-5 py-2 text-xs"
               >
-                View My Apps
+                My Apps
               </button>
             </div>
           </motion.div>
@@ -363,10 +266,10 @@ export default function InstallPage() {
       </AnimatePresence>
 
       {/* Task list */}
-      <div className="glass-card rounded-2xl p-5 mb-6">
-        <div className="space-y-1">
+      <div className="glass-card rounded-xl p-4 mb-4 border border-white/[0.08]">
+        <div className="space-y-0.5">
           {tasks.map((task, i) => (
-            <TaskRow key={task.id} task={task} index={i} isCurrent={i === currentIdx && status === 'running'} />
+            <TaskRow key={task.id} task={task} isCurrent={i === currentIdx && status === 'running'} />
           ))}
         </div>
       </div>
@@ -374,10 +277,11 @@ export default function InstallPage() {
       {/* Technical details toggle */}
       <button
         onClick={() => setShowDetails(!showDetails)}
-        className="flex items-center gap-2 text-xs text-zinc-600 hover:text-zinc-400 transition-colors mb-3"
+        className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-3"
       >
-        {showDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        <span>{showDetails ? 'Hide' : 'View'} technical details</span>
+        <Terminal className="w-3.5 h-3.5" />
+        <span>{showDetails ? 'Hide' : 'Show'} agent logs</span>
+        {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
       </button>
 
       <AnimatePresence>
@@ -386,7 +290,7 @@ export default function InstallPage() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="glass-card rounded-xl p-4 mb-6 font-mono text-[11px] text-zinc-500 overflow-hidden"
+            className="glass-card rounded-lg p-3.5 mb-5 font-mono text-[11px] text-zinc-400 bg-zinc-950/80 border border-white/10"
           >
             {logs.map((log, i) => (
               <p key={i} className="py-0.5">{log}</p>
@@ -400,7 +304,7 @@ export default function InstallPage() {
         <div className="text-center">
           <button
             onClick={() => setShowCancelDialog(true)}
-            className="text-xs text-zinc-600 hover:text-rose-400 transition-colors"
+            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
           >
             Cancel installation
           </button>
@@ -410,105 +314,68 @@ export default function InstallPage() {
       {/* Cancel dialog */}
       <AnimatePresence>
         {showCancelDialog && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
-          >
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <motion.div
-              initial={{ scale: 0.95 }}
+              initial={{ scale: 0.96 }}
               animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="glass-card rounded-2xl p-6 max-w-sm w-full mx-4"
+              className="glass-card rounded-xl p-5 max-w-sm w-full border border-white/15"
             >
-              <h3 className="text-base font-semibold text-white mb-3">Cancel installation?</h3>
-              <div className="space-y-2 mb-4">
-                {tasks.filter((t) => t.status === 'COMPLETED').map((t) => (
-                  <div key={t.id} className="flex items-center gap-2 text-xs text-zinc-400">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                    <span>{t.title}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-zinc-500 mb-5">
-                Completed changes will not automatically be removed.
+              <h3 className="text-sm font-semibold text-zinc-100 mb-2">Cancel installation?</h3>
+              <p className="text-xs text-zinc-400 mb-4">
+                Completed changes will remain in their verified state.
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     setStatus('cancelled');
                     setShowCancelDialog(false);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-rose-500/10 text-rose-400 text-sm font-medium hover:bg-rose-500/20 transition-colors"
+                  className="flex-1 py-2 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-medium hover:bg-zinc-700 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => setShowCancelDialog(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-white/[0.06] text-zinc-300 text-sm font-medium hover:bg-white/[0.1] transition-colors"
+                  className="flex-1 py-2 rounded-lg btn-primary text-xs font-semibold"
                 >
                   Continue
                 </button>
               </div>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </motion.div>
   );
 }
 
-// ─── Task Row ────────────────────────────────────────────────────────────────
-function TaskRow({ task, index, isCurrent }: { task: Task; index: number; isCurrent: boolean }) {
-  const statusIcon = {
-    LOCKED: <Circle className="w-4 h-4 text-zinc-700" />,
-    READY: <Circle className="w-4 h-4 text-zinc-500" />,
-    RUNNING: <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />,
-    WAITING_FOR_USER: <AlertCircle className="w-4 h-4 text-amber-400" />,
-    VERIFYING: <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />,
-    COMPLETED: <CheckCircle2 className="w-4 h-4 text-emerald-400" />,
-    FAILED: <AlertCircle className="w-4 h-4 text-rose-400" />,
-    SKIPPED: <Circle className="w-4 h-4 text-zinc-600" />,
-    CANCELLED: <X className="w-4 h-4 text-zinc-600" />,
-  };
-
+function TaskRow({ task, isCurrent }: { task: Task; isCurrent: boolean }) {
   return (
     <div
-      className={`flex items-center gap-3 py-3 px-3 rounded-lg transition-colors ${
+      className={`flex items-center gap-3 py-2.5 px-2.5 rounded-lg transition-colors ${
         isCurrent ? 'bg-white/[0.04]' : ''
       }`}
     >
-      {statusIcon[task.status]}
+      {task.status === 'COMPLETED' ? (
+        <Check className="w-3.5 h-3.5 text-zinc-200" />
+      ) : task.status === 'RUNNING' ? (
+        <Loader2 className="w-3.5 h-3.5 text-zinc-100 animate-spin" />
+      ) : (
+        <Circle className="w-3.5 h-3.5 text-zinc-700" />
+      )}
       <div className="flex-1 min-w-0">
         <p
-          className={`text-sm font-medium ${
+          className={`text-xs font-medium ${
             task.status === 'COMPLETED'
-              ? 'text-zinc-400'
+              ? 'text-zinc-500'
               : task.status === 'RUNNING'
-              ? 'text-white'
-              : task.status === 'LOCKED'
-              ? 'text-zinc-600'
-              : 'text-zinc-300'
+              ? 'text-zinc-100'
+              : 'text-zinc-600'
           }`}
         >
           {task.title}
         </p>
-        {isCurrent && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-[11px] text-zinc-500 mt-0.5"
-          >
-            {task.description}
-          </motion.p>
-        )}
       </div>
-      {task.requires_elevation && task.status !== 'COMPLETED' && task.status !== 'LOCKED' && (
-        <span className="text-[10px] text-amber-400/60 bg-amber-400/10 px-1.5 py-0.5 rounded">
-          Admin
-        </span>
-      )}
     </div>
   );
 }

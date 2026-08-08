@@ -1,35 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @theme {
-  /* ─── Dark Graphite Palette ─────────────────────────────────────────────── */
-  --color-surface-50: #fafafa;
-  --color-surface-100: #18181b;
-  --color-surface-200: #1c1c21;
-  --color-surface-300: #222228;
-  --color-surface-400: #2a2a32;
-  --color-surface-500: #35353f;
-  --color-surface-600: #45454f;
-  --color-surface-700: #5a5a66;
-  --color-surface-800: #8a8a96;
-  --color-surface-900: #b0b0bc;
-
-  /* ─── Accent Palette ────────────────────────────────────────────────────── */
-  --color-accent-400: #818cf8;
-  --color-accent-500: #6366f1;
-  --color-accent-600: #4f46e5;
-
-  /* ─── Status Colors ─────────────────────────────────────────────────────── */
-  --color-success: #22c55e;
-  --color-warning: #eab308;
-  --color-error: #ef4444;
-  --color-info: #3b82f6;
+  /* ─── Calm Monochrome Palette ────────────────────────────────────────────── */
+  --color-bg: #09090b;
+  --color-surface-100: #121215;
+  --color-surface-200: #18181b;
+  --color-surface-300: #27272a;
+  --color-surface-400: #3f3f46;
+  --color-surface-500: #52525b;
+  --color-surface-600: #71717a;
+  --color-surface-700: #a1a1aa;
+  --color-surface-800: #d4d4d8;
+  --color-surface-900: #fafafa;
 }
 
-/* ─── Custom scrollbar ────────────────────────────────────────────────────── */
+/* ─── Scrollbar ───────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -37,12 +26,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #35353f;
-  border-radius: 3px;
+  background: #27272a;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #45454f;
+  background: #3f3f46;
 }
 
 /* ─── Base styles ─────────────────────────────────────────────────────────── */
@@ -52,123 +41,84 @@ html {
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #0d0d0f;
+  background-color: #09090b;
   color: #e4e4e7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.011em;
 }
 
-/* ─── Glassmorphism card ──────────────────────────────────────────────────── */
+/* ─── Minimal Glass Card ─────────────────────────────────────────────────── */
 .glass-card {
-  background: rgba(28, 28, 33, 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
+  background: #121215;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
 }
 
 .glass-card:hover {
-  background: rgba(34, 34, 40, 0.7);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
-/* ─── Gradient text ───────────────────────────────────────────────────────── */
-.gradient-text {
-  background: linear-gradient(135deg, #818cf8, #c084fc, #f472b6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* ─── Clean Monochrome Primary CTA ───────────────────────────────────────── */
+.btn-primary {
+  background-color: #fafafa;
+  color: #09090b;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.15s ease;
 }
 
-/* ─── Glow effects ────────────────────────────────────────────────────────── */
-.glow-accent {
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15),
-              0 0 60px rgba(99, 102, 241, 0.05);
+.btn-primary:hover {
+  background-color: #ffffff;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
-.glow-success {
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+/* ─── Clean Secondary Button ─────────────────────────────────────────────── */
+.btn-secondary {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #e4e4e7;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.15s ease;
 }
 
-/* ─── Pulsing status dot ──────────────────────────────────────────────────── */
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+/* ─── App Card Hover ──────────────────────────────────────────────────────── */
+.app-card {
+  transition: all 0.2s ease;
+}
+
+.app-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+/* ─── Pulsing minimal dot ─────────────────────────────────────────────────── */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  50% { opacity: 0.3; }
 }
 
 .pulse-dot {
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
-/* ─── Shimmer loading ─────────────────────────────────────────────────────── */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.shimmer {
-  background: linear-gradient(90deg, #1c1c21 25%, #2a2a32 50%, #1c1c21 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-}
-
-/* ─── Progress bar animation ──────────────────────────────────────────────── */
-@keyframes progress-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(99, 102, 241, 0.4); }
-  50% { box-shadow: 0 0 16px rgba(99, 102, 241, 0.6); }
-}
-
-.progress-bar {
-  animation: progress-glow 2s ease-in-out infinite;
-}
-
-/* ─── Sidebar active link ─────────────────────────────────────────────────── */
-.nav-link-active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.05));
-  border-left: 2px solid #6366f1;
-}
-
-/* ─── Install button gradient ─────────────────────────────────────────────── */
-.btn-install {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  transition: all 0.2s ease;
-}
-
-.btn-install:hover {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
-  transform: translateY(-1px);
-}
-
-/* ─── Category card hover ─────────────────────────────────────────────────── */
-.category-card {
-  transition: all 0.2s ease;
-}
-
-.category-card:hover {
-  transform: translateY(-2px);
-}
-
-/* ─── App card ────────────────────────────────────────────────────────────── */
-.app-card {
-  transition: all 0.25s ease;
-}
-
-.app-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-}
-
-/* ─── Fade in animation ──────────────────────────────────────────────────── */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
-/* ─── Search input ────────────────────────────────────────────────────────── */
-.search-input:focus {
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+/* ─── Clean badge ─────────────────────────────────────────────────────────── */
+.badge-minimal {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a1a1aa;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 9999px;
+  padding: 2px 8px;
 }
