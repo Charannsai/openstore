@@ -20,6 +20,10 @@ import {
   TerminalIcon,
   CheckIcon,
   CopyIcon,
+  PlayIcon,
+  FolderOpenIcon,
+  Trash2Icon,
+  Loader2Icon,
 } from '@/components/ui/hugeicons';
 
 export default function AppDetailPage() {
@@ -44,8 +48,86 @@ export default function AppDetailPage() {
     );
   }
 
-  const installedRecord = installedApps.find((a) => a.application_id === app.id || a.id === app.id);
+  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+  const [startingAppId, setStartingAppId] = useState<string | null>(null);
+
+  const installedRecord = installedApps.find((a) => {
+    if (!a || !app) return false;
+    if (a.application_id && a.application_id === app.id) return true;
+    if (a.id && a.id === app.id) return true;
+    if (a.application?.slug && a.application.slug === app.slug) return true;
+    if (a.application?.name && a.application.name.toLowerCase() === app.name.toLowerCase()) return true;
+    if (app.repository_url && a.application?.repository_url && a.application.repository_url.toLowerCase() === app.repository_url.toLowerCase()) return true;
+    if (a.install_path && app.slug && a.install_path.toLowerCase().includes(app.slug.toLowerCase())) return true;
+    return false;
+  });
   const isInstalled = !!installedRecord;
+
+  const handleLaunchOrRun = async () => {
+    if (!installedRecord || !isElectron) {
+      navigate('my-apps');
+      return;
+    }
+    const mode = installedRecord.run_mode || 'folder';
+    const path = installedRecord.install_path;
+    setStartingAppId(installedRecord.id);
+
+    try {
+      if (mode === 'browser') {
+        const eco = await window.electronAPI!.inspectRepoEcosystem(path);
+        const startCmd = installedRecord.start_command || eco.start_command;
+        if (startCmd) {
+          await window.electronAPI!.startBackgroundService(startCmd, path, installedRecord.id);
+          const targetPort = eco.detected_port || 3000;
+          const webUrl = `http://localhost:${targetPort}`;
+          let retries = 0;
+          const interval = setInterval(async () => {
+            retries++;
+            const check = await window.electronAPI!.checkPort(targetPort);
+            if (check.inUse || retries >= 15) {
+              clearInterval(interval);
+              setStartingAppId(null);
+              useAppStore.getState().updateInstalledAppStatus(installedRecord.id, 'running');
+              await window.electronAPI!.launchApp({ url: webUrl });
+            }
+          }, 1000);
+        } else {
+          setStartingAppId(null);
+          await window.electronAPI!.launchApp({ path });
+        }
+      } else if (mode === 'ide') {
+        await window.electronAPI!.openInIDE(path);
+        setStartingAppId(null);
+      } else if (mode === 'terminal') {
+        await window.electronAPI!.executeTerminalCommand(`start cmd /k "cd /d ${path}"`, path);
+        setStartingAppId(null);
+      } else {
+        await window.electronAPI!.openFolder(path);
+        setStartingAppId(null);
+      }
+    } catch (err) {
+      console.error('Error launching app:', err);
+      setStartingAppId(null);
+    }
+  };
+
+  const handleOpenFolder = async () => {
+    if (isElectron && installedRecord?.install_path) {
+      await window.electronAPI!.openFolder(installedRecord.install_path);
+    }
+  };
+
+  const handleOpenInIDE = async () => {
+    if (isElectron && installedRecord?.install_path) {
+      await window.electronAPI!.openInIDE(installedRecord.install_path);
+    }
+  };
+
+  const handleUninstall = async () => {
+    if (installedRecord && confirm(`Are you sure you want to uninstall ${app.name}?`)) {
+      useAppStore.getState().removeInstalledApp(installedRecord.id);
+    }
+  };
 
   const handleOpenExternalUrl = async (url?: string) => {
     if (!url) return;
@@ -152,14 +234,53 @@ export default function AppDetailPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-            {isInstalled ? (
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+            {isInstalled && installedRecord ? (
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
-                  onClick={() => navigate('my-apps')}
-                  className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-100 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                  onClick={handleLaunchOrRun}
+                  disabled={startingAppId === installedRecord.id}
+                  className="px-5 py-2.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-100 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all disabled:opacity-50"
                 >
-                  <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
-                  <span>Open in My Apps</span>
+                  {startingAppId === installedRecord.id ? (
+                    <Loader2Icon className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <PlayIcon className="w-4 h-4" />
+                  )}
+                  <span>
+                    {startingAppId === installedRecord.id
+                      ? 'Starting...'
+                      : installedRecord.run_mode === 'browser'
+                      ? 'Run & Open Web App'
+                      : installedRecord.run_mode === 'ide'
+                      ? 'Open in IDE'
+                      : 'Run Application'}
+                  </span>
+                </button>
+
+                <button
+                  onClick={handleOpenFolder}
+                  className="px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  title="Open Installation Directory on Disk"
+                >
+                  <FolderOpenIcon className="w-4 h-4 text-zinc-500" />
+                  <span>Open Folder</span>
+                </button>
+
+                <button
+                  onClick={handleOpenInIDE}
+                  className="px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-white/10 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  title="Open in VS Code / IDE"
+                >
+                  <Code2Icon className="w-4 h-4 text-zinc-500" />
+                  <span>VS Code</span>
+                </button>
+
+                <button
+                  onClick={handleUninstall}
+                  className="p-2.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200 dark:border-rose-900/30 transition-all cursor-pointer"
+                  title="Uninstall App"
+                >
+                  <Trash2Icon className="w-4 h-4" />
                 </button>
               </div>
             ) : (

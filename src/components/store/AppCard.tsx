@@ -3,7 +3,7 @@
 
 import type { Application } from '@/lib/types';
 import { useAppStore } from '@/store/app-store';
-import { StarIcon, ShieldCheckIcon } from '@/components/ui/hugeicons';
+import { StarIcon, ShieldCheckIcon, CheckCircleIcon } from '@/components/ui/hugeicons';
 import { motion } from 'framer-motion';
 
 interface AppCardProps {
@@ -12,7 +12,18 @@ interface AppCardProps {
 }
 
 export default function AppCard({ app, index = 0 }: AppCardProps) {
-  const { navigate } = useAppStore();
+  const { navigate, installedApps } = useAppStore();
+
+  const isInstalled = installedApps.some((a) => {
+    if (!a) return false;
+    if (a.application_id && a.application_id === app.id) return true;
+    if (a.id && a.id === app.id) return true;
+    if (a.application?.slug && a.application.slug === app.slug) return true;
+    if (a.application?.name && a.application.name.toLowerCase() === app.name.toLowerCase()) return true;
+    if (app.repository_url && a.application?.repository_url && a.application.repository_url.toLowerCase() === app.repository_url.toLowerCase()) return true;
+    if (a.install_path && app.slug && a.install_path.toLowerCase().includes(app.slug.toLowerCase())) return true;
+    return false;
+  });
 
   const formatCount = (n: number) => {
     if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
@@ -80,10 +91,17 @@ export default function AppCard({ app, index = 0 }: AppCardProps) {
           )}
         </div>
 
-        {/* Difficulty pill */}
-        <span className="badge-minimal">
-          {app.difficulty.charAt(0).toUpperCase() + app.difficulty.slice(1)}
-        </span>
+        {/* Installed Badge or Difficulty pill */}
+        {isInstalled ? (
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold flex items-center gap-1">
+            <CheckCircleIcon className="w-3 h-3" />
+            Installed
+          </span>
+        ) : (
+          <span className="badge-minimal">
+            {app.difficulty.charAt(0).toUpperCase() + app.difficulty.slice(1)}
+          </span>
+        )}
       </div>
     </motion.button>
   );
