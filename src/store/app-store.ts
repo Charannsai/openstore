@@ -169,8 +169,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
   setSearchFilters: (filters) => set({ searchFilters: filters }),
 
   startInstallation: (appId) =>
-    set({
-      currentView: 'install',
+    set((state) => ({
       currentInstallation: {
         appId,
         jobId: `job-${Date.now()}`,
@@ -180,7 +179,7 @@ export const useAppStore = create<AppStoreState>((set) => ({
         status: 'running',
         logs: [],
       },
-    }),
+    })),
 
   cancelInstallation: () =>
     set((state) => ({

@@ -1,10 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { getAppBySlug } from '@/lib/mock-data';
 import { formatRelativeTime } from '@/lib/utils';
+import { runRealInstallation } from '@/lib/installer-engine';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeftIcon,
@@ -24,13 +25,25 @@ import {
   FolderOpenIcon,
   Trash2Icon,
   Loader2Icon,
+  XIcon,
 } from '@/components/ui/hugeicons';
 
 export default function AppDetailPage() {
-  const { selectedAppSlug, navigate, startInstallation, installedApps, applications } = useAppStore();
+  const {
+    selectedAppSlug,
+    navigate,
+    startInstallation,
+    cancelInstallation,
+    currentInstallation,
+    installedApps,
+    applications,
+    addInstalledApp,
+    addActivity,
+  } = useAppStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'releases'>('overview');
   const [copied, setCopied] = useState(false);
   const [startingAppId, setStartingAppId] = useState<string | null>(null);
+  const [installProgress, setInstallProgress] = useState(0);
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
 
   let app = applications.find((a) => a.slug === selectedAppSlug || a.id === selectedAppSlug) || (selectedAppSlug ? getAppBySlug(selectedAppSlug) : null);
@@ -88,6 +101,70 @@ export default function AppDetailPage() {
       </div>
     );
   }
+
+  const isInstalling = Boolean(app && currentInstallation.appId === app.id && currentInstallation.status === 'running');
+
+  useEffect(() => {
+    if (!app || !isInstalling) return;
+
+    let isMounted = true;
+
+    async function executeInstallation() {
+      if (!app) return;
+      try {
+        const record = await runRealInstallation(app, {
+          onTaskChange: () => {},
+          onOverallProgress: (pct: number) => {
+            if (isMounted) setInstallProgress(pct);
+          },
+          onLog: () => {},
+        });
+
+        if (isMounted && useAppStore.getState().currentInstallation.status === 'running') {
+          addInstalledApp(record);
+          addActivity({
+            id: `act-${Date.now()}`,
+            type: 'install',
+            application_name: app.name,
+            application_icon: app.icon_url,
+            message: `Successfully installed ${app.name} v${app.latest_version || '1.0.0'}`,
+            timestamp: new Date().toISOString(),
+          });
+          useAppStore.setState({
+            currentInstallation: {
+              ...useAppStore.getState().currentInstallation,
+              status: 'completed',
+              progress: 100,
+            },
+          });
+        }
+      } catch (err) {
+        console.error('Installation execution error:', err);
+      }
+    }
+
+    executeInstallation();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [app, isInstalling]);
+
+  const handleCancelInstallation = async () => {
+    cancelInstallation();
+    setInstallProgress(0);
+    if (!app) return;
+    if (isElectron && typeof window.electronAPI?.uninstallApp === 'function') {
+      try {
+        const userConfiguredDir = useAppStore.getState().settings.installDir;
+        const sanitizeName = app.slug.replace(/[^a-zA-Z0-9-_]/g, '_');
+        const targetDir = `${userConfiguredDir}/${sanitizeName}`;
+        await window.electronAPI.uninstallApp(app.id, targetDir);
+      } catch (err) {
+        console.error('Error cleaning up cancelled installation:', err);
+      }
+    }
+  };
 
   const installedRecord = installedApps.find((a) => {
     if (!a || !app) return false;
@@ -275,7 +352,59 @@ export default function AppDetailPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-            {isInstalled && installedRecord ? (
+            {isInstalling ? (
+              <div className="flex items-center gap-3.5 px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-xs">
+                {/* PlayStore Circular Progress Ring */}
+                <div className="relative flex items-center justify-center w-8 h-8 flex-shrink-0">
+                  <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      className="text-zinc-200 dark:text-zinc-800"
+                      strokeWidth="3.5"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="text-emerald-500 transition-all duration-300 ease-out"
+                      strokeDasharray={`${installProgress}, 100`}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                  <span className="absolute text-[9px] font-extrabold text-zinc-950 dark:text-white">
+                    {installProgress}%
+                  </span>
+                </div>
+
+                {/* Status Label & Progress Bar */}
+                <div className="min-w-[130px]">
+                  <div className="flex items-center justify-between text-xs font-bold text-zinc-950 dark:text-white tracking-tight mb-1">
+                    <span>
+                      {installProgress < 30 ? 'Downloading...' : installProgress < 80 ? 'Setting up repo...' : 'Finishing...'}
+                    </span>
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">{installProgress}%</span>
+                  </div>
+                  <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${installProgress}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Cancel X Button */}
+                <button
+                  onClick={handleCancelInstallation}
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer ml-1"
+                  title="Cancel Installation and Delete Workspace Files"
+                >
+                  <XIcon className="w-4 h-4" />
+                </button>
+              </div>
+            ) : isInstalled && installedRecord ? (
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleLaunchOrRun}
