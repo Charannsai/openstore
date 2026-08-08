@@ -755,6 +755,110 @@ function registerAgentHandlers(ipcMain) {
   });
 
   ipcMain.handle('agent:get-downloads-dir', () => getDownloadsDir());
+
+  // ── Winget Package Manager & Prerequisite Auto-Fixer ───────────────────
+  ipcMain.handle('agent:check-winget', async () => {
+    try {
+      const output = await execPromise('winget --version', { timeout: 8000 });
+      return { available: true, version: output };
+    } catch {
+      return { available: false };
+    }
+  });
+
+  ipcMain.handle('agent:search-winget', async (_event, query) => {
+    if (!query) return [];
+    try {
+      const output = await execPromise(`winget search "${query}" --accept-source-agreements`, { timeout: 15000 });
+      const lines = output.split('\n');
+      const results = [];
+      let headerFound = false;
+      for (const line of lines) {
+        if (line.includes('---')) {
+          headerFound = true;
+          continue;
+        }
+        if (headerFound && line.trim()) {
+          const parts = line.split(/\s{2,}/);
+          if (parts.length >= 2) {
+            results.push({ name: parts[0], id: parts[1], version: parts[2] || 'latest' });
+          }
+        }
+      }
+      return results.slice(0, 5);
+    } catch (err) {
+      console.error('Winget search error:', err);
+      return [];
+    }
+  });
+
+  ipcMain.handle('agent:install-winget', async (event, packageId) => {
+    if (!packageId) return { success: false, error: 'Package ID required' };
+    logAudit('install-winget', 'renderer', 'started', packageId);
+
+    return new Promise((resolve) => {
+      const sender = event.sender;
+      const cmd = `winget install --id "${packageId}" --exact --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`;
+      
+      sender.send('winget:progress', `[WINGET] Launching Windows Package Manager for ${packageId}...`);
+
+      const child = spawn(cmd, { shell: true });
+
+      child.stdout.on('data', (data) => {
+        const text = data.toString().trim();
+        if (text) {
+          sender.send('winget:progress', `[WINGET] ${text}`);
+        }
+      });
+
+      child.stderr.on('data', (data) => {
+        const text = data.toString().trim();
+        if (text) {
+          sender.send('winget:progress', `[WINGET LOG] ${text}`);
+        }
+      });
+
+      child.on('close', (code) => {
+        if (code === 0 || code === 3010) {
+          logAudit('install-winget', 'renderer', 'success', packageId);
+          sender.send('winget:progress', `[WINGET] Successfully installed ${packageId}!`);
+          resolve({ success: true, code });
+        } else {
+          logAudit('install-winget', 'renderer', 'failed', `exit code ${code}`);
+          sender.send('winget:progress', `[WINGET] Winget exited with code ${code}.`);
+          resolve({ success: false, code });
+        }
+      });
+    });
+  });
+
+  ipcMain.handle('agent:check-prerequisites', async () => {
+    const check = async (cmd, flag = '--version') => {
+      try {
+        const out = await execPromise(`${cmd} ${flag}`, { timeout: 8000 });
+        const match = out.match(/(\d+\.\d+[\.\d]*)/);
+        return { installed: true, version: match ? match[1] : 'installed' };
+      } catch {
+        return { installed: false, version: null };
+      }
+    };
+
+    const [git, node, npm, python, docker] = await Promise.all([
+      check('git'),
+      check('node'),
+      check('npm'),
+      check('python'),
+      check('docker', 'version'),
+    ]);
+
+    return {
+      git,
+      node,
+      npm,
+      python,
+      docker,
+    };
+  });
 }
 
 function execPromise(command, options = {}) {

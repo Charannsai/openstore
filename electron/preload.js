@@ -5,6 +5,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSystemInfo: () => ipcRenderer.invoke('agent:get-system-info'),
   checkCommand: (command) => ipcRenderer.invoke('agent:check-command', command),
   checkPort: (port) => ipcRenderer.invoke('agent:check-port', port),
+  checkPrerequisites: () => ipcRenderer.invoke('agent:check-prerequisites'),
+
+  // ─── Winget Package Manager Integration ────────────────────────────────
+  checkWinget: () => ipcRenderer.invoke('agent:check-winget'),
+  searchWinget: (query) => ipcRenderer.invoke('agent:search-winget', query),
+  installWingetPackage: (packageId) => ipcRenderer.invoke('agent:install-winget', packageId),
 
   // ─── Git, Terminal & Ecosystem Orchestrator ────────────────────────────
   gitClone: (repoUrl, targetDir) => ipcRenderer.invoke('agent:git-clone', repoUrl, targetDir),
@@ -44,6 +50,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('agent:service-output', handler);
     return () => ipcRenderer.removeListener('agent:service-output', handler);
+  },
+  onWingetProgress: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('winget:progress', handler);
+    return () => ipcRenderer.removeListener('winget:progress', handler);
   },
 
   // ─── Window Controls ──────────────────────────────────────────────────
