@@ -1,4 +1,5 @@
 import type { Application, InstallStrategy } from './types';
+import { searchApps as searchLocalApps } from './mock-data';
 
 export interface GitHubRepoItem {
   id: number;
@@ -27,7 +28,7 @@ export interface GitHubRepoItem {
   default_branch: string;
 }
 
-// In-memory search cache to prevent hitting GitHub rate limits
+// Global in-memory search cache (persists between SearchBar & SearchPage)
 const searchCache = new Map<string, Application[]>();
 
 export async function searchGitHubRepos(query: string): Promise<Application[]> {
@@ -36,37 +37,58 @@ export async function searchGitHubRepos(query: string): Promise<Application[]> {
   }
 
   const cleanQuery = query.trim().toLowerCase();
+
+  // 1. Instant Cache Hit: Return cached results if available
   if (searchCache.has(cleanQuery)) {
     return searchCache.get(cleanQuery)!;
+  }
+
+  // Check prefix matches in cache (e.g. if user searched "ob" and now enters "obs")
+  for (const [key, cachedApps] of searchCache.entries()) {
+    if (key === cleanQuery || cleanQuery.startsWith(key)) {
+      const filtered = cachedApps.filter(
+        (a) =>
+          a.name.toLowerCase().includes(cleanQuery) ||
+          a.description.toLowerCase().includes(cleanQuery) ||
+          a.developer.toLowerCase().includes(cleanQuery)
+      );
+      if (filtered.length > 0) {
+        return filtered;
+      }
+    }
   }
 
   try {
     const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(
       cleanQuery
-    )}+is:public&sort=stars&order=desc&per_page=16`;
+    )}+is:public&sort=stars&order=desc&per_page=20`;
 
     const res = await fetch(url, {
       headers: {
         Accept: 'application/vnd.github.v3+json',
       },
-      next: { revalidate: 3600 },
     });
 
-    if (!res.ok) {
-      console.warn(`GitHub API error: ${res.status}`);
-      return [];
+    if (res.ok) {
+      const data = await res.json();
+      const items: GitHubRepoItem[] = data.items || [];
+      const apps = items.map(mapGitHubRepoToApp);
+
+      if (apps.length > 0) {
+        searchCache.set(cleanQuery, apps);
+        return apps;
+      }
+    } else {
+      console.warn(`GitHub API returned status ${res.status}. Falling back to local catalog.`);
     }
-
-    const data = await res.json();
-    const items: GitHubRepoItem[] = data.items || [];
-    const apps = items.map(mapGitHubRepoToApp);
-
-    searchCache.set(cleanQuery, apps);
-    return apps;
   } catch (err) {
-    console.error('Failed to search GitHub repos:', err);
-    return [];
+    console.error('Network error reaching GitHub API:', err);
   }
+
+  // 2. Fallback: Search local catalog if GitHub API is rate-limited or returns 0 items
+  const localFallback = searchLocalApps(cleanQuery);
+  searchCache.set(cleanQuery, localFallback);
+  return localFallback;
 }
 
 export async function getPopularGitHubRepos(): Promise<Application[]> {
@@ -77,27 +99,32 @@ export async function getPopularGitHubRepos(): Promise<Application[]> {
 
   try {
     const url =
-      'https://api.github.com/search/repositories?q=stars:>10000+is:public&sort=stars&order=desc&per_page=16';
+      'https://api.github.com/search/repositories?q=stars:>10000+is:public&sort=stars&order=desc&per_page=20';
 
     const res = await fetch(url, {
       headers: {
         Accept: 'application/vnd.github.v3+json',
       },
-      next: { revalidate: 3600 },
     });
 
-    if (!res.ok) return [];
+    if (res.ok) {
+      const data = await res.json();
+      const items: GitHubRepoItem[] = data.items || [];
+      const apps = items.map(mapGitHubRepoToApp);
 
-    const data = await res.json();
-    const items: GitHubRepoItem[] = data.items || [];
-    const apps = items.map(mapGitHubRepoToApp);
-
-    searchCache.set(cacheKey, apps);
-    return apps;
+      if (apps.length > 0) {
+        searchCache.set(cacheKey, apps);
+        return apps;
+      }
+    }
   } catch (err) {
     console.error('Failed to fetch popular GitHub repos:', err);
-    return [];
   }
+
+  // Fallback to local catalog if offline or rate limited
+  const localFallback = searchLocalApps('');
+  searchCache.set(cacheKey, localFallback);
+  return localFallback;
 }
 
 export function mapGitHubRepoToApp(item: GitHubRepoItem): Application {
@@ -105,7 +132,6 @@ export function mapGitHubRepoToApp(item: GitHubRepoItem): Application {
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
-  // Determine difficulty based on language & topics
   let difficulty: 'easy' | 'moderate' | 'advanced' = 'easy';
   const topicsStr = (item.topics || []).join(' ').toLowerCase();
   if (topicsStr.includes('docker') || topicsStr.includes('kubernetes') || topicsStr.includes('self-hosted')) {
@@ -114,7 +140,6 @@ export function mapGitHubRepoToApp(item: GitHubRepoItem): Application {
     difficulty = 'advanced';
   }
 
-  // Determine installation strategy
   const installMethods: InstallStrategy[] = ['OFFICIAL_INSTALLER'];
   if (topicsStr.includes('docker') || topicsStr.includes('container')) {
     installMethods.unshift('CONTAINER');
