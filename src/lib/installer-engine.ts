@@ -134,12 +134,20 @@ export async function runRealInstallation(
   callbacks.onTaskChange(3, { status: 'RUNNING', progress: 0 });
 
   if (isElectron && finalInstallPath.endsWith('.zip') && typeof api?.unzipFile === 'function') {
-    const extractTarget = `${downloadsDir}/${sanitizeName}_extracted`;
-    callbacks.onLog(`[AGENT] Extracting archive via PowerShell Expand-Archive...`);
+    const zipFilePath = finalInstallPath;
+    const extractTarget = `${downloadsDir}/${sanitizeName}`;
+    callbacks.onLog(`[AGENT] Extracting archive cleanly to ${extractTarget}...`);
     try {
-      const unzipRes = await api.unzipFile(finalInstallPath, extractTarget);
+      const unzipRes = await api.unzipFile(zipFilePath, extractTarget);
       finalInstallPath = unzipRes.targetDir;
-      callbacks.onLog(`[AGENT] Extracted to ${extractTarget}`);
+      callbacks.onLog(`[AGENT] Extracted cleanly to ${extractTarget}`);
+      
+      // Clean up temporary downloaded zip file
+      try {
+        if (typeof api?.executeTerminalCommand === 'function') {
+          await api.executeTerminalCommand(`del /f /q "${zipFilePath.replace(/\//g, '\\')}"`);
+        }
+      } catch {}
     } catch (unzipErr: unknown) {
       const msg = unzipErr instanceof Error ? unzipErr.message : String(unzipErr);
       callbacks.onLog(`[AGENT] Extraction notice: ${msg}`);
