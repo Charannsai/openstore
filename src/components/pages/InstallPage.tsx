@@ -255,10 +255,6 @@ export default function InstallPage() {
       {/* Back */}
       <button
         onClick={() => navigate('app-detail', { slug: app.slug })}
-        className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-6"
-      >
-      <button
-        onClick={() => navigate('app-detail', { slug: app.slug })}
         className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors mb-6 cursor-pointer"
       >
         <ArrowLeftIcon className="w-4 h-4" />
