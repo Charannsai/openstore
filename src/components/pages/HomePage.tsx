@@ -46,12 +46,12 @@ export default function HomePage() {
 
   return (
     <div className="space-y-10">
-      {/* Hero */}
+      {/* Hero with High Z-Index for Dropdown Stacking */}
       <motion.section
         initial={{ opacity: 0, y: 15, filter: 'blur(10px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="relative pt-4 pb-2"
+        className="relative z-50 pt-4 pb-2"
       >
         <div className="relative text-center max-w-2xl mx-auto mb-8">
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white mb-2">
@@ -125,7 +125,7 @@ function Section({
   const { navigate } = useAppStore();
 
   return (
-    <section>
+    <section className="relative z-10">
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2">
           {icon}
