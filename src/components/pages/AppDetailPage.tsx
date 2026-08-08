@@ -7,16 +7,13 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeftIcon,
   StarIcon,
-  GitForkIcon,
+  DownloadIcon,
   ExternalLinkIcon,
   ShieldCheckIcon,
   CheckCircleIcon,
-  MonitorIcon,
-  CpuIcon,
-  HardDriveIcon,
   GlobeIcon,
   InfoIcon,
-  DownloadIcon,
+  HardDriveIcon,
 } from '@/components/ui/hugeicons';
 
 export default function AppDetailPage() {
@@ -30,7 +27,7 @@ export default function AppDetailPage() {
         <p className="text-sm font-semibold text-slate-500 dark:text-zinc-400">Repository metadata not found.</p>
         <button
           onClick={() => navigate('home')}
-          className="btn-secondary px-4 py-2 text-xs flex items-center gap-2"
+          className="btn-secondary px-4 py-2 text-xs flex items-center gap-2 cursor-pointer"
         >
           <ArrowLeftIcon className="w-4 h-4" />
           <span>Return Home</span>
@@ -99,10 +96,10 @@ export default function AppDetailPage() {
                     <span className="text-slate-800 dark:text-zinc-200">{formatCount(app.star_count)} stars</span>
                   </div>
                 )}
-                {app.fork_count > 0 && (
+                {app.download_count > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <GitForkIcon className="w-4 h-4 text-indigo-500" />
-                    <span>{formatCount(app.fork_count)} forks</span>
+                    <DownloadIcon className="w-4 h-4 text-indigo-500" />
+                    <span>{formatCount(app.download_count)} downloads</span>
                   </div>
                 )}
               </div>
@@ -129,13 +126,13 @@ export default function AppDetailPage() {
               </button>
             )}
 
-            {app.github_url && (
+            {app.repository_url && (
               <a
-                href={app.github_url}
+                href={app.repository_url}
                 target="_blank"
                 rel="noreferrer"
                 className="btn-secondary p-3 rounded-2xl text-xs flex items-center justify-center"
-                title="View on GitHub"
+                title="View Repository"
               >
                 <ExternalLinkIcon className="w-4.5 h-4.5" />
               </a>
@@ -154,22 +151,6 @@ export default function AppDetailPage() {
               {app.long_description || app.description}
             </p>
           </div>
-
-          {app.tags && app.tags.length > 0 && (
-            <div className="glass-card rounded-3xl p-6 border border-slate-200/80 dark:border-white/10">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3">Tags & Technologies</h2>
-              <div className="flex flex-wrap gap-2">
-                {app.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-semibold border border-slate-200 dark:border-white/10"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Sidebar Info Panel */}
@@ -193,12 +174,12 @@ export default function AppDetailPage() {
               </div>
             )}
 
-            {app.size_mb && (
+            {app.latest_version && (
               <div className="flex items-center justify-between text-xs py-2 border-b border-slate-200/50 dark:border-white/[0.06]">
                 <span className="text-slate-500 dark:text-zinc-400 font-medium flex items-center gap-2">
-                  <HardDriveIcon className="w-4 h-4 text-indigo-500" /> Download Size
+                  <HardDriveIcon className="w-4 h-4 text-indigo-500" /> Latest Version
                 </span>
-                <span className="font-bold text-slate-800 dark:text-zinc-200">{app.size_mb} MB</span>
+                <span className="font-bold text-slate-800 dark:text-zinc-200">v{app.latest_version}</span>
               </div>
             )}
 
