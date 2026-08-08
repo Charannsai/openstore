@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Questions & Discussions
+    url: https://github.com/Charannsai/openstore/discussions
+    about: Ask questions and discuss ideas in GitHub Discussions instead of opening an issue.
+  - name: 🔒 Security Vulnerability
+    url: https://github.com/Charannsai/openstore/security/advisories/new
+    about: Report security vulnerabilities privately. Do NOT open a public issue.

@@ -1,7 +1,27 @@
 {
   "name": "openstore",
   "version": "0.1.0",
-  "private": true,
+  "description": "Discover, install, and manage open-source software — clean, fast, and minimal.",
+  "author": "Charan Sai <openstore@proton.me> (https://github.com/Charannsai)",
+  "license": "MIT",
+  "homepage": "https://github.com/Charannsai/openstore#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Charannsai/openstore.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Charannsai/openstore/issues"
+  },
+  "keywords": [
+    "open-source",
+    "app-store",
+    "package-manager",
+    "electron",
+    "nextjs",
+    "desktop-app",
+    "installer",
+    "software-discovery"
+  ],
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
