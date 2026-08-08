@@ -28,20 +28,13 @@ const navItems = [
 
 export default function Sidebar() {
   const { currentView, navigate, installedApps, theme, setTheme, isSidebarCollapsed, toggleSidebar } = useAppStore();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const saved = localStorage.getItem('openstore-theme') as 'dark' | 'light' | 'system' | null;
     if (saved && saved !== theme) {
       setTheme(saved);
-    } else {
-      const isLight = document.documentElement.classList.contains('light');
-      if (isLight && theme !== 'light') {
-        setTheme('light');
-      }
     }
-  }, []);
+  }, [setTheme, theme]);
 
   const updatesCount = 1;
   const installedCount = installedApps.length;

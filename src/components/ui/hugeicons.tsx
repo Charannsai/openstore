@@ -282,6 +282,14 @@ export const InfoIcon: React.FC<IconProps> = ({ size = 20, className = '', ...pr
   </svg>
 );
 
+export const AlertCircleIcon: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
+  <svg width={size} height={size} {...defaultProps} className={className} {...props}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2.5" />
+  </svg>
+);
+
 export const Loader2Icon: React.FC<IconProps> = ({ size = 20, className = 'animate-spin', ...props }) => (
   <svg width={size} height={size} {...defaultProps} className={className} {...props}>
     <path d="M21 12a9 9 0 11-6.219-8.56" />

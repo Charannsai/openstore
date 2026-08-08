@@ -34,9 +34,9 @@ export default function HomePage() {
       setFeaturedApps(popular.slice(0, 4));
       setAiApps(aiResults.slice(0, 4));
 
-      useAppStore.setState((state) => ({
+      useAppStore.setState({
         applications: [...popular, ...aiResults],
-      }));
+      });
 
       setIsLoading(false);
     }
