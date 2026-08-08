@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppStore } from '@/store/app-store';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -23,7 +24,12 @@ export default function MyAppsPage() {
   const [uninstallTarget, setUninstallTarget] = useState<string | null>(null);
   const [startingAppId, setStartingAppId] = useState<string | null>(null);
   const [runningWebUrls, setRunningWebUrls] = useState<Record<string, string>>({});
+  const [mounted, setMounted] = useState(false);
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     async function syncRegistry() {
@@ -294,47 +300,63 @@ export default function MyAppsPage() {
         })}
       </div>
 
-      {/* Blur Opening Modal Dialog for Uninstall Confirmation */}
-      <AnimatePresence>
-        {uninstallTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, filter: 'blur(12px)' }}
-              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, scale: 0.95, filter: 'blur(12px)' }}
-              transition={{ duration: 0.2 }}
-              className="glass-panel rounded-2xl p-5 max-w-sm w-full border border-zinc-200 dark:border-white/10 shadow-2xl"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Uninstall Application</h3>
-                <button onClick={() => setUninstallTarget(null)} className="text-zinc-400 hover:text-zinc-700 dark:hover:text-white">
-                  <XIcon className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-5 font-normal">
-                Are you sure you want to uninstall this application? Installed files will be removed from your disk.
-              </p>
-
-              <div className="flex items-center justify-end gap-2.5">
-                <button
-                  onClick={() => setUninstallTarget(null)}
-                  className="btn-secondary px-3.5 py-1.5 text-xs font-semibold cursor-pointer"
+      {/* Full Viewport Modal Dialog for Uninstall Confirmation */}
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {uninstallTarget && (
+              <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="bg-white dark:bg-[#141417] rounded-2xl p-6 max-w-md w-full border border-zinc-200 dark:border-white/10 shadow-2xl space-y-4"
                 >
-                  Cancel
-                </button>
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center flex-shrink-0 border border-rose-500/20">
+                      <Trash2Icon className="w-5 h-5" />
+                    </div>
 
-                <button
-                  onClick={() => handleConfirmUninstall(uninstallTarget)}
-                  className="btn-primary px-3.5 py-1.5 font-semibold text-xs cursor-pointer"
-                >
-                  Uninstall
-                </button>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-zinc-950 dark:text-white tracking-tight">
+                        Uninstall Application?
+                      </h3>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-normal leading-relaxed">
+                        Are you sure you want to uninstall this application? Installed files will be permanently removed from your disk.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => setUninstallTarget(null)}
+                      className="text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-colors p-1 cursor-pointer"
+                    >
+                      <XIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-zinc-100 dark:border-white/5">
+                    <button
+                      onClick={() => setUninstallTarget(null)}
+                      className="px-4 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      onClick={() => handleConfirmUninstall(uninstallTarget)}
+                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-xs cursor-pointer transition-all flex items-center gap-1.5"
+                    >
+                      <Trash2Icon className="w-3.5 h-3.5" />
+                      <span>Uninstall</span>
+                    </button>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </motion.div>
   );
 }
