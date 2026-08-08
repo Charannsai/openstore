@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
-import { Play, Square, FolderOpen, Package, ExternalLink, Loader2, Globe } from 'lucide-react';
+import { Play, Square, FolderOpen, Package, ExternalLink, Loader2, Globe, Trash2 } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils';
 import type { InstalledApp } from '@/lib/types';
 
