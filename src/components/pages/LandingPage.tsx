@@ -26,11 +26,6 @@ import { motion } from 'framer-motion';
 
 export default function LandingPage({ onLaunchWebApp }: { onLaunchWebApp?: () => void }) {
   const { theme, setTheme } = useAppStore();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');

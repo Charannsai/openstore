@@ -1,11 +1,23 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
+import { useState } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion } from 'framer-motion';
-import { RefreshCwIcon, CheckCircleIcon, ArrowRightIcon } from '@/components/ui/hugeicons';
+import { RefreshCwIcon, CheckCircleIcon, ArrowRightIcon, Loader2Icon } from '@/components/ui/hugeicons';
 
 export default function UpdatesPage() {
-  const { installedApps } = useAppStore();
+  const { installedApps, startInstallation } = useAppStore();
+  const [isChecking, setIsChecking] = useState(false);
+  const [lastChecked, setLastChecked] = useState<string | null>(null);
+
+  const handleCheckUpdates = async () => {
+    setIsChecking(true);
+    // Simulate real update check latency
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setLastChecked(new Date().toLocaleTimeString());
+    setIsChecking(false);
+  };
 
   const appsWithUpdates = installedApps.filter(
     (a) => a.version !== a.application.latest_version
@@ -14,10 +26,23 @@ export default function UpdatesPage() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="flex items-center justify-between mb-5">
-        <h1 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Updates</h1>
-        <button className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 cursor-pointer">
-          <RefreshCwIcon className="w-3.5 h-3.5 text-zinc-500" />
-          <span>Check for updates</span>
+        <div>
+          <h1 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Updates</h1>
+          {lastChecked && (
+            <p className="text-[10px] text-zinc-400 mt-0.5">Last checked: {lastChecked}</p>
+          )}
+        </div>
+        <button
+          onClick={handleCheckUpdates}
+          disabled={isChecking}
+          className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white transition-colors px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 cursor-pointer disabled:opacity-60"
+        >
+          {isChecking ? (
+            <Loader2Icon className="w-3.5 h-3.5 text-zinc-500 animate-spin" />
+          ) : (
+            <RefreshCwIcon className="w-3.5 h-3.5 text-zinc-500" />
+          )}
+          <span>{isChecking ? 'Checking...' : 'Check for updates'}</span>
         </button>
       </div>
 
@@ -52,7 +77,10 @@ export default function UpdatesPage() {
                       <span className="text-[10px] text-zinc-900 dark:text-zinc-100 font-semibold">v{app.latest_version}</span>
                     </div>
                   </div>
-                  <button className="btn-primary px-4 py-1.5 text-xs font-semibold cursor-pointer">
+                  <button
+                    onClick={() => startInstallation(app.id)}
+                    className="btn-primary px-4 py-1.5 text-xs font-semibold cursor-pointer"
+                  >
                     Update
                   </button>
                 </div>

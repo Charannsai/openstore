@@ -76,8 +76,21 @@ export async function runRealInstallation(
         finalInstallPath = targetDir;
         callbacks.onLog(`[AGENT] Terminal git clone finished at ${targetDir}`);
       }
-    } catch (gitErr: any) {
-      callbacks.onLog(`[AGENT] Git clone notice: ${gitErr.message || gitErr}`);
+interface EcosystemInspectionInfo {
+  ecosystem: string;
+  install_command: string;
+  build_command: string;
+  start_command: string;
+  detected_port: number;
+  is_web_app: boolean;
+  resolved_cwd: string;
+  run_mode?: 'browser' | 'ide' | 'terminal' | 'executable' | 'folder';
+  env_commands?: string[];
+}
+
+    } catch (gitErr: unknown) {
+      const msg = gitErr instanceof Error ? gitErr.message : String(gitErr);
+      callbacks.onLog(`[AGENT] Git clone notice: ${msg}`);
     }
   }
 
@@ -122,12 +135,13 @@ export async function runRealInstallation(
       const unzipRes = await api.unzipFile(finalInstallPath, extractTarget);
       finalInstallPath = unzipRes.targetDir;
       callbacks.onLog(`[AGENT] Extracted to ${extractTarget}`);
-    } catch (unzipErr: any) {
-      callbacks.onLog(`[AGENT] Extraction notice: ${unzipErr.message || unzipErr}`);
+    } catch (unzipErr: unknown) {
+      const msg = unzipErr instanceof Error ? unzipErr.message : String(unzipErr);
+      callbacks.onLog(`[AGENT] Extraction notice: ${msg}`);
     }
   }
 
-  let ecosystemInfo: any = {
+  let ecosystemInfo: EcosystemInspectionInfo = {
     ecosystem: 'unknown',
     install_command: '',
     build_command: '',
@@ -157,8 +171,9 @@ export async function runRealInstallation(
       try {
         await api.executeTerminalCommand(envCmd, runCwd);
         callbacks.onLog(`[AGENT] Environment file configured.`);
-      } catch (err: any) {
-        callbacks.onLog(`[AGENT] Environment setup note: ${err.message || err}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        callbacks.onLog(`[AGENT] Environment setup note: ${msg}`);
       }
     }
   }
@@ -192,8 +207,9 @@ export async function runRealInstallation(
           }
         }
       }
-    } catch (cmdErr: any) {
-      callbacks.onLog(`[AGENT TERMINAL] Dependency setup notice: ${cmdErr.message || cmdErr}`);
+    } catch (cmdErr: unknown) {
+      const msg = cmdErr instanceof Error ? cmdErr.message : String(cmdErr);
+      callbacks.onLog(`[AGENT TERMINAL] Dependency setup notice: ${msg}`);
     } finally {
       termUnsub();
     }
@@ -239,8 +255,9 @@ export async function runRealInstallation(
     try {
       await api.saveInstalledApp(installedAppRecord);
       callbacks.onLog(`[AGENT] Setup complete! Saved record to %APPDATA%/OpenStore/installed_apps.json`);
-    } catch (err: any) {
-      callbacks.onLog(`[AGENT] Persistence notice: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      callbacks.onLog(`[AGENT] Persistence notice: ${msg}`);
     }
   }
 

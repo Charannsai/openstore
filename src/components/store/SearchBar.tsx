@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -17,19 +18,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function SearchBar() {
   const { setSearchQuery, navigate, searchQuery } = useAppStore();
   const [query, setQuery] = useState(searchQuery || '');
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery);
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (searchQuery && searchQuery !== query) {
-      setQuery(searchQuery);
-    }
-  }, [searchQuery]);
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery);
+    setQuery(searchQuery || '');
+  }
 
   useEffect(() => {
-    if (query.trim().length < 2) {
+    let isCancelled = false;
+    const cleanQuery = query.trim();
+
+    if (cleanQuery.length < 2) {
       setSuggestions([]);
       setIsLoading(false);
       return;
@@ -37,12 +41,17 @@ export default function SearchBar() {
 
     setIsLoading(true);
     const timer = setTimeout(async () => {
-      const results = await searchGitHubRepos(query);
-      setSuggestions(results.slice(0, 5));
-      setIsLoading(false);
+      const results = await searchGitHubRepos(cleanQuery);
+      if (!isCancelled) {
+        setSuggestions(results.slice(0, 5));
+        setIsLoading(false);
+      }
     }, 350);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
   }, [query]);
 
   const handleSubmit = async (e: React.FormEvent) => {

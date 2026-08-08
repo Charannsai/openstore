@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/hugeicons';
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useAppStore();
+  const { theme, setTheme, settings, updateSetting } = useAppStore();
 
   return (
     <motion.div
@@ -82,13 +82,14 @@ export default function SettingsPage() {
           <SettingRow
             label="Install directory"
             description="Default location for installed applications"
-            value="C:\Users\user\OpenStore"
+            value={settings.installDir}
           />
           <SettingRow
             label="Auto-check updates"
             description="Periodically check for application updates"
             toggle={true}
-            defaultChecked={true}
+            checked={settings.autoCheckUpdates}
+            onToggle={(checked) => updateSetting('autoCheckUpdates', checked)}
           />
         </SettingsSection>
 
@@ -98,13 +99,15 @@ export default function SettingsPage() {
             label="Send diagnostics"
             description="Help improve the platform by sending anonymized crash reports"
             toggle={true}
-            defaultChecked={false}
+            checked={settings.sendDiagnostics}
+            onToggle={(checked) => updateSetting('sendDiagnostics', checked)}
           />
           <SettingRow
             label="Verify checksums"
             description="Always verify file integrity before installation"
             toggle={true}
-            defaultChecked={true}
+            checked={settings.verifyChecksums}
+            onToggle={(checked) => updateSetting('verifyChecksums', checked)}
           />
         </SettingsSection>
 
@@ -114,7 +117,8 @@ export default function SettingsPage() {
             label="Update notifications"
             description="Show notifications when updates are available"
             toggle={true}
-            defaultChecked={true}
+            checked={settings.updateNotifications}
+            onToggle={(checked) => updateSetting('updateNotifications', checked)}
           />
         </SettingsSection>
 
@@ -123,15 +127,14 @@ export default function SettingsPage() {
           <SettingRow
             label="Cache size"
             description="Downloaded installers and temporary files"
-            value="2.4 GB"
-            action="Clear"
+            value="Local disk cache"
           />
         </SettingsSection>
 
         {/* About */}
         <SettingsSection title="About" icon={<InfoIcon className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />}>
           <SettingRow label="Version" value={BRAND.version} />
-          <SettingRow label="Agent status" value="Connected" />
+          <SettingRow label="Architecture" value="Local Desktop App" />
         </SettingsSection>
       </div>
     </motion.div>
@@ -163,14 +166,16 @@ function SettingRow({
   description,
   value,
   toggle,
-  defaultChecked,
+  checked,
+  onToggle,
   action,
 }: {
   label: string;
   description?: string;
   value?: string;
   toggle?: boolean;
-  defaultChecked?: boolean;
+  checked?: boolean;
+  onToggle?: (checked: boolean) => void;
   action?: string;
 }) {
   return (
@@ -181,7 +186,12 @@ function SettingRow({
       </div>
       {toggle && (
         <label className="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" className="sr-only peer" defaultChecked={defaultChecked} />
+          <input
+            type="checkbox"
+            className="sr-only peer"
+            checked={checked}
+            onChange={(e) => onToggle?.(e.target.checked)}
+          />
           <div className="w-9 h-5 bg-zinc-300 dark:bg-zinc-700 rounded-full peer peer-checked:bg-zinc-950 dark:peer-checked:bg-white transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:after:bg-zinc-950 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4 shadow-sm" />
         </label>
       )}

@@ -183,8 +183,13 @@ export async function getGitHubReleaseAssetUrl(app: Application): Promise<string
       const release = await res.json();
       const assets = release.assets || [];
 
+      interface GitHubReleaseAsset {
+        name: string;
+        browser_download_url: string;
+      }
+
       // Find Windows executable or zip asset
-      const exeAsset = assets.find((a: any) =>
+      const exeAsset = assets.find((a: GitHubReleaseAsset) =>
         a.name.endsWith('.exe') || a.name.endsWith('.msi') || a.name.includes('win64') || a.name.includes('x64')
       );
 
@@ -192,7 +197,7 @@ export async function getGitHubReleaseAssetUrl(app: Application): Promise<string
         return exeAsset.browser_download_url;
       }
 
-      const zipAsset = assets.find((a: any) => a.name.endsWith('.zip'));
+      const zipAsset = assets.find((a: GitHubReleaseAsset) => a.name.endsWith('.zip'));
       if (zipAsset && zipAsset.browser_download_url) {
         return zipAsset.browser_download_url;
       }

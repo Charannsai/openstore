@@ -3,6 +3,41 @@ import type { Application, InstalledApp, Task, SystemInfo, ActivityEvent, Search
 import { applications, mockInstalledApps, categories } from '@/lib/mock-data';
 import type { Category } from '@/lib/types';
 
+export interface AppSettings {
+  installDir: string;
+  autoCheckUpdates: boolean;
+  sendDiagnostics: boolean;
+  verifyChecksums: boolean;
+  updateNotifications: boolean;
+}
+
+const getInitialActivities = (): ActivityEvent[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('openstore-activities');
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+const getInitialSettings = (): AppSettings => {
+  const defaults: AppSettings = {
+    installDir: 'C:\\Users\\Public\\Downloads\\OpenStore',
+    autoCheckUpdates: true,
+    sendDiagnostics: false,
+    verifyChecksums: true,
+    updateNotifications: true,
+  };
+  if (typeof window === 'undefined') return defaults;
+  try {
+    const saved = localStorage.getItem('openstore-settings');
+    return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+  } catch {
+    return defaults;
+  }
+};
+
 // ─── App Store State ─────────────────────────────────────────────────────────
 interface AppStoreState {
   // Navigation
@@ -17,6 +52,10 @@ interface AppStoreState {
   categories: Category[];
   installedApps: InstalledApp[];
   activities: ActivityEvent[];
+
+  // Settings
+  settings: AppSettings;
+  updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
 
   // Installation state
   currentInstallation: {
@@ -65,32 +104,19 @@ export const useAppStore = create<AppStoreState>((set) => ({
   applications,
   categories,
   installedApps: mockInstalledApps,
-  activities: [
-    {
-      id: '1',
-      type: 'install',
-      application_name: 'VLC Media Player',
-      application_icon: '🎬',
-      message: 'Installed VLC Media Player v3.0.21',
-      timestamp: '2025-06-10T14:30:00Z',
-    },
-    {
-      id: '2',
-      type: 'install',
-      application_name: 'VS Code',
-      application_icon: '💻',
-      message: 'Installed Visual Studio Code v1.99.0',
-      timestamp: '2025-05-20T09:15:00Z',
-    },
-    {
-      id: '3',
-      type: 'update',
-      application_name: 'VS Code',
-      application_icon: '💻',
-      message: 'Updated VS Code from v1.98.0 to v1.99.0',
-      timestamp: '2025-07-01T10:00:00Z',
-    },
-  ],
+  activities: getInitialActivities(),
+  settings: getInitialSettings(),
+
+  updateSetting: (key, value) =>
+    set((state) => {
+      const newSettings = { ...state.settings, [key]: value };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('openstore-settings', JSON.stringify(newSettings));
+        } catch {}
+      }
+      return { settings: newSettings };
+    }),
 
   // ─── Installation state ──────────────────────────────────────────────────
   currentInstallation: {
@@ -177,9 +203,15 @@ export const useAppStore = create<AppStoreState>((set) => ({
   setSystemInfo: (info) => set({ systemInfo: info }),
 
   addActivity: (event) =>
-    set((state) => ({
-      activities: [event, ...state.activities],
-    })),
+    set((state) => {
+      const updated = [event, ...state.activities];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('openstore-activities', JSON.stringify(updated.slice(0, 50)));
+        } catch {}
+      }
+      return { activities: updated };
+    }),
 
   addInstalledApp: (app) =>
     set((state) => ({
