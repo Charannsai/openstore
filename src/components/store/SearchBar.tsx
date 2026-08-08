@@ -37,7 +37,6 @@ export default function SearchBar() {
       return;
     }
 
-    setIsLoading(true);
     const timer = setTimeout(async () => {
       const results = await searchGitHubRepos(cleanQuery);
       if (!isCancelled) {
@@ -102,6 +101,8 @@ export default function SearchBar() {
               if (val.trim().length < 2) {
                 setSuggestions([]);
                 setIsLoading(false);
+              } else {
+                setIsLoading(true);
               }
             }}
             onFocus={() => setIsFocused(true)}
