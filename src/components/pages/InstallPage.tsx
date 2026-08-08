@@ -164,53 +164,73 @@ export default function InstallPage() {
     };
   }, [app]);
 
-  const handleRunAndOpen = async () => {
-    if (!installedRecord || !isElectron) {
-      if (installedRecord?.local_url) window.open(installedRecord.local_url, '_blank');
-      return;
-    }
+  // ── Context-Aware Post-Install Open Handler ──────────────────────────────
+  const handleOpen = async () => {
+    if (!installedRecord || !isElectron) return;
+
+    const mode = installedRecord.run_mode || 'folder';
+    const projPath = installedRecord.install_path;
 
     setIsStartingServer(true);
-    setLogs((prev) => [...prev, `[HANDS-FREE] Inspecting repository run command for ${app?.name}...`]);
 
     try {
-      const path = installedRecord.install_path;
+      switch (mode) {
+        case 'browser': {
+          setLogs((prev) => [...prev, `[HANDS-FREE] Starting web server for ${app?.name}...`]);
+          const eco = await window.electronAPI!.inspectRepoEcosystem(projPath);
+          const startCmd = installedRecord.start_command || eco.start_command;
 
-      if (path && (path.endsWith('.exe') || path.endsWith('.msi'))) {
-        await window.electronAPI!.launchApp({ path });
-        setIsStartingServer(false);
-        return;
-      }
+          if (startCmd) {
+            await window.electronAPI!.startBackgroundService(startCmd, projPath, installedRecord.id);
+            const targetPort = eco.detected_port || 3000;
+            const webUrl = `http://localhost:${targetPort}`;
+            setLogs((prev) => [...prev, `[HANDS-FREE] Monitoring port ${targetPort}...`]);
 
-      const eco = await window.electronAPI!.inspectRepoEcosystem(path);
-
-      if (eco.start_command) {
-        setLogs((prev) => [...prev, `[HANDS-FREE] Spawning background server: "${eco.start_command}"...`]);
-        await window.electronAPI!.startBackgroundService(eco.start_command, path, installedRecord.id);
-
-        const targetPort = eco.detected_port || 3000;
-        const webUrl = `http://localhost:${targetPort}`;
-        setLogs((prev) => [...prev, `[HANDS-FREE] Monitoring port ${targetPort} until ready...`]);
-
-        let retries = 0;
-        const interval = setInterval(async () => {
-          retries++;
-          const check = await window.electronAPI!.checkPort(targetPort);
-
-          if (check.inUse || retries >= 15) {
-            clearInterval(interval);
-            setIsStartingServer(false);
-            updateInstalledAppStatus(installedRecord.id, 'running');
-            setLogs((prev) => [...prev, `[HANDS-FREE] Server ready! Opening ${webUrl} in browser...`]);
-            await window.electronAPI!.launchApp({ url: webUrl });
+            let retries = 0;
+            const interval = setInterval(async () => {
+              retries++;
+              const check = await window.electronAPI!.checkPort(targetPort);
+              if (check.inUse || retries >= 15) {
+                clearInterval(interval);
+                setIsStartingServer(false);
+                updateInstalledAppStatus(installedRecord.id, 'running');
+                setLogs((prev) => [...prev, `[HANDS-FREE] Server ready! Opening ${webUrl}...`]);
+                await window.electronAPI!.launchApp({ url: webUrl });
+              }
+            }, 1000);
           }
-        }, 1000);
-      } else {
-        await window.electronAPI!.launchApp({ path });
-        setIsStartingServer(false);
+          break;
+        }
+
+        case 'ide': {
+          setLogs((prev) => [...prev, `[HANDS-FREE] Opening project in IDE...`]);
+          const result = await window.electronAPI!.openInIDE(projPath);
+          setLogs((prev) => [...prev, `[HANDS-FREE] Opened in ${result.ide}`]);
+          setIsStartingServer(false);
+          break;
+        }
+
+        case 'terminal': {
+          setLogs((prev) => [...prev, `[HANDS-FREE] Opening terminal at project directory...`]);
+          await window.electronAPI!.executeTerminalCommand(`start cmd /k "cd /d ${projPath}"`, projPath);
+          setIsStartingServer(false);
+          break;
+        }
+
+        case 'executable': {
+          await window.electronAPI!.launchApp({ path: projPath });
+          setIsStartingServer(false);
+          break;
+        }
+
+        default: {
+          await window.electronAPI!.launchApp({ path: projPath });
+          setIsStartingServer(false);
+          break;
+        }
       }
     } catch (err: any) {
-      setLogs((prev) => [...prev, `[HANDS-FREE ERROR] Failed to start service: ${err.message}`]);
+      setLogs((prev) => [...prev, `[ERROR] ${err.message}`]);
       setIsStartingServer(false);
     }
   };
