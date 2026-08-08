@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import TopNav from '@/components/layout/TopNav';
 import HomePage from '@/components/pages/HomePage';
@@ -12,7 +12,7 @@ import UpdatesPage from '@/components/pages/UpdatesPage';
 import ActivityPage from '@/components/pages/ActivityPage';
 import SettingsPage from '@/components/pages/SettingsPage';
 import CategoryPage from '@/components/pages/CategoryPage';
-import LandingPage from '@/components/pages/LandingPage';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const pageComponents: Record<string, React.ComponentType> = {
@@ -27,17 +27,8 @@ const pageComponents: Record<string, React.ComponentType> = {
   category: CategoryPage,
 };
 
-import ErrorBoundary from '@/components/ErrorBoundary';
-
-const subscribe = () => () => {};
-const getSnapshot = () => typeof window !== 'undefined' && !!window.electronAPI;
-const getServerSnapshot = () => false;
-
-export default function App() {
+export default function DesktopDashboard() {
   const { currentView, navigate } = useAppStore();
-  const isElectron = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const [viewOverride, setViewOverride] = useState<'landing' | 'desktop' | null>(null);
-
   const PageComponent = pageComponents[currentView] || HomePage;
 
   useEffect(() => {
@@ -54,13 +45,6 @@ export default function App() {
         });
     }
   }, []);
-
-  // Decide whether to show Landing Page or Desktop App
-  // In Electron window (has electronAPI), immediately render Desktop App (0 flash)
-  // In standard Web Browser, show the Landing Page
-  const isNativeElectron = typeof window !== 'undefined' && !!window.electronAPI;
-  const isWebMode = !isNativeElectron && !isElectron;
-  const showLandingPage = viewOverride === 'landing' || (isWebMode && viewOverride !== 'desktop');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,14 +80,6 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
-
-  if (showLandingPage) {
-    return (
-      <ErrorBoundary>
-        <LandingPage onLaunchWebApp={() => setViewOverride('desktop')} />
-      </ErrorBoundary>
-    );
-  }
 
   return (
     <ErrorBoundary>

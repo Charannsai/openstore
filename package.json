@@ -1,7 +1,8 @@
 {
   "name": "openstore",
   "version": "0.1.0",
-  "description": "Discover, install, and manage open-source software — clean, fast, and minimal.",
+  "private": true,
+  "description": "OpenStore — The Open-Source Software Discovery & Hands-Free Execution Platform",
   "author": "Charan Sai <openstore@proton.me> (https://github.com/Charannsai)",
   "license": "MIT",
   "homepage": "https://github.com/Charannsai/openstore#readme",
@@ -12,72 +13,17 @@
   "bugs": {
     "url": "https://github.com/Charannsai/openstore/issues"
   },
-  "keywords": [
-    "open-source",
-    "app-store",
-    "package-manager",
-    "electron",
-    "nextjs",
-    "desktop-app",
-    "installer",
-    "software-discovery"
+  "workspaces": [
+    "apps/*"
   ],
-  "main": "electron/main.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "electron:dev": "concurrently -k \"cross-env NODE_ENV=development next dev\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .\"",
-    "electron:build": "next build && electron-builder",
-    "electron:start": "electron ."
-  },
-  "dependencies": {
-    "clsx": "^2.1.1",
-    "framer-motion": "^13.0.0",
-    "lucide-react": "^1.30.0",
-    "next": "16.3.0",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "zustand": "^5.0.14"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "concurrently": "^10.0.4",
-    "cross-env": "^10.1.0",
-    "electron": "^41.7.1",
-    "electron-builder": "^26.15.3",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.0",
-    "tailwindcss": "^4",
-    "typescript": "^5",
-    "wait-on": "^9.1.0"
-  },
-  "build": {
-    "appId": "com.openstore.app",
-    "productName": "OpenStore",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "electron/**/*",
-      "out/**/*",
-      "package.json"
-    ],
-    "win": {
-      "target": ["nsis"],
-      "icon": "public/icon.png"
-    },
-    "mac": {
-      "target": ["dmg"],
-      "icon": "public/icon.png"
-    },
-    "linux": {
-      "target": ["AppImage", "deb"],
-      "icon": "public/icon.png"
-    }
+    "dev:desktop": "npm --workspace=@openstore/desktop run electron:dev",
+    "dev:web": "npm --workspace=@openstore/web run dev",
+    "build:desktop": "npm --workspace=@openstore/desktop run electron:build",
+    "build:web": "npm --workspace=@openstore/web run build",
+    "electron:dev": "npm --workspace=@openstore/desktop run electron:dev",
+    "electron:build": "npm --workspace=@openstore/desktop run electron:build",
+    "dev": "npm --workspace=@openstore/desktop run electron:dev",
+    "build": "npm --workspace=@openstore/desktop run build"
   }
 }

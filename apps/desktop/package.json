@@ -1,0 +1,62 @@
+{
+  "name": "@openstore/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenStore — Native Desktop Application & Hands-Free Execution Engine",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "electron:dev": "concurrently -k \"cross-env NODE_ENV=development next dev\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .\"",
+    "electron:build": "next build && electron-builder",
+    "electron:start": "electron ."
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "framer-motion": "^13.0.0",
+    "lucide-react": "^1.30.0",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^10.0.4",
+    "cross-env": "^10.1.0",
+    "electron": "^41.7.1",
+    "electron-builder": "^26.15.3",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.openstore.app",
+    "productName": "OpenStore",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "out/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "public/icon.png"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "public/icon.png"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "public/icon.png"
+    }
+  }
+}
