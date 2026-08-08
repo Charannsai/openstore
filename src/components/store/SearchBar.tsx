@@ -34,8 +34,6 @@ export default function SearchBar() {
     const cleanQuery = query.trim();
 
     if (cleanQuery.length < 2) {
-      setSuggestions([]);
-      setIsLoading(false);
       return;
     }
 
