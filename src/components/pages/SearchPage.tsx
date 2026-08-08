@@ -7,7 +7,7 @@ import SearchBar from '@/components/store/SearchBar';
 import { searchGitHubRepos } from '@/lib/github-api';
 import type { Application } from '@/lib/types';
 import { motion } from 'framer-motion';
-import { SlidersHorizontal, X, Loader2, Search } from 'lucide-react';
+import { SlidersIcon, XIcon, Loader2Icon, SearchIcon } from '@/components/ui/hugeicons';
 import { CATEGORIES } from '@/lib/constants';
 
 export default function SearchPage() {
@@ -29,7 +29,6 @@ export default function SearchPage() {
         setResults(fetched);
         setIsLoading(false);
 
-        // Store in global store for navigation
         useAppStore.setState((state) => ({
           applications: [...fetched, ...state.applications],
         }));
@@ -59,18 +58,18 @@ export default function SearchPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
-        <span className="text-xs text-zinc-500 mr-1 flex items-center gap-1">
-          <SlidersHorizontal className="w-3 h-3" />
+        <span className="text-xs text-slate-500 dark:text-zinc-400 mr-1 flex items-center gap-1.5 font-semibold">
+          <SlidersIcon className="w-4 h-4 text-indigo-500" />
           Filter:
         </span>
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
-            className={`text-xs px-2.5 py-1 rounded-full transition-colors border ${
+            className={`text-xs px-3 py-1.5 rounded-full transition-all border cursor-pointer font-semibold ${
               activeCategory === cat.id
-                ? 'bg-zinc-100 text-zinc-900 border-zinc-100 font-medium'
-                : 'bg-zinc-900 text-zinc-400 border-white/[0.08] hover:text-zinc-200 hover:border-white/20'
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20'
+                : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-white/10 hover:text-slate-900 dark:hover:text-zinc-200'
             }`}
           >
             {cat.name}
@@ -80,10 +79,10 @@ export default function SearchPage() {
           <button
             key={d}
             onClick={() => setActiveDifficulty(activeDifficulty === d ? null : d)}
-            className={`text-xs px-2.5 py-1 rounded-full transition-colors border ${
+            className={`text-xs px-3 py-1.5 rounded-full transition-all border cursor-pointer font-semibold ${
               activeDifficulty === d
-                ? 'bg-zinc-100 text-zinc-900 border-zinc-100 font-medium'
-                : 'bg-zinc-900 text-zinc-400 border-white/[0.08] hover:text-zinc-200 hover:border-white/20'
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20'
+                : 'bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-white/10 hover:text-slate-900 dark:hover:text-zinc-200'
             }`}
           >
             {d.charAt(0).toUpperCase() + d.slice(1)}
@@ -95,9 +94,9 @@ export default function SearchPage() {
               setActiveCategory(null);
               setActiveDifficulty(null);
             }}
-            className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1 ml-1"
+            className="text-xs text-rose-500 font-bold hover:text-rose-600 transition-colors flex items-center gap-1 ml-1 cursor-pointer"
           >
-            <X className="w-3 h-3" />
+            <XIcon className="w-3.5 h-3.5" />
             Clear
           </button>
         )}
@@ -105,12 +104,12 @@ export default function SearchPage() {
 
       {/* Results header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+        <h2 className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
           {searchQuery ? `Results for "${searchQuery}" (${filteredResults.length})` : 'Popular Open-Source Projects'}
         </h2>
         {isLoading && (
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <div className="flex items-center gap-2 text-xs text-indigo-500 font-semibold">
+            <Loader2Icon className="w-4 h-4 animate-spin" />
             <span>Fetching repositories...</span>
           </div>
         )}
@@ -118,22 +117,22 @@ export default function SearchPage() {
 
       {/* Results grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="h-36 rounded-xl bg-zinc-900/60 border border-white/[0.05] animate-pulse" />
+            <div key={n} className="h-40 rounded-2xl bg-slate-200/50 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-white/10 animate-pulse" />
           ))}
         </div>
       ) : filteredResults.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredResults.map((app, i) => (
             <AppCard key={app.id} app={app} index={i} />
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-center glass-card rounded-xl border border-white/[0.08]">
-          <Search className="w-8 h-8 text-zinc-600 mb-3" />
-          <p className="text-xs font-medium text-zinc-300 mb-1">No repositories found for &quot;{searchQuery}&quot;</p>
-          <p className="text-[11px] text-zinc-500">Try searching for project names like &quot;obs-studio&quot;, &quot;ollama&quot;, or &quot;vscode&quot;.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center glass-card rounded-2xl border border-slate-200/80 dark:border-white/10">
+          <SearchIcon className="w-10 h-10 text-slate-400 dark:text-zinc-600 mb-3" />
+          <p className="text-sm font-bold text-slate-800 dark:text-zinc-300 mb-1">No repositories found for &quot;{searchQuery}&quot;</p>
+          <p className="text-xs text-slate-500 dark:text-zinc-500 font-medium">Try searching for project names like &quot;obs-studio&quot;, &quot;ollama&quot;, or &quot;vscode&quot;.</p>
         </div>
       )}
     </motion.div>

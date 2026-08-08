@@ -2,8 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/app-store';
-import { motion } from 'framer-motion';
-import { Play, Square, FolderOpen, Package, Loader2, Globe, Trash2, Code2, Terminal } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  PlayIcon,
+  SquareIcon,
+  FolderOpenIcon,
+  PackageIcon,
+  Loader2Icon,
+  GlobeIcon,
+  Trash2Icon,
+  Code2Icon,
+  TerminalIcon,
+  XIcon,
+} from '@/components/ui/hugeicons';
 import type { InstalledApp } from '@/lib/types';
 
 export default function MyAppsPage() {
@@ -29,18 +40,19 @@ export default function MyAppsPage() {
     syncRegistry();
   }, [isElectron]);
 
-  // ── Context-Aware Open Handler ─────────────────────────────────────────
-  const handleOpen = async (installed: InstalledApp) => {
-    if (!isElectron) return;
+  const handleLaunchOrRun = async (installed: InstalledApp) => {
+    if (!isElectron) {
+      alert('Local agent execution is available in the desktop application.');
+      return;
+    }
 
     const mode = installed.run_mode || 'folder';
     const path = installed.install_path;
 
+    setStartingAppId(installed.id);
+
     switch (mode) {
       case 'browser': {
-        // Web app: start dev server → wait for port → open browser
-        setStartingAppId(installed.id);
-
         try {
           const eco = await window.electronAPI!.inspectRepoEcosystem(path);
           const startCmd = installed.start_command || eco.start_command;
@@ -54,57 +66,47 @@ export default function MyAppsPage() {
             const interval = setInterval(async () => {
               retries++;
               const check = await window.electronAPI!.checkPort(targetPort);
-
               if (check.inUse || retries >= 15) {
                 clearInterval(interval);
+                setStartingAppId(null);
                 updateInstalledAppStatus(installed.id, 'running');
                 setRunningWebUrls((prev) => ({ ...prev, [installed.id]: webUrl }));
-                setStartingAppId(null);
                 await window.electronAPI!.launchApp({ url: webUrl });
               }
             }, 1000);
+          } else {
+            setStartingAppId(null);
+            await window.electronAPI!.launchApp({ path });
           }
-        } catch {
+        } catch (err) {
+          console.error('Error launching service:', err);
           setStartingAppId(null);
         }
         break;
       }
 
       case 'ide': {
-        // IDE project: open in VS Code / Cursor / available IDE
-        try {
-          const result = await window.electronAPI!.openInIDE(path);
-          updateInstalledAppStatus(installed.id, 'running');
-        } catch {
-          // Fallback: open folder
-          await window.electronAPI!.launchApp({ path });
-        }
+        await window.electronAPI!.openInIDE(path);
+        setStartingAppId(null);
         break;
       }
 
       case 'terminal': {
-        // CLI tool: open terminal at project directory
-        try {
-          if (typeof window.electronAPI!.executeTerminalCommand === 'function') {
-            // Open Windows Terminal / cmd at the project path
-            await window.electronAPI!.executeTerminalCommand(`start cmd /k "cd /d ${path}"`, path);
-          }
-        } catch {
-          await window.electronAPI!.launchApp({ path });
-        }
+        await window.electronAPI!.executeTerminalCommand(`start cmd /k "cd /d ${path}"`, path);
+        setStartingAppId(null);
         break;
       }
 
       case 'executable': {
-        // Desktop app / binary: launch the executable or start script
         await window.electronAPI!.launchApp({ path, command: installed.start_command });
         updateInstalledAppStatus(installed.id, 'running');
+        setStartingAppId(null);
         break;
       }
 
       default: {
-        // Folder: just open in Explorer
         await window.electronAPI!.launchApp({ path });
+        setStartingAppId(null);
         break;
       }
     }
@@ -140,33 +142,34 @@ export default function MyAppsPage() {
     setUninstallTarget(null);
   };
 
-  // ── Run Mode Label & Icon Mapping ──────────────────────────────────────
   function getRunModeInfo(mode: string) {
     switch (mode) {
       case 'browser':
-        return { label: 'Run Server & Open', icon: Globe, actionLabel: 'Open Browser' };
+        return { label: 'Run Server & Open', icon: GlobeIcon, actionLabel: 'Open Browser' };
       case 'ide':
-        return { label: 'Open in IDE', icon: Code2, actionLabel: 'Open in IDE' };
+        return { label: 'Open in IDE', icon: Code2Icon, actionLabel: 'Open in IDE' };
       case 'terminal':
-        return { label: 'Open Terminal', icon: Terminal, actionLabel: 'Open Terminal' };
+        return { label: 'Open Terminal', icon: TerminalIcon, actionLabel: 'Open Terminal' };
       case 'executable':
-        return { label: 'Launch', icon: Play, actionLabel: 'Launch' };
+        return { label: 'Launch', icon: PlayIcon, actionLabel: 'Launch' };
       default:
-        return { label: 'Open Folder', icon: FolderOpen, actionLabel: 'Open' };
+        return { label: 'Open Folder', icon: FolderOpenIcon, actionLabel: 'Open' };
     }
   }
 
   if (installedApps.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-        <Package className="w-10 h-10 text-zinc-700 mb-3" />
-        <h2 className="text-sm font-semibold text-zinc-300 mb-1">No apps installed</h2>
-        <p className="text-xs text-zinc-500 mb-5 max-w-xs">
+        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 border border-indigo-500/20">
+          <PackageIcon className="w-8 h-8 text-indigo-500" />
+        </div>
+        <h2 className="text-base font-bold text-slate-900 dark:text-zinc-100 mb-1">No apps installed</h2>
+        <p className="text-xs text-slate-500 dark:text-zinc-400 mb-6 max-w-xs font-medium">
           Search open-source software or GitHub repos to set them up hands-free.
         </p>
         <button
           onClick={() => navigate('home')}
-          className="btn-primary px-5 py-2 text-xs font-semibold"
+          className="btn-primary px-6 py-2.5 text-xs font-bold cursor-pointer"
         >
           Explore Projects
         </button>
@@ -176,11 +179,11 @@ export default function MyAppsPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <h1 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">
+      <h1 className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-5">
         Installed Applications ({installedApps.length})
       </h1>
 
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         {installedApps.map((installed, i) => {
           const app = installed.application;
           const mode = installed.run_mode || 'folder';
@@ -193,18 +196,18 @@ export default function MyAppsPage() {
           return (
             <motion.div
               key={installed.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               transition={{ delay: i * 0.04 }}
-              className="glass-card rounded-xl p-4 border border-white/[0.08]"
+              className="glass-card rounded-2xl p-4 border border-slate-200/80 dark:border-white/10"
             >
-              <div className="flex items-center gap-3.5">
+              <div className="flex items-center gap-4">
                 {/* Icon */}
-                <div className="w-10 h-10 rounded-lg bg-zinc-900 flex items-center justify-center border border-white/10 flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-zinc-900 flex items-center justify-center border border-slate-200 dark:border-white/10 flex-shrink-0">
                   <img
                     src={app.icon_url}
                     alt={app.name}
-                    className="w-6 h-6 object-contain rounded"
+                    className="w-7 h-7 object-contain rounded"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
@@ -214,75 +217,76 @@ export default function MyAppsPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xs font-semibold text-zinc-100 truncate">{app.name}</h3>
-                    <div className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-zinc-100 pulse-dot' : 'bg-zinc-700'}`} />
-                    <span className="text-[10px] text-zinc-500">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100 truncate tracking-tight">{app.name}</h3>
+                    <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-emerald-500 pulse-ring' : 'bg-slate-400 dark:bg-zinc-600'}`} />
+                    <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-semibold">
                       {isStarting ? 'Starting...' : isRunning ? 'Active' : 'Ready'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <span className="text-[10px] text-zinc-500">v{installed.version}</span>
-                    <span className="text-[10px] text-zinc-600 px-1.5 py-0.5 rounded bg-zinc-900 border border-white/5">
-                      {mode === 'browser' ? 'Web App' : mode === 'ide' ? 'IDE Project' : mode === 'terminal' ? 'CLI Tool' : mode === 'executable' ? 'Desktop App' : 'Folder'}
-                    </span>
-                    <span className="text-[10px] text-zinc-600 truncate max-w-[180px]">
-                      {installed.install_path}
-                    </span>
-                  </div>
+
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 truncate mt-0.5 font-medium">
+                    Version {installed.version} • Installed {new Date(installed.installed_at).toLocaleDateString()}
+                  </p>
                 </div>
 
-                {/* Context-Aware Actions */}
-                <div className="flex items-center gap-1.5">
-                  {isStarting ? (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 rounded-lg text-xs text-zinc-400 border border-white/10">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-200" />
-                      <span>Starting...</span>
-                    </div>
-                  ) : isRunning && mode === 'browser' ? (
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  {mode === 'browser' && isRunning ? (
                     <>
                       {webUrl && (
-                        <button
-                          onClick={() => window.electronAPI?.launchApp({ url: webUrl })}
-                          className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1"
+                        <a
+                          href={webUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn-primary px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5"
                         >
-                          <Globe className="w-3.5 h-3.5" />
-                          <span>Open Browser</span>
-                        </button>
+                          <GlobeIcon className="w-4 h-4" />
+                          <span>Open</span>
+                        </a>
                       )}
+
                       <button
                         onClick={() => handleStopService(installed)}
-                        className="btn-secondary px-3 py-1.5 text-xs font-medium flex items-center gap-1"
-                        title="Stop background server process"
+                        className="btn-secondary px-3.5 py-2 text-xs font-semibold text-rose-500 hover:text-rose-600 dark:text-rose-400 flex items-center gap-1.5 cursor-pointer"
                       >
-                        <Square className="w-3.5 h-3.5" />
+                        <SquareIcon className="w-4 h-4" />
                         <span>Stop</span>
                       </button>
                     </>
                   ) : (
                     <button
-                      onClick={() => handleOpen(installed)}
-                      className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1"
-                      title={modeInfo.label}
+                      onClick={() => handleLaunchOrRun(installed)}
+                      disabled={isStarting}
+                      className="btn-primary px-4 py-2 text-xs font-semibold flex items-center gap-2 cursor-pointer"
                     >
-                      <ModeIcon className="w-3.5 h-3.5" />
-                      <span>{modeInfo.label}</span>
+                      {isStarting ? (
+                        <>
+                          <Loader2Icon className="w-4 h-4 animate-spin" />
+                          <span>Starting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <ModeIcon className="w-4 h-4" />
+                          <span>{modeInfo.label}</span>
+                        </>
+                      )}
                     </button>
                   )}
 
                   <button
                     onClick={() => handleOpenFolder(installed)}
-                    className="p-1.5 rounded-lg hover:bg-white/[0.06] text-zinc-500 hover:text-zinc-300 transition-colors"
-                    title="Open project directory"
+                    className="btn-secondary p-2 rounded-xl text-xs flex items-center justify-center cursor-pointer"
+                    title="Open project folder"
                   >
-                    <FolderOpen className="w-3.5 h-3.5" />
+                    <FolderOpenIcon className="w-4 h-4" />
                   </button>
 
                   <button
                     onClick={() => setUninstallTarget(installed.id)}
-                    className="p-1.5 rounded-lg hover:bg-white/[0.06] text-zinc-500 hover:text-zinc-300 transition-colors"
-                    title="Uninstall"
+                    className="p-2 rounded-xl text-slate-400 dark:text-zinc-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                    title="Uninstall App"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2Icon className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -291,37 +295,47 @@ export default function MyAppsPage() {
         })}
       </div>
 
-      {/* Uninstall Dialog */}
-      {uninstallTarget && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ scale: 0.96 }}
-            animate={{ scale: 1 }}
-            className="glass-card rounded-xl p-5 max-w-sm w-full border border-white/15"
-          >
-            <h3 className="text-sm font-semibold text-zinc-100 mb-2">
-              Uninstall {installedApps.find((a) => a.id === uninstallTarget)?.application.name}?
-            </h3>
-            <p className="text-xs text-zinc-400 mb-4">
-              This will stop any background processes and remove project files from your drive.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleConfirmUninstall(uninstallTarget)}
-                className="flex-1 py-2 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-medium hover:bg-zinc-700 transition-colors"
-              >
-                Uninstall
-              </button>
-              <button
-                onClick={() => setUninstallTarget(null)}
-                className="flex-1 py-2 rounded-lg btn-primary text-xs font-semibold"
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      {/* Blur Opening Modal Dialog for Uninstall Confirmation */}
+      <AnimatePresence>
+        {uninstallTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-black/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, filter: 'blur(16px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 0.9, filter: 'blur(16px)' }}
+              transition={{ duration: 0.22 }}
+              className="glass-panel rounded-3xl p-6 max-w-sm w-full border border-slate-200/80 dark:border-white/15 shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Uninstall Application</h3>
+                <button onClick={() => setUninstallTarget(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                  <XIcon className="w-4 h-4" />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-zinc-400 mb-6 font-medium">
+                Are you sure you want to uninstall this application? Installed files will be removed from your disk.
+              </p>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setUninstallTarget(null)}
+                  className="btn-secondary px-4 py-2 text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={() => handleConfirmUninstall(uninstallTarget)}
+                  className="px-4 py-2 rounded-xl bg-rose-500 text-white font-semibold text-xs hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20 cursor-pointer"
+                >
+                  Uninstall
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

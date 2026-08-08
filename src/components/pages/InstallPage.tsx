@@ -4,18 +4,17 @@ import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft,
-  Check,
-  Circle,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-  CheckCircle2,
-  Terminal,
-  Globe,
-  FolderOpen,
-  Code2,
-} from 'lucide-react';
+  ArrowLeftIcon,
+  CheckCircleIcon,
+  Loader2Icon,
+  ChevronRightIcon,
+  CheckCircle2Icon,
+  TerminalIcon,
+  GlobeIcon,
+  FolderOpenIcon,
+  Code2Icon,
+  XIcon,
+} from '@/components/ui/hugeicons';
 import type { Task, InstalledApp } from '@/lib/types';
 import { runRealInstallation } from '@/lib/installer-engine';
 
@@ -258,14 +257,18 @@ export default function InstallPage() {
         onClick={() => navigate('app-detail', { slug: app.slug })}
         className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-6"
       >
-        <ArrowLeft className="w-3.5 h-3.5" />
+      <button
+        onClick={() => navigate('app-detail', { slug: app.slug })}
+        className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors mb-6 cursor-pointer"
+      >
+        <ArrowLeftIcon className="w-4 h-4" />
         <span>Back</span>
       </button>
 
       {/* Header */}
-      <div className="glass-card rounded-xl p-5 mb-5 border border-white/[0.08]">
+      <div className="glass-card rounded-2xl p-5 mb-5 border border-slate-200/80 dark:border-white/10">
         <div className="flex items-center gap-3.5 mb-4">
-          <div className="w-10 h-10 rounded-lg bg-zinc-900 flex items-center justify-center border border-white/10 flex-shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-900 flex items-center justify-center border border-slate-200 dark:border-white/10 flex-shrink-0">
             <img
               src={app.icon_url}
               alt={app.name}
@@ -276,10 +279,10 @@ export default function InstallPage() {
             />
           </div>
           <div>
-            <h1 className="text-sm font-semibold text-zinc-100">
+            <h1 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
               {status === 'completed' ? `${app.name} Ready` : `Installing ${app.name}`}
             </h1>
-            <p className="text-[11px] text-zinc-500">
+            <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
               {status === 'completed'
                 ? 'Dependencies installed & workspace configured'
                 : status === 'failed'
@@ -291,9 +294,9 @@ export default function InstallPage() {
 
         {/* Real Progress bar */}
         {status !== 'completed' && (
-          <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden mb-1 border border-white/[0.05]">
+          <div className="w-full h-2 bg-slate-200 dark:bg-zinc-900 rounded-full overflow-hidden mb-1 border border-slate-300/40 dark:border-white/[0.05]">
             <motion.div
-              className="h-full bg-zinc-100 rounded-full"
+              className="h-full bg-indigo-600 dark:bg-indigo-400 rounded-full"
               animate={{ width: `${overallProgress}%` }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
             />
@@ -305,46 +308,46 @@ export default function InstallPage() {
       <AnimatePresence>
         {status === 'completed' && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-card rounded-xl p-6 mb-5 text-center border border-white/15"
+            initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            className="glass-card rounded-2xl p-6 mb-5 text-center border border-indigo-500/30"
           >
-            <CheckCircle2 className="w-8 h-8 text-zinc-100 mx-auto mb-3" />
-            <h2 className="text-sm font-semibold text-zinc-100 mb-1">
+            <CheckCircle2Icon className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
+            <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100 mb-1">
               Setup Complete
             </h2>
-            <p className="text-xs text-zinc-400 mb-5 max-w-sm mx-auto">
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mb-5 max-w-sm mx-auto font-medium">
               {isBinary ? 'Binary installer verified.' : 'Repository cloned directly via git clone and dependencies installed.'}
             </p>
             <div className="flex justify-center gap-2.5">
               <button
                 onClick={handleOpen}
                 disabled={isStartingServer}
-                className="btn-primary px-6 py-2.5 text-xs font-semibold flex items-center gap-2"
+                className="btn-primary px-6 py-2.5 text-xs font-semibold flex items-center gap-2 cursor-pointer"
               >
                 {isStartingServer ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
                     <span>Starting...</span>
                   </>
                 ) : installedRecord?.run_mode === 'browser' ? (
                   <>
-                    <Globe className="w-3.5 h-3.5" />
+                    <GlobeIcon className="w-3.5 h-3.5" />
                     <span>Run Server & Open</span>
                   </>
                 ) : installedRecord?.run_mode === 'ide' ? (
                   <>
-                    <Code2 className="w-3.5 h-3.5" />
+                    <Code2Icon className="w-3.5 h-3.5" />
                     <span>Open in IDE</span>
                   </>
                 ) : installedRecord?.run_mode === 'terminal' ? (
                   <>
-                    <Terminal className="w-3.5 h-3.5" />
+                    <TerminalIcon className="w-3.5 h-3.5" />
                     <span>Open Terminal</span>
                   </>
                 ) : (
                   <>
-                    <FolderOpen className="w-3.5 h-3.5" />
+                    <FolderOpenIcon className="w-3.5 h-3.5" />
                     <span>Open</span>
                   </>
                 )}
@@ -352,16 +355,16 @@ export default function InstallPage() {
 
               <button
                 onClick={handleOpenFolder}
-                className="btn-secondary px-4 py-2.5 text-xs font-medium flex items-center gap-1.5"
+                className="btn-secondary px-4 py-2.5 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
                 title="Open project folder in Windows Explorer"
               >
-                <FolderOpen className="w-3.5 h-3.5" />
+                <FolderOpenIcon className="w-3.5 h-3.5" />
                 <span>Open Folder</span>
               </button>
 
               <button
                 onClick={() => navigate('my-apps')}
-                className="btn-secondary px-4 py-2.5 text-xs font-medium"
+                className="btn-secondary px-4 py-2.5 text-xs font-medium cursor-pointer"
               >
                 My Apps
               </button>
@@ -371,8 +374,8 @@ export default function InstallPage() {
       </AnimatePresence>
 
       {/* Task list */}
-      <div className="glass-card rounded-xl p-4 mb-4 border border-white/[0.08]">
-        <div className="space-y-0.5">
+      <div className="glass-card rounded-2xl p-4 mb-4 border border-slate-200/80 dark:border-white/10">
+        <div className="space-y-1">
           {tasks.map((task, i) => (
             <TaskRow key={task.id} task={task} isCurrent={i === currentIdx && status === 'running'} />
           ))}
@@ -382,20 +385,20 @@ export default function InstallPage() {
       {/* Terminal Log */}
       <button
         onClick={() => setShowDetails(!showDetails)}
-        className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-3"
+        className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-zinc-200 transition-colors mb-3 cursor-pointer font-semibold"
       >
-        <Terminal className="w-3.5 h-3.5" />
+        <TerminalIcon className="w-4 h-4" />
         <span>{showDetails ? 'Hide' : 'Show'} real terminal output</span>
-        {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        <ChevronRightIcon className={`w-3.5 h-3.5 transition-transform ${showDetails ? 'rotate-90' : ''}`} />
       </button>
 
       <AnimatePresence>
         {showDetails && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="glass-card rounded-lg p-3.5 mb-5 font-mono text-[11px] text-zinc-400 bg-zinc-950/90 border border-white/10 overflow-x-auto max-h-56"
+            initial={{ opacity: 0, height: 0, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, height: 'auto', filter: 'blur(0px)' }}
+            exit={{ opacity: 0, height: 0, filter: 'blur(10px)' }}
+            className="glass-card rounded-xl p-3.5 mb-5 font-mono text-[11px] text-slate-800 dark:text-zinc-300 bg-slate-900 dark:bg-zinc-950/90 text-zinc-100 border border-slate-700 dark:border-white/10 overflow-x-auto max-h-56"
           >
             {logs.map((log, i) => (
               <p key={i} className="py-0.5 whitespace-pre-wrap">{log}</p>
@@ -410,32 +413,32 @@ export default function InstallPage() {
 function TaskRow({ task, isCurrent }: { task: Task; isCurrent: boolean }) {
   return (
     <div
-      className={`flex items-center gap-3 py-2.5 px-2.5 rounded-lg transition-colors ${
-        isCurrent ? 'bg-white/[0.04]' : ''
+      className={`flex items-center gap-3 py-2.5 px-3 rounded-xl transition-colors ${
+        isCurrent ? 'bg-indigo-500/10 border border-indigo-500/20' : ''
       }`}
     >
       {task.status === 'COMPLETED' ? (
-        <Check className="w-3.5 h-3.5 text-zinc-200" />
+        <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
       ) : task.status === 'RUNNING' ? (
-        <Loader2 className="w-3.5 h-3.5 text-zinc-100 animate-spin" />
+        <Loader2Icon className="w-4 h-4 text-indigo-500 animate-spin" />
       ) : (
-        <Circle className="w-3.5 h-3.5 text-zinc-700" />
+        <div className="w-4 h-4 rounded-full border border-slate-300 dark:border-zinc-700" />
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
           <p
-            className={`text-xs font-medium ${
+            className={`text-xs font-semibold ${
               task.status === 'COMPLETED'
-                ? 'text-zinc-500'
+                ? 'text-slate-500 dark:text-zinc-400'
                 : task.status === 'RUNNING'
-                ? 'text-zinc-100'
-                : 'text-zinc-600'
+                ? 'text-slate-900 dark:text-zinc-100'
+                : 'text-slate-400 dark:text-zinc-500'
             }`}
           >
             {task.title}
           </p>
           {task.status === 'RUNNING' && task.progress > 0 && (
-            <span className="text-[10px] text-zinc-400 font-mono">{task.progress}%</span>
+            <span className="text-[10px] text-indigo-500 font-mono font-bold">{task.progress}%</span>
           )}
         </div>
       </div>
