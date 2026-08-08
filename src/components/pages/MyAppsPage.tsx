@@ -160,16 +160,14 @@ export default function MyAppsPage() {
   if (installedApps.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 border border-indigo-500/20">
-          <PackageIcon className="w-8 h-8 text-indigo-500" />
-        </div>
-        <h2 className="text-base font-bold text-slate-900 dark:text-zinc-100 mb-1">No apps installed</h2>
-        <p className="text-xs text-slate-500 dark:text-zinc-400 mb-6 max-w-xs font-medium">
+        <PackageIcon className="w-10 h-10 text-zinc-400 dark:text-zinc-600 mb-3" />
+        <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-1">No apps installed</h2>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-5 max-w-xs font-normal">
           Search open-source software or GitHub repos to set them up hands-free.
         </p>
         <button
           onClick={() => navigate('home')}
-          className="btn-primary px-6 py-2.5 text-xs font-bold cursor-pointer"
+          className="btn-primary px-5 py-2 text-xs font-semibold cursor-pointer"
         >
           Explore Projects
         </button>
@@ -179,11 +177,11 @@ export default function MyAppsPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <h1 className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-5">
+      <h1 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-4">
         Installed Applications ({installedApps.length})
       </h1>
 
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {installedApps.map((installed, i) => {
           const app = installed.application;
           const mode = installed.run_mode || 'folder';
@@ -196,18 +194,18 @@ export default function MyAppsPage() {
           return (
             <motion.div
               key={installed.id}
-              initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
+              initial={{ opacity: 0, y: 8, filter: 'blur(6px)' }}
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               transition={{ delay: i * 0.04 }}
-              className="glass-card rounded-2xl p-4 border border-slate-200/80 dark:border-white/10"
+              className="glass-card rounded-xl p-4 border border-zinc-200 dark:border-white/10"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3.5">
                 {/* Icon */}
-                <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-zinc-900 flex items-center justify-center border border-slate-200 dark:border-white/10 flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center border border-zinc-200 dark:border-white/10 flex-shrink-0">
                   <img
                     src={app.icon_url}
                     alt={app.name}
-                    className="w-7 h-7 object-contain rounded"
+                    className="w-6 h-6 object-contain rounded"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
@@ -217,15 +215,15 @@ export default function MyAppsPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100 truncate tracking-tight">{app.name}</h3>
-                    <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-emerald-500 pulse-ring' : 'bg-slate-400 dark:bg-zinc-600'}`} />
-                    <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-semibold">
+                    <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate tracking-tight">{app.name}</h3>
+                    <div className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-zinc-900 dark:bg-zinc-100 pulse-dot' : 'bg-zinc-400 dark:bg-zinc-600'}`} />
+                    <span className="text-[10px] text-zinc-500 font-medium">
                       {isStarting ? 'Starting...' : isRunning ? 'Active' : 'Ready'}
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 truncate mt-0.5 font-medium">
-                    Version {installed.version} • Installed {new Date(installed.installed_at).toLocaleDateString()}
+                  <p className="text-[11px] text-zinc-500 truncate mt-0.5 font-normal">
+                    v{installed.version} • Installed {new Date(installed.installed_at).toLocaleDateString()}
                   </p>
                 </div>
 
@@ -238,18 +236,18 @@ export default function MyAppsPage() {
                           href={webUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="btn-primary px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5"
+                          className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5"
                         >
-                          <GlobeIcon className="w-4 h-4" />
+                          <GlobeIcon className="w-3.5 h-3.5" />
                           <span>Open</span>
                         </a>
                       )}
 
                       <button
                         onClick={() => handleStopService(installed)}
-                        className="btn-secondary px-3.5 py-2 text-xs font-semibold text-rose-500 hover:text-rose-600 dark:text-rose-400 flex items-center gap-1.5 cursor-pointer"
+                        className="btn-secondary px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
                       >
-                        <SquareIcon className="w-4 h-4" />
+                        <SquareIcon className="w-3.5 h-3.5" />
                         <span>Stop</span>
                       </button>
                     </>
@@ -257,16 +255,16 @@ export default function MyAppsPage() {
                     <button
                       onClick={() => handleLaunchOrRun(installed)}
                       disabled={isStarting}
-                      className="btn-primary px-4 py-2 text-xs font-semibold flex items-center gap-2 cursor-pointer"
+                      className="btn-primary px-4 py-1.5 text-xs font-semibold flex items-center gap-2 cursor-pointer"
                     >
                       {isStarting ? (
                         <>
-                          <Loader2Icon className="w-4 h-4 animate-spin" />
+                          <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
                           <span>Starting...</span>
                         </>
                       ) : (
                         <>
-                          <ModeIcon className="w-4 h-4" />
+                          <ModeIcon className="w-3.5 h-3.5" />
                           <span>{modeInfo.label}</span>
                         </>
                       )}
@@ -275,18 +273,18 @@ export default function MyAppsPage() {
 
                   <button
                     onClick={() => handleOpenFolder(installed)}
-                    className="btn-secondary p-2 rounded-xl text-xs flex items-center justify-center cursor-pointer"
+                    className="btn-secondary p-1.5 rounded-lg text-xs flex items-center justify-center cursor-pointer"
                     title="Open project folder"
                   >
-                    <FolderOpenIcon className="w-4 h-4" />
+                    <FolderOpenIcon className="w-3.5 h-3.5" />
                   </button>
 
                   <button
                     onClick={() => setUninstallTarget(installed.id)}
-                    className="p-2 rounded-xl text-slate-400 dark:text-zinc-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
                     title="Uninstall App"
                   >
-                    <Trash2Icon className="w-4 h-4" />
+                    <Trash2Icon className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -298,36 +296,36 @@ export default function MyAppsPage() {
       {/* Blur Opening Modal Dialog for Uninstall Confirmation */}
       <AnimatePresence>
         {uninstallTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-black/60 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, filter: 'blur(16px)' }}
+              initial={{ opacity: 0, scale: 0.95, filter: 'blur(12px)' }}
               animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, scale: 0.9, filter: 'blur(16px)' }}
-              transition={{ duration: 0.22 }}
-              className="glass-panel rounded-3xl p-6 max-w-sm w-full border border-slate-200/80 dark:border-white/15 shadow-2xl"
+              exit={{ opacity: 0, scale: 0.95, filter: 'blur(12px)' }}
+              transition={{ duration: 0.2 }}
+              className="glass-panel rounded-2xl p-5 max-w-sm w-full border border-zinc-200 dark:border-white/10 shadow-2xl"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Uninstall Application</h3>
-                <button onClick={() => setUninstallTarget(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Uninstall Application</h3>
+                <button onClick={() => setUninstallTarget(null)} className="text-zinc-400 hover:text-zinc-700 dark:hover:text-white">
                   <XIcon className="w-4 h-4" />
                 </button>
               </div>
 
-              <p className="text-xs text-slate-600 dark:text-zinc-400 mb-6 font-medium">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-5 font-normal">
                 Are you sure you want to uninstall this application? Installed files will be removed from your disk.
               </p>
 
-              <div className="flex items-center justify-end gap-3">
+              <div className="flex items-center justify-end gap-2.5">
                 <button
                   onClick={() => setUninstallTarget(null)}
-                  className="btn-secondary px-4 py-2 text-xs font-semibold cursor-pointer"
+                  className="btn-secondary px-3.5 py-1.5 text-xs font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
 
                 <button
                   onClick={() => handleConfirmUninstall(uninstallTarget)}
-                  className="px-4 py-2 rounded-xl bg-rose-500 text-white font-semibold text-xs hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20 cursor-pointer"
+                  className="btn-primary px-3.5 py-1.5 font-semibold text-xs cursor-pointer"
                 >
                   Uninstall
                 </button>
