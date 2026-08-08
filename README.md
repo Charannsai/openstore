@@ -125,20 +125,19 @@ cp .env.example .env.local
 # Edit .env.local with your Groq API key (optional, for AI features)
 
 # 4. Run the development server
-npm run dev          # Web only
-npm run electron:dev # Desktop app (Electron + Next.js)
-```
+# 4. Run Desktop Application (Terminal 1)
+npm run dev:desktop
+# or
+npm run electron:dev
 
-Open [http://localhost:3000](http://localhost:3000) for the web version, or the Electron window will open automatically for the desktop app.
+# 5. Run Web Marketing Landing Page (Terminal 2)
+npm run dev:web
 
-### Build for Production
+# Build Desktop app (Windows/macOS/Linux)
+npm run build:desktop
 
-```bash
-# Build Next.js
-npm run build
-
-# Build Electron app (Windows/macOS/Linux)
-npm run electron:build
+# Build Web Landing Page (Cloud / Vercel)
+npm run build:web
 ```
 
 ---
@@ -146,39 +145,30 @@ npm run electron:build
 ## Architecture
 
 ```
-openstore/
-├── electron/              # Electron main process
-│   ├── main.js            # App entry, window management
-│   ├── preload.js         # Secure IPC bridge
-│   ├── ipc-handlers.js    # System operations (git, terminal, etc.)
-│   └── groq-agent.js      # AI-powered repo analysis
-├── src/
-│   ├── app/               # Next.js App Router
-│   ├── components/        # React UI components
-│   │   ├── layout/        # Sidebar, navigation
-│   │   ├── pages/         # Full page views
-│   │   ├── store/         # Store-specific components
-│   │   └── ui/            # Reusable UI primitives
-│   ├── lib/               # Core logic
-│   │   ├── installer-engine.ts   # Installation orchestrator
-│   │   ├── github-api.ts         # GitHub integration
-│   │   ├── types.ts              # TypeScript definitions
-│   │   └── constants.ts          # App configuration
-│   └── store/             # Zustand state management
-└── package.json
+openstore/ (Monorepo Root)
+├── apps/
+│   ├── desktop/           # Native Electron Desktop App & Full UI Dashboard
+│   │   ├── electron/      # Main process, preload bridge, IPC handlers, Groq AI
+│   │   ├── src/           # Desktop Dashboard views (Discover, MyApps, Details, Settings)
+│   │   └── package.json   # @openstore/desktop
+│   │
+│   └── web/               # Standalone Public Marketing Landing Page (Next.js)
+│       ├── src/           # SEO landing page, hero showcase, download buttons
+│       └── package.json   # @openstore/web
+└── package.json           # Workspace root orchestrator
 ```
 
 ### Tech Stack
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Frontend** | Next.js 16 + React 19 | Web UI with App Router |
-| **Desktop** | Electron 41 | Native desktop packaging |
-| **Styling** | Tailwind CSS 4 | Utility-first styling |
+| **Desktop App** | Electron 41 + React 19 | Native desktop GUI & workspace manager |
+| **Web Landing** | Next.js 16 | Public product landing page |
+| **Styling** | Tailwind CSS 4 | Modern utility-first styling |
 | **Animations** | Framer Motion | Smooth transitions |
 | **State** | Zustand | Lightweight state management |
-| **Data** | GitHub API + Local catalog | Live repo search + built-in seed catalog |
-| **AI** | Groq (LLaMA) | Repo analysis & auto-healing |
+| **Engine** | Node.js child_process | Git cloning, streaming logs, background daemons |
+| **AI** | Groq (llama-3.3-70b) | Build analysis & auto-healing |
 
 ---
 
