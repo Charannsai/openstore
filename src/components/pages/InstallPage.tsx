@@ -14,6 +14,7 @@ import {
   Terminal,
   Globe,
   FolderOpen,
+  Code2,
 } from 'lucide-react';
 import type { Task, InstalledApp } from '@/lib/types';
 import { runRealInstallation } from '@/lib/installer-engine';
