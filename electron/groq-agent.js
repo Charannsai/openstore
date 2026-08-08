@@ -11,14 +11,27 @@ const https = require('https');
 
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
+function getGroqApiKey() {
+  if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY.trim();
+  try {
+    const base = process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + '/.local/share');
+    const settingsFile = path.join(base, 'OpenStore', 'settings.json');
+    if (fs.existsSync(settingsFile)) {
+      const data = JSON.parse(fs.readFileSync(settingsFile, 'utf-8'));
+      if (data.groqApiKey) return data.groqApiKey.trim();
+    }
+  } catch {}
+  return '';
+}
+
 /**
  * Perform HTTPS POST request to Groq API
  */
 function callGroqAPI(messages, temperature = 0.1) {
   return new Promise((resolve, reject) => {
-    const apiKey = process.env.GROQ_API_KEY || '';
+    const apiKey = getGroqApiKey();
     if (!apiKey) {
-      return reject(new Error('Groq API Key is not configured. Please set GROQ_API_KEY environment variable.'));
+      return reject(new Error('Groq API Key is not configured. (Optional) Set GROQ_API_KEY in Settings or .env to enable AI Auto-Healing.'));
     }
 
     const payload = JSON.stringify({

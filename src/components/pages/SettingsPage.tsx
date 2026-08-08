@@ -279,14 +279,36 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-white dark:bg-[#121215] border border-zinc-200 dark:border-white/10 p-6 shadow-xs space-y-2">
-                <h2 className="text-xs font-bold text-zinc-950 dark:text-white uppercase tracking-wider mb-2">Disk Cache</h2>
-                <div className="flex items-center justify-between text-xs py-2">
+              {/* Groq AI Auto-Healing Key Card */}
+              <div className="rounded-2xl bg-white dark:bg-[#121215] border border-zinc-200 dark:border-white/10 p-6 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-zinc-950 dark:text-white">Installer Download Cache</p>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal">Temporary installer files stored locally</p>
+                    <h2 className="text-xs font-bold text-zinc-950 dark:text-white uppercase tracking-wider">AI Auto-Healing Engine (Optional)</h2>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal">
+                      Powered by Groq's high-speed LPU AI model to automatically diagnose and fix repository build failures.
+                    </p>
                   </div>
-                  <span className="font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400">Local Disk Cache</span>
+                  <a
+                    href="https://console.groq.com/keys"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                  >
+                    Get Free API Key
+                  </a>
+                </div>
+
+                <div className="pt-1">
+                  <input
+                    type="password"
+                    placeholder="Enter Groq API Key (gsk_...)"
+                    value={settings.groqApiKey || ''}
+                    onChange={(e) => updateSetting('groqApiKey', e.target.value.trim())}
+                    className="w-full px-3.5 py-2 text-xs font-mono rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                    Keys are stored 100% locally on your machine and never transmitted to OpenStore servers.
+                  </p>
                 </div>
               </div>
             </div>
