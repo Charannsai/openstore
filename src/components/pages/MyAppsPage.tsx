@@ -245,7 +245,7 @@ export default function MyAppsPage() {
                     </span>
                   </div>
 
-                  <p className="text-[11px] text-zinc-500 truncate mt-0.5 font-normal">
+                  <p suppressHydrationWarning className="text-[11px] text-zinc-500 truncate mt-0.5 font-normal">
                     v{installed.version} • Installed {new Date(installed.installed_at).toLocaleDateString()}
                   </p>
                 </div>
