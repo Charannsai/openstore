@@ -31,13 +31,12 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function App() {
   const { currentView, isSidebarCollapsed } = useAppStore();
-  const [isElectron] = useState<boolean | null>(() => {
-    if (typeof window !== 'undefined') {
-      return !!window.electronAPI;
-    }
-    return null;
-  });
+  const [isElectron, setIsElectron] = useState<boolean | null>(null);
   const [viewOverride, setViewOverride] = useState<'landing' | 'desktop' | null>(null);
+
+  useEffect(() => {
+    setIsElectron(typeof window !== 'undefined' && !!window.electronAPI);
+  }, []);
 
   const PageComponent = pageComponents[currentView] || HomePage;
 
