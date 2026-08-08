@@ -47,7 +47,7 @@ export default function App() {
 
   if (isElectron === null) {
     // Initial mount hydration check
-    return <div className="min-h-screen bg-[var(--bg-app)]" />;
+    return <div className="min-h-screen bg-[var(--bg-app)]" suppressHydrationWarning />;
   }
 
   if (showLandingPage) {

@@ -41,7 +41,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.className} antialiased min-h-screen transition-colors duration-300 font-sans`}>
+      <body
+        className={`${inter.className} antialiased min-h-screen transition-colors duration-300 font-sans`}
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>
