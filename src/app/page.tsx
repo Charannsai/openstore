@@ -27,6 +27,8 @@ const pageComponents: Record<string, React.ComponentType> = {
   category: CategoryPage,
 };
 
+import ErrorBoundary from '@/components/ErrorBoundary';
+
 export default function App() {
   const { currentView, isSidebarCollapsed } = useAppStore();
   const [isElectron, setIsElectron] = useState<boolean | null>(null);
@@ -51,31 +53,37 @@ export default function App() {
   }
 
   if (showLandingPage) {
-    return <LandingPage onLaunchWebApp={() => setViewOverride('desktop')} />;
+    return (
+      <ErrorBoundary>
+        <LandingPage onLaunchWebApp={() => setViewOverride('desktop')} />
+      </ErrorBoundary>
+    );
   }
 
   return (
-    <div className="flex min-h-screen relative">
-      <Sidebar />
-      <main
-        className={`flex-1 transition-all duration-300 ease-out ${
-          isSidebarCollapsed ? 'ml-[104px]' : 'ml-[280px]'
-        }`}
-      >
-        <div className="max-w-[1240px] mx-auto px-8 py-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentView}
-              initial={{ opacity: 0, scale: 0.97, filter: 'blur(12px)' }}
-              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, scale: 1.02, filter: 'blur(12px)' }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <PageComponent />
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </main>
-    </div>
+    <ErrorBoundary>
+      <div className="flex min-h-screen relative">
+        <Sidebar />
+        <main
+          className={`flex-1 transition-all duration-300 ease-out ${
+            isSidebarCollapsed ? 'ml-[104px]' : 'ml-[280px]'
+          }`}
+        >
+          <div className="max-w-[1240px] mx-auto px-8 py-6">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentView}
+                initial={{ opacity: 0, scale: 0.97, filter: 'blur(12px)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, scale: 1.02, filter: 'blur(12px)' }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <PageComponent />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }
