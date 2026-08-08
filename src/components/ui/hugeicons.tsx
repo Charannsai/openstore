@@ -302,3 +302,12 @@ export const LayersIcon: React.FC<IconProps> = ({ size = 20, className = '', ...
     <polyline points="2 12 12 17 22 12" />
   </svg>
 );
+
+export const SidebarToggleIcon: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
+  <svg width={size} height={size} {...defaultProps} className={className} {...props}>
+    <rect x="3" y="3" width="18" height="18" rx="3" />
+    <path d="M9 3v18" />
+    <path d="M14 9l-3 3 3 3" />
+  </svg>
+);
+
