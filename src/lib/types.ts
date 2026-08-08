@@ -259,7 +259,8 @@ export interface ElectronAPI {
   checkCommand: (command: string) => Promise<{ exists: boolean; version?: string }>;
   checkPort: (port: number) => Promise<{ inUse: boolean; process?: string }>;
 
-  // Downloads & Files
+  // Git, Downloads & Files
+  gitClone: (repoUrl: string, targetDir: string) => Promise<{ success: boolean; targetDir: string; action: string }>;
   downloadFile: (
     url: string,
     dest?: string,

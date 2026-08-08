@@ -9,7 +9,7 @@ const net = require('net');
 const { BrowserWindow, shell } = require('electron');
 
 /**
- * Desktop Agent — Real End-to-End Local Execution
+ * Desktop Agent — Real End-to-End Local Execution with Git Clone Support
  */
 
 const auditLog = [];
@@ -26,13 +26,10 @@ function logAudit(action, source, result, details = '') {
   console.log(`[AGENT AUDIT] ${entry.timestamp} | ${action} | ${result} | ${details}`);
 }
 
-// Ensure AppData storage directory exists
 function getStorageDir() {
   const base = process.env.APPDATA || (process.platform === 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + '/.local/share');
   const dir = path.join(base, 'OpenStore');
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
 
@@ -43,9 +40,7 @@ function getInstalledAppsFile() {
 function getDownloadsDir() {
   const userHome = os.homedir();
   const dir = path.join(userHome, 'Downloads', 'OpenStore');
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
 
@@ -74,7 +69,7 @@ function registerAgentHandlers(ipcMain) {
         } catch {}
       }
 
-      const info = {
+      return {
         platform,
         os_version: os.release(),
         architecture: arch,
@@ -86,9 +81,6 @@ function registerAgentHandlers(ipcMain) {
         cpu_model: os.cpus()[0]?.model || 'Processor',
         cpu_cores: os.cpus().length,
       };
-
-      logAudit('get-system-info', 'renderer', 'success', `${platform} ${arch}`);
-      return info;
     } catch (error) {
       logAudit('get-system-info', 'renderer', 'error', error.message);
       throw error;
@@ -119,18 +111,31 @@ function registerAgentHandlers(ipcMain) {
     }
   });
 
-  // ── Check Port ───────────────────────────────────────────────────────────
-  ipcMain.handle('agent:check-port', async (_event, port) => {
-    if (!port || typeof port !== 'number') return { inUse: false };
+  // ── Real Git Clone ───────────────────────────────────────────────────────
+  ipcMain.handle('agent:git-clone', async (_event, repoUrl, targetDir) => {
+    if (!repoUrl || typeof repoUrl !== 'string') throw new Error('Invalid repository URL');
+    if (!targetDir || typeof targetDir !== 'string') throw new Error('Invalid target directory');
 
-    return new Promise((resolve) => {
-      const socket = new net.Socket();
-      socket.setTimeout(2000);
-      socket.on('connect', () => { socket.destroy(); resolve({ inUse: true }); });
-      socket.on('timeout', () => { socket.destroy(); resolve({ inUse: false }); });
-      socket.on('error', () => { socket.destroy(); resolve({ inUse: false }); });
-      socket.connect(port, '127.0.0.1');
-    });
+    logAudit('git-clone', 'renderer', 'started', `${repoUrl} -> ${targetDir}`);
+
+    // If target directory already exists with a git repo, pull updates
+    if (fs.existsSync(targetDir)) {
+      const gitDir = path.join(targetDir, '.git');
+      if (fs.existsSync(gitDir)) {
+        await execPromise(`git -C "${targetDir}" pull`, { timeout: 120000 });
+        logAudit('git-clone', 'renderer', 'git-pull-success', targetDir);
+        return { success: true, targetDir, action: 'pulled' };
+      } else {
+        fs.rmSync(targetDir, { recursive: true, force: true });
+      }
+    }
+
+    const parentDir = path.dirname(targetDir);
+    if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+
+    await execPromise(`git clone "${repoUrl}" "${targetDir}"`, { timeout: 300000 });
+    logAudit('git-clone', 'renderer', 'git-clone-success', targetDir);
+    return { success: true, targetDir, action: 'cloned' };
   });
 
   // ── Real File Downloader ─────────────────────────────────────────────────
@@ -145,17 +150,13 @@ function registerAgentHandlers(ipcMain) {
 
     return new Promise((resolve, reject) => {
       function downloadUrl(targetUrl, redirectCount = 0) {
-        if (redirectCount > 5) {
-          return reject(new Error('Too many redirects'));
-        }
+        if (redirectCount > 5) return reject(new Error('Too many redirects'));
 
         const parsedUrl = new URL(targetUrl);
         const protocol = parsedUrl.protocol === 'https:' ? https : http;
 
         const req = protocol.get(targetUrl, {
-          headers: {
-            'User-Agent': 'OpenStore-Desktop-Agent/1.0',
-          },
+          headers: { 'User-Agent': 'OpenStore-Desktop-Agent/1.0' },
         }, (res) => {
           if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
             const redirectUrl = new URL(res.headers.location, targetUrl).href;
@@ -208,7 +209,7 @@ function registerAgentHandlers(ipcMain) {
 
         req.setTimeout(120000, () => {
           req.destroy();
-          reject(new Error('Download timeout (120s)'));
+          reject(new Error('Download timeout'));
         });
       }
 
@@ -241,38 +242,27 @@ function registerAgentHandlers(ipcMain) {
     if (config.path) {
       const targetPath = config.path;
       if (fs.existsSync(targetPath)) {
-        const stat = fs.statSync(targetPath);
-        if (stat.isDirectory()) {
-          shell.openPath(targetPath);
-          logAudit('launch-app', 'renderer', 'open-folder', targetPath);
-          return 0;
-        } else if (targetPath.endsWith('.exe') || targetPath.endsWith('.msi')) {
-          shell.openPath(targetPath);
-          logAudit('launch-app', 'renderer', 'launched-installer', targetPath);
-          return 0;
-        } else {
-          shell.openPath(targetPath);
-          return 0;
-        }
+        shell.openPath(targetPath);
+        logAudit('launch-app', 'renderer', 'opened-path', targetPath);
+        return 0;
       }
     }
 
     if (config.url) {
       shell.openExternal(config.url);
-      logAudit('launch-app', 'renderer', 'open-url', config.url);
+      logAudit('launch-app', 'renderer', 'opened-url', config.url);
       return 0;
     }
 
     throw new Error('Target path or URL not found');
   });
 
-  // ── Real Installed Apps Registry ──────────────────────────────────────────
+  // ── App Registry Persistence ──────────────────────────────────────────────
   ipcMain.handle('agent:get-installed-apps', async () => {
     const file = getInstalledAppsFile();
     if (fs.existsSync(file)) {
       try {
-        const content = fs.readFileSync(file, 'utf-8');
-        return JSON.parse(content);
+        return JSON.parse(fs.readFileSync(file, 'utf-8'));
       } catch {
         return [];
       }
@@ -284,11 +274,7 @@ function registerAgentHandlers(ipcMain) {
     const file = getInstalledAppsFile();
     let list = [];
     if (fs.existsSync(file)) {
-      try {
-        list = JSON.parse(fs.readFileSync(file, 'utf-8'));
-      } catch {
-        list = [];
-      }
+      try { list = JSON.parse(fs.readFileSync(file, 'utf-8')); } catch { list = []; }
     }
 
     list = list.filter((a) => a.id !== appRecord.id && a.application_id !== appRecord.application_id);
@@ -300,7 +286,6 @@ function registerAgentHandlers(ipcMain) {
   });
 
   ipcMain.handle('agent:uninstall-app', async (_event, appId, installPath) => {
-    // Delete files if path exists inside Downloads/OpenStore
     if (installPath && fs.existsSync(installPath)) {
       try {
         const downloadsRoot = path.normalize(getDownloadsDir());
@@ -313,7 +298,6 @@ function registerAgentHandlers(ipcMain) {
       }
     }
 
-    // Remove from registry file
     const file = getInstalledAppsFile();
     let list = [];
     if (fs.existsSync(file)) {
@@ -328,20 +312,18 @@ function registerAgentHandlers(ipcMain) {
     return list;
   });
 
-  // ── Stop Process ─────────────────────────────────────────────────────────
   ipcMain.handle('agent:stop-app', async (_event, processId) => {
     if (processId && typeof processId === 'number') {
       try { process.kill(processId); } catch {}
     }
   });
 
-  // ── Downloads Directory Helper ───────────────────────────────────────────
   ipcMain.handle('agent:get-downloads-dir', () => getDownloadsDir());
 }
 
 function execPromise(command, options = {}) {
   return new Promise((resolve, reject) => {
-    exec(command, { timeout: 15000, ...options }, (error, stdout) => {
+    exec(command, { timeout: 300000, ...options }, (error, stdout) => {
       if (error) reject(error);
       else resolve(stdout.toString().trim());
     });

@@ -6,7 +6,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkCommand: (command) => ipcRenderer.invoke('agent:check-command', command),
   checkPort: (port) => ipcRenderer.invoke('agent:check-port', port),
 
-  // ─── File & Download Operations ────────────────────────────────────────
+  // ─── Git & File Operations ──────────────────────────────────────────────
+  gitClone: (repoUrl, targetDir) => ipcRenderer.invoke('agent:git-clone', repoUrl, targetDir),
   downloadFile: (url, dest, checksum) =>
     ipcRenderer.invoke('agent:download-file', url, dest, checksum),
   unzipFile: (zipPath, targetDir) =>
