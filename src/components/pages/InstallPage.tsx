@@ -22,11 +22,13 @@ export default function InstallPage() {
   const { selectedAppSlug, navigate, applications, addInstalledApp, addActivity, updateInstalledAppStatus } = useAppStore();
   const app = applications.find((a) => a.slug === selectedAppSlug);
 
+  const isBinary = app ? (app.installation_methods[0] === 'OFFICIAL_INSTALLER' && !app.repository_url?.includes('github.com')) : false;
+
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: 'task-1',
       title: 'Detect System Environment',
-      description: 'Checking local OS, architecture, and disk space',
+      description: 'Checking local OS, CPU architecture, and disk space',
       type: 'CHECK',
       status: 'RUNNING',
       prerequisites: [],
@@ -40,7 +42,7 @@ export default function InstallPage() {
     {
       id: 'task-2',
       title: 'Check Prerequisites',
-      description: 'Verifying Git, Node, and runtime dependencies',
+      description: 'Verifying Git, Node.js, and runtime dependencies',
       type: 'CHECK',
       status: 'LOCKED',
       prerequisites: [],
@@ -53,8 +55,8 @@ export default function InstallPage() {
     },
     {
       id: 'task-3',
-      title: `Clone / Download ${app?.name || 'Package'}`,
-      description: 'Executing git clone into Downloads/OpenStore',
+      title: isBinary ? `Download ${app?.name || 'Installer'}` : `Git Clone ${app?.name || 'Repository'}`,
+      description: isBinary ? 'Downloading official installer binary' : 'Cloning source repository directly into Downloads/OpenStore',
       type: 'DOWNLOAD',
       status: 'LOCKED',
       prerequisites: [],
@@ -67,8 +69,8 @@ export default function InstallPage() {
     },
     {
       id: 'task-4',
-      title: 'Inspect & Install Dependencies',
-      description: 'Inspecting package.json/requirements.txt & running npm install',
+      title: isBinary ? 'Verify File Checksum' : 'Inspect & Install Dependencies',
+      description: isBinary ? 'Verifying file integrity' : 'Inspecting package.json & running npm install',
       type: 'VERIFY',
       status: 'LOCKED',
       prerequisites: [],
@@ -81,8 +83,8 @@ export default function InstallPage() {
     },
     {
       id: 'task-5',
-      title: 'Register Service Lifecycle',
-      description: 'Configuring hands-free run script and port detection',
+      title: 'Configure Service Lifecycle',
+      description: 'Configuring run scripts and port detection',
       type: 'LAUNCH',
       status: 'LOCKED',
       prerequisites: [],
@@ -162,7 +164,6 @@ export default function InstallPage() {
     };
   }, [app]);
 
-  // Hands-Free Run & Open App Handler
   const handleRunAndOpen = async () => {
     if (!installedRecord || !isElectron) {
       if (installedRecord?.local_url) window.open(installedRecord.local_url, '_blank');
@@ -175,14 +176,12 @@ export default function InstallPage() {
     try {
       const path = installedRecord.install_path;
 
-      // Executable files (.exe / .msi)
       if (path && (path.endsWith('.exe') || path.endsWith('.msi'))) {
         await window.electronAPI!.launchApp({ path });
         setIsStartingServer(false);
         return;
       }
 
-      // Web/Source Repo: Inspect ecosystem and run server
       const eco = await window.electronAPI!.inspectRepoEcosystem(path);
 
       if (eco.start_command) {
@@ -263,7 +262,7 @@ export default function InstallPage() {
                 ? 'Dependencies installed & workspace configured'
                 : status === 'failed'
                 ? 'Installation encountered an error'
-                : `Step ${currentIdx + 1} of 5 in progress`}
+                : `Task ${currentIdx + 1} of 5 in progress`}
             </p>
           </div>
         </div>
@@ -280,7 +279,7 @@ export default function InstallPage() {
         )}
       </div>
 
-      {/* Success State with Hands-Free Run Action */}
+      {/* Success State */}
       <AnimatePresence>
         {status === 'completed' && (
           <motion.div
@@ -293,7 +292,7 @@ export default function InstallPage() {
               Setup Complete
             </h2>
             <p className="text-xs text-zinc-400 mb-5 max-w-sm mx-auto">
-              Repository cloned and dependencies (`npm install`) installed hands-free.
+              {isBinary ? 'Binary installer verified.' : 'Repository cloned directly via git clone and dependencies installed.'}
             </p>
             <div className="flex justify-center gap-2.5">
               <button
@@ -343,7 +342,7 @@ export default function InstallPage() {
         </div>
       </div>
 
-      {/* Real Terminal Output Log Toggle */}
+      {/* Terminal Log */}
       <button
         onClick={() => setShowDetails(!showDetails)}
         className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-3"
