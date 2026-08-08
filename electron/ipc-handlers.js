@@ -798,29 +798,30 @@ function registerAgentHandlers(ipcMain) {
       managedProcesses.delete(appId);
     }
 
-    // Delete project files
-    if (installPath && fs.existsSync(installPath)) {
+    // Delete project files unconditionally (including custom workspace paths)
+    if (installPath && typeof installPath === 'string') {
       try {
-        const downloadsRoot = path.normalize(getDownloadsDir());
-        const targetNorm = path.normalize(installPath);
-        if (targetNorm.startsWith(downloadsRoot)) {
+        if (fs.existsSync(installPath)) {
           if (os.platform() === 'win32') {
-            // Windows: clear read-only attributes on .git files before deleting
-            try {
-              await execPromise(`attrib -R -H -S "${installPath}\\*.*" /S /D`, { timeout: 30000 });
-            } catch {}
-            await execPromise(`rmdir /S /Q "${installPath}"`, { timeout: 60000 });
-          } else {
-            fs.rmSync(installPath, { recursive: true, force: true });
+            try { await execPromise(`attrib -R -H -S "${installPath}\\*.*" /S /D`, { timeout: 15000 }); } catch {}
+            try { await execPromise(`rmdir /S /Q "${installPath}"`, { timeout: 30000 }); } catch {}
+            try { await execPromise(`powershell -Command "Remove-Item -Path '${installPath}' -Recurse -Force -ErrorAction SilentlyContinue"`, { timeout: 30000 }); } catch {}
           }
+          try {
+            if (fs.existsSync(installPath)) {
+              fs.rmSync(installPath, { recursive: true, force: true });
+            }
+          } catch {}
           logAudit('uninstall-app', 'renderer', 'files-deleted', installPath);
+        }
+
+        // Also clean up any lingering .zip archive
+        const zipArchive = `${installPath}.zip`;
+        if (fs.existsSync(zipArchive)) {
+          try { fs.unlinkSync(zipArchive); } catch {}
         }
       } catch (err) {
         console.error('Uninstall file deletion error:', err);
-        // Final fallback: try PowerShell
-        try {
-          await execPromise(`powershell -Command "Remove-Item -Path '${installPath}' -Recurse -Force -ErrorAction SilentlyContinue"`, { timeout: 60000 });
-        } catch {}
       }
     }
 

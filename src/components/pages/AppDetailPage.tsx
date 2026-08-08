@@ -240,6 +240,13 @@ export default function AppDetailPage() {
 
   const handleUninstall = async () => {
     if (installedRecord && confirm(`Are you sure you want to uninstall ${app.name}?`)) {
+      if (isElectron && installedRecord.install_path && typeof window.electronAPI?.uninstallApp === 'function') {
+        try {
+          await window.electronAPI.uninstallApp(installedRecord.id, installedRecord.install_path);
+        } catch (err) {
+          console.error('Failed to delete app folder:', err);
+        }
+      }
       useAppStore.getState().removeInstalledApp(installedRecord.id);
     }
   };
