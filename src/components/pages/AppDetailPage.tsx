@@ -30,6 +30,8 @@ export default function AppDetailPage() {
   const { selectedAppSlug, navigate, startInstallation, installedApps, applications } = useAppStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'releases'>('overview');
   const [copied, setCopied] = useState(false);
+  const [startingAppId, setStartingAppId] = useState<string | null>(null);
+  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
 
   let app = applications.find((a) => a.slug === selectedAppSlug || a.id === selectedAppSlug) || (selectedAppSlug ? getAppBySlug(selectedAppSlug) : null);
 
@@ -86,9 +88,6 @@ export default function AppDetailPage() {
       </div>
     );
   }
-
-  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
-  const [startingAppId, setStartingAppId] = useState<string | null>(null);
 
   const installedRecord = installedApps.find((a) => {
     if (!a || !app) return false;
