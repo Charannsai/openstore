@@ -606,18 +606,46 @@ function registerAgentHandlers(ipcMain) {
   });
 
   ipcMain.handle('agent:uninstall-app', async (_event, appId, installPath) => {
+    // Stop any running background service first
+    const processInfo = managedProcesses.get(appId);
+    if (processInfo) {
+      try {
+        if (os.platform() === 'win32') {
+          await execPromise(`taskkill /F /PID ${processInfo.pid} /T`);
+        } else {
+          process.kill(-processInfo.pid, 'SIGKILL');
+        }
+      } catch {}
+      managedProcesses.delete(appId);
+    }
+
+    // Delete project files
     if (installPath && fs.existsSync(installPath)) {
       try {
         const downloadsRoot = path.normalize(getDownloadsDir());
         const targetNorm = path.normalize(installPath);
         if (targetNorm.startsWith(downloadsRoot)) {
-          fs.rmSync(installPath, { recursive: true, force: true });
+          if (os.platform() === 'win32') {
+            // Windows: clear read-only attributes on .git files before deleting
+            try {
+              await execPromise(`attrib -R -H -S "${installPath}\\*.*" /S /D`, { timeout: 30000 });
+            } catch {}
+            await execPromise(`rmdir /S /Q "${installPath}"`, { timeout: 60000 });
+          } else {
+            fs.rmSync(installPath, { recursive: true, force: true });
+          }
+          logAudit('uninstall-app', 'renderer', 'files-deleted', installPath);
         }
       } catch (err) {
-        console.error('Uninstall error:', err);
+        console.error('Uninstall file deletion error:', err);
+        // Final fallback: try PowerShell
+        try {
+          await execPromise(`powershell -Command "Remove-Item -Path '${installPath}' -Recurse -Force -ErrorAction SilentlyContinue"`, { timeout: 60000 });
+        } catch {}
       }
     }
 
+    // Remove from registry
     const file = getInstalledAppsFile();
     let list = [];
     if (fs.existsSync(file)) {
@@ -628,6 +656,7 @@ function registerAgentHandlers(ipcMain) {
       } catch {}
     }
 
+    logAudit('uninstall-app', 'renderer', 'success', appId);
     return list;
   });
 
