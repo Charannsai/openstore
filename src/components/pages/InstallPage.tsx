@@ -8,12 +8,10 @@ import {
   CheckCircleIcon,
   Loader2Icon,
   ChevronRightIcon,
-  CheckCircle2Icon,
   TerminalIcon,
   GlobeIcon,
   FolderOpenIcon,
   Code2Icon,
-  XIcon,
   ShieldCheckIcon,
   DownloadIcon,
 } from '@/components/ui/hugeicons';
@@ -181,10 +179,11 @@ export default function InstallPage() {
             timestamp: new Date().toISOString(),
           });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (isMounted) {
           setStatus('failed');
-          setLogs((prev) => [...prev, `[ERROR] Installation failed: ${err.message || err}`]);
+          const msg = err instanceof Error ? err.message : String(err);
+          setLogs((prev) => [...prev, `[ERROR] Installation failed: ${msg}`]);
         }
       }
     }
@@ -194,7 +193,7 @@ export default function InstallPage() {
     return () => {
       isMounted = false;
     };
-  }, [app]);
+  }, [app, addActivity, addInstalledApp]);
 
   const handleAutoFixPrerequisite = async (packageId: string) => {
     if (!isElectron || !window.electronAPI?.installWingetPackage) return;
@@ -213,8 +212,9 @@ export default function InstallPage() {
       } else {
         setLogs((prev) => [...prev, `[AUTO-FIX] Winget exit code: ${res.code}`]);
       }
-    } catch (err: any) {
-      setLogs((prev) => [...prev, `[AUTO-FIX ERROR] ${err.message}`]);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setLogs((prev) => [...prev, `[AUTO-FIX ERROR] ${msg}`]);
     } finally {
       setIsInstallingWinget(null);
     }
@@ -249,7 +249,7 @@ export default function InstallPage() {
                 clearInterval(interval);
                 setIsStartingServer(false);
                 updateInstalledAppStatus(installedRecord.id, 'running');
-                setLogs((prev) => [...prev, `[HANDS-FREE] Server ready! Opening ${webUrl}...`]);
+                setRunningWebUrls((prev) => ({ ...prev, [installedRecord.id]: webUrl }));
                 await window.electronAPI!.launchApp({ url: webUrl });
               }
             }, 1000);
@@ -284,8 +284,9 @@ export default function InstallPage() {
           break;
         }
       }
-    } catch (err: any) {
-      setLogs((prev) => [...prev, `[ERROR] ${err.message}`]);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setLogs((prev) => [...prev, `[ERROR] ${msg}`]);
       setIsStartingServer(false);
     }
   };

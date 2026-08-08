@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import { BRAND } from '@/lib/constants';
 import {
@@ -15,9 +14,7 @@ import {
   MoonIcon,
   SparklesIcon,
   ExternalLinkIcon,
-  ChevronRightIcon,
   MonitorIcon,
-  CpuIcon,
   LayersIcon,
   CompassIcon,
 } from '@/components/ui/hugeicons';

@@ -7,6 +7,18 @@ export interface InstallationProgressCallback {
   onOverallProgress: (percent: number) => void;
 }
 
+interface EcosystemInspectionInfo {
+  ecosystem: string;
+  install_command: string;
+  build_command: string;
+  start_command: string;
+  detected_port: number;
+  is_web_app: boolean;
+  resolved_cwd: string;
+  run_mode?: 'browser' | 'ide' | 'terminal' | 'executable' | 'folder';
+  env_commands?: string[];
+}
+
 export async function runRealInstallation(
   app: Application,
   callbacks: InstallationProgressCallback
@@ -76,18 +88,6 @@ export async function runRealInstallation(
         finalInstallPath = targetDir;
         callbacks.onLog(`[AGENT] Terminal git clone finished at ${targetDir}`);
       }
-interface EcosystemInspectionInfo {
-  ecosystem: string;
-  install_command: string;
-  build_command: string;
-  start_command: string;
-  detected_port: number;
-  is_web_app: boolean;
-  resolved_cwd: string;
-  run_mode?: 'browser' | 'ide' | 'terminal' | 'executable' | 'folder';
-  env_commands?: string[];
-}
-
     } catch (gitErr: unknown) {
       const msg = gitErr instanceof Error ? gitErr.message : String(gitErr);
       callbacks.onLog(`[AGENT] Git clone notice: ${msg}`);
