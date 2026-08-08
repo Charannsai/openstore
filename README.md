@@ -15,7 +15,9 @@ No more `git clone && npm install && npm run build` — just click install.
 
 <br/>
 
-<iframe src="https://github.com/sponsors/Charannsai/button" title="Sponsor Charannsai" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+<a href="https://github.com/sponsors/Charannsai">
+  <img src="https://img.shields.io/badge/Sponsor-Charannsai-ea4aaa?style=for-the-badge&logo=github" alt="Sponsor Charannsai" />
+</a>
 
 <br/>
 
@@ -239,7 +241,9 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
 
 <br/>
 
-<iframe src="https://github.com/sponsors/Charannsai/button" title="Sponsor Charannsai" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+<a href="https://github.com/sponsors/Charannsai">
+  <img src="https://img.shields.io/badge/Sponsor-Charannsai-ea4aaa?style=for-the-badge&logo=github" alt="Sponsor Charannsai" />
+</a>
 
 ---
 
