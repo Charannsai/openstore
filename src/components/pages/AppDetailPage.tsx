@@ -190,7 +190,8 @@ export default function AppDetailPage() {
     }
   };
 
-  const formatCount = (n: number) => {
+  const formatCount = (n?: number) => {
+    if (!n || typeof n !== 'number' || isNaN(n)) return '0';
     if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
     if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
     return n.toString();
@@ -220,14 +221,14 @@ export default function AppDetailPage() {
             {/* App Icon */}
             <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center overflow-hidden flex-shrink-0 border border-zinc-200 dark:border-white/10 p-2">
               <img
-                src={app.icon_url}
-                alt={app.name}
+                src={app.icon_url || ''}
+                alt={app.name || 'App'}
                 className="w-11 h-11 object-contain rounded-lg"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                   const parent = (e.target as HTMLImageElement).parentElement;
                   if (parent) {
-                    parent.innerHTML = `<span class="text-lg font-bold text-zinc-900 dark:text-white">${app.name.substring(0, 2).toUpperCase()}</span>`;
+                    parent.innerHTML = `<span class="text-lg font-bold text-zinc-900 dark:text-white">${(app.name || 'AP').substring(0, 2).toUpperCase()}</span>`;
                   }
                 }}
               />
@@ -237,25 +238,27 @@ export default function AppDetailPage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-extrabold text-zinc-950 dark:text-white tracking-tight truncate">
-                  {app.name}
+                  {app.name || 'Application'}
                 </h1>
-                <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-white/10 uppercase">
-                  {app.difficulty}
-                </span>
+                {app.difficulty && (
+                  <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-white/10 uppercase">
+                    {app.difficulty}
+                  </span>
+                )}
               </div>
               
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-medium">
-                Maintained by <span className="text-zinc-900 dark:text-zinc-200 font-semibold">{app.developer}</span>
+                Maintained by <span className="text-zinc-900 dark:text-zinc-200 font-semibold">{app.developer || 'Open Source Community'}</span>
               </p>
               
               <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-                {app.star_count > 0 && (
+                {(app.star_count || 0) > 0 && (
                   <div className="flex items-center gap-1.5">
                     <StarIcon className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
                     <span className="text-zinc-900 dark:text-zinc-200 font-semibold">{formatCount(app.star_count)} stars</span>
                   </div>
                 )}
-                {app.download_count > 0 && (
+                {(app.download_count || 0) > 0 && (
                   <div className="flex items-center gap-1.5">
                     <DownloadIcon className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
                     <span>{formatCount(app.download_count)} downloads</span>
