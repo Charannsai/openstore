@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -57,14 +57,14 @@ html.light {
   background: var(--text-subtle);
 }
 
-/* ─── Base Styles ─────────────────────────────────────────────────────────── */
+/* ─── Base Styles (Inter Font) ────────────────────────────────────────────── */
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg-app);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  letter-spacing: -0.011em;
+  letter-spacing: -0.014em;
   transition: background-color 0.2s ease, color 0.2s ease;
   overflow-x: hidden;
 }
@@ -139,7 +139,7 @@ html.dark .btn-primary {
   border: 1px solid rgba(0, 0, 0, 0.08);
   color: #3f3f46;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   border-radius: 9999px;
   padding: 2px 8px;
 }

@@ -62,15 +62,15 @@ export default function Sidebar() {
             onClick={() => navigate('home')}
             className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-all group text-left"
           >
-            <div className="w-8 h-8 rounded-lg bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-semibold text-xs flex items-center justify-center flex-shrink-0 shadow-xs">
               OS
             </div>
 
             <div className="flex-1 min-w-0">
-              <span className="text-sm font-extrabold tracking-tight text-zinc-950 dark:text-white block">
+              <span className="text-sm font-semibold tracking-tight text-zinc-950 dark:text-white block">
                 {BRAND.name}
               </span>
-              <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-bold block truncate -mt-0.5">
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-normal block truncate -mt-0.5">
                 Desktop Agent
               </span>
             </div>
@@ -87,19 +87,19 @@ export default function Sidebar() {
                   key={item.id}
                   onClick={() => navigate(item.id)}
                   className={`
-                    w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold
+                    w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium
                     transition-all duration-150 relative group cursor-pointer
                     ${
                       isActive
-                        ? 'text-zinc-950 dark:text-white font-extrabold'
-                        : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
+                        ? 'text-zinc-950 dark:text-white font-semibold'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
                     }
                   `}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="crazy-sidebar-active-bg"
-                      className="absolute inset-0 rounded-xl bg-zinc-100 dark:bg-white/[0.08] border border-zinc-300/80 dark:border-white/10 shadow-xs"
+                      className="absolute inset-0 rounded-xl bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200 dark:border-white/10 shadow-xs"
                       transition={{ type: 'spring', stiffness: 500, damping: 32 }}
                     />
                   )}
@@ -116,19 +116,19 @@ export default function Sidebar() {
                     className={`w-4 h-4 z-10 transition-colors ${
                       isActive
                         ? 'text-zinc-950 dark:text-white'
-                        : 'text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-950 dark:group-hover:text-white'
+                        : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-950 dark:group-hover:text-white'
                     }`}
                   />
                   <span className="z-10 tracking-tight">{item.label}</span>
 
                   {/* Badges */}
                   {item.id === 'updates' && updatesCount > 0 && (
-                    <span className="ml-auto z-10 bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                    <span className="ml-auto z-10 bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-xs">
                       {updatesCount}
                     </span>
                   )}
                   {item.id === 'my-apps' && installedCount > 0 && (
-                    <span className="ml-auto z-10 text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-200 border border-zinc-300 dark:border-white/10">
+                    <span className="ml-auto z-10 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-white/10">
                       {installedCount}
                     </span>
                   )}
@@ -145,13 +145,13 @@ export default function Sidebar() {
             onClick={toggleTheme}
             className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-900/60 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-white/10 transition-all cursor-pointer group"
           >
-            <div className="flex items-center gap-2 text-xs font-bold text-zinc-950 dark:text-zinc-200">
+            <div className="flex items-center gap-2 text-xs font-medium text-zinc-900 dark:text-zinc-200">
               {mounted && theme === 'light' ? (
                 <SunIcon className="w-4 h-4 text-zinc-950" />
               ) : (
                 <MoonIcon className="w-4 h-4 text-zinc-300" />
               )}
-              <span className="text-[11px] font-bold text-zinc-950 dark:text-zinc-200">
+              <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-200">
                 {mounted && theme === 'light' ? 'Light Mode' : 'Dark Mode'}
               </span>
             </div>
@@ -170,14 +170,14 @@ export default function Sidebar() {
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 pulse-dot" />
-                <span className="text-[11px] font-extrabold text-zinc-950 dark:text-zinc-100">
+                <span className="text-[11px] font-semibold text-zinc-950 dark:text-zinc-100">
                   Windows x64
                 </span>
               </div>
-              <CpuIcon className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />
+              <CpuIcon className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
             </div>
 
-            <p className="text-[10px] text-zinc-600 dark:text-zinc-400 font-bold">Local Agent Active</p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-normal">Local Agent Active</p>
           </div>
         </div>
 

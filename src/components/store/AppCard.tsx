@@ -39,7 +39,7 @@ export default function AppCard({ app, index = 0 }: AppCardProps) {
               (e.target as HTMLImageElement).style.display = 'none';
               const parent = (e.target as HTMLImageElement).parentElement;
               if (parent) {
-                parent.innerHTML = `<span class="text-xs font-bold text-zinc-900 dark:text-zinc-200">${app.name.substring(0, 2).toUpperCase()}</span>`;
+                parent.innerHTML = `<span class="text-xs font-semibold text-zinc-900 dark:text-zinc-200">${app.name.substring(0, 2).toUpperCase()}</span>`;
               }
             }}
           />
@@ -47,34 +47,34 @@ export default function AppCard({ app, index = 0 }: AppCardProps) {
 
         {/* Title + Developer */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-xs font-extrabold text-zinc-950 dark:text-zinc-100 truncate group-hover:text-zinc-900 dark:group-hover:text-white transition-colors tracking-tight">
+          <h3 className="text-xs font-semibold text-zinc-950 dark:text-zinc-100 truncate group-hover:text-zinc-900 dark:group-hover:text-white transition-colors tracking-tight">
             {app.name}
           </h3>
-          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 truncate mt-0.5 font-bold">{app.developer}</p>
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5 font-normal">{app.developer}</p>
         </div>
       </div>
 
       {/* Description */}
-      <p className="text-xs text-zinc-800 dark:text-zinc-300 leading-normal mb-4 line-clamp-2 min-h-[32px] font-semibold">
+      <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-normal mb-4 line-clamp-2 min-h-[32px] font-normal">
         {app.description}
       </p>
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-2.5 border-t border-zinc-200 dark:border-white/[0.04]">
-        <div className="flex items-center gap-3 text-zinc-800 dark:text-zinc-200 text-[11px] font-bold">
+        <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400 text-[11px] font-medium">
           {/* Stars */}
           {app.star_count > 0 && (
             <div className="flex items-center gap-1">
               <StarIcon className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-zinc-900 dark:text-zinc-100">{formatCount(app.star_count)}</span>
+              <span className="text-zinc-800 dark:text-zinc-200">{formatCount(app.star_count)}</span>
             </div>
           )}
 
           {/* License */}
           {app.license && (
             <div className="flex items-center gap-1">
-              <ShieldCheckIcon className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-              <span className="truncate max-w-[80px] text-zinc-700 dark:text-zinc-300">{app.license}</span>
+              <ShieldCheckIcon className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+              <span className="truncate max-w-[80px] text-zinc-600 dark:text-zinc-400">{app.license}</span>
             </div>
           )}
         </div>

@@ -54,10 +54,10 @@ export default function HomePage() {
         className="relative pt-4 pb-2"
       >
         <div className="relative text-center max-w-2xl mx-auto mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-950 dark:text-white mb-2">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white mb-2">
             Open-source software, simplified.
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 mb-6 font-semibold">
+          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mb-6 font-normal">
             Discover, install, and run open-source projects — directly from GitHub.
           </p>
           <SearchBar />
@@ -65,7 +65,7 @@ export default function HomePage() {
       </motion.section>
 
       {/* Featured */}
-      <Section title="Featured Projects" icon={<SparklesIcon className="w-4 h-4 text-zinc-800 dark:text-zinc-200" />}>
+      <Section title="Featured Projects" icon={<SparklesIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />}>
         {isLoading ? (
           <LoadingSkeleton />
         ) : (
@@ -83,7 +83,7 @@ export default function HomePage() {
       </Section>
 
       {/* Popular */}
-      <Section title="Popular Repositories" icon={<TrendingUpIcon className="w-4 h-4 text-zinc-800 dark:text-zinc-200" />}>
+      <Section title="Popular Repositories" icon={<TrendingUpIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />}>
         {isLoading ? (
           <LoadingSkeleton />
         ) : (
@@ -96,7 +96,7 @@ export default function HomePage() {
       </Section>
 
       {/* AI Tools */}
-      <Section title="AI & Machine Learning" icon={<CpuIcon className="w-4 h-4 text-zinc-800 dark:text-zinc-200" />} showAll="ai-tools">
+      <Section title="AI & Machine Learning" icon={<CpuIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />} showAll="ai-tools">
         {isLoading ? (
           <LoadingSkeleton />
         ) : (
@@ -129,12 +129,12 @@ function Section({
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2">
           {icon}
-          <h2 className="text-xs font-extrabold text-zinc-950 dark:text-zinc-100 uppercase tracking-wider">{title}</h2>
+          <h2 className="text-xs font-semibold text-zinc-950 dark:text-zinc-200 uppercase tracking-wider">{title}</h2>
         </div>
         {showAll && (
           <button
             onClick={() => navigate('category', { categoryId: showAll })}
-            className="flex items-center gap-1 text-xs font-bold text-zinc-700 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1 text-xs font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white transition-colors cursor-pointer"
           >
             <span>Explore</span>
             <ChevronRightIcon className="w-3.5 h-3.5" />
@@ -150,7 +150,7 @@ function LoadingSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
       {[1, 2, 3, 4].map((n) => (
-        <div key={n} className="h-36 rounded-xl bg-zinc-200/80 dark:bg-zinc-900/60 border border-zinc-300/80 dark:border-white/10 animate-pulse" />
+        <div key={n} className="h-36 rounded-xl bg-zinc-200/60 dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/10 animate-pulse" />
       ))}
     </div>
   );
