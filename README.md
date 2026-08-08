@@ -13,7 +13,13 @@ No more `git clone && npm install && npm run build` — just click install.
 [![GitHub Issues](https://img.shields.io/github/issues/Charannsai/openstore?style=for-the-badge&color=ef4444)](https://github.com/Charannsai/openstore/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-22d3ee.svg?style=for-the-badge)](CONTRIBUTING.md)
 
-[**Download**](#download) · [**Features**](#features) · [**Quick Start**](#quick-start) · [**Contributing**](#contributing) · [**Roadmap**](#roadmap)
+<br/>
+
+<iframe src="https://github.com/sponsors/Charannsai/button" title="Sponsor Charannsai" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+
+<br/>
+
+[**Download**](#download) · [**Features**](#features) · [**Quick Start**](#quick-start) · [**Contributing**](#contributing) · [**Sponsor**](https://github.com/sponsors/Charannsai) · [**Roadmap**](#roadmap)
 
 </div>
 
@@ -229,6 +235,11 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
 - **Feature Requests** — [Request a feature](https://github.com/Charannsai/openstore/issues/new?template=feature_request.yml)
 - **Discussions** — [Join the conversation](https://github.com/Charannsai/openstore/discussions)
 - **Security** — [Report a vulnerability](SECURITY.md)
+- **Sponsor** — [Support Charannsai on GitHub Sponsors](https://github.com/sponsors/Charannsai)
+
+<br/>
+
+<iframe src="https://github.com/sponsors/Charannsai/button" title="Sponsor Charannsai" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
 
 ---
 
