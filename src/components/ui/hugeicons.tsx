@@ -22,6 +22,14 @@ export const CompassIcon: React.FC<IconProps> = ({ size = 20, className = '', ..
   </svg>
 );
 
+export const MoreVerticalIcon: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
+  <svg width={size} height={size} {...defaultProps} className={className} {...props}>
+    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+    <circle cx="12" cy="5" r="1.5" fill="currentColor" />
+    <circle cx="12" cy="19" r="1.5" fill="currentColor" />
+  </svg>
+);
+
 export const SearchIcon: React.FC<IconProps> = ({ size = 20, className = '', ...props }) => (
   <svg width={size} height={size} {...defaultProps} className={className} {...props}>
     <circle cx="11" cy="11" r="7" />

@@ -16,6 +16,8 @@ import {
   Code2Icon,
   TerminalIcon,
   XIcon,
+  MoreVerticalIcon,
+  InfoIcon,
 } from '@/components/ui/hugeicons';
 import type { InstalledApp } from '@/lib/types';
 
@@ -24,6 +26,7 @@ export default function MyAppsPage() {
   const [uninstallTarget, setUninstallTarget] = useState<string | null>(null);
   const [startingAppId, setStartingAppId] = useState<string | null>(null);
   const [runningWebUrls, setRunningWebUrls] = useState<Record<string, string>>({});
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
 
@@ -278,21 +281,79 @@ export default function MyAppsPage() {
                     </button>
                   )}
 
-                  <button
-                    onClick={() => handleOpenFolder(installed)}
-                    className="btn-secondary p-1.5 rounded-lg text-xs flex items-center justify-center cursor-pointer"
-                    title="Open project folder"
-                  >
-                    <FolderOpenIcon className="w-3.5 h-3.5" />
-                  </button>
+                  {/* 3-Dot Options Menu */}
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMenuId(activeMenuId === installed.id ? null : installed.id);
+                      }}
+                      className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                      title="More Options"
+                    >
+                      <MoreVerticalIcon className="w-4 h-4" />
+                    </button>
 
-                  <button
-                    onClick={() => setUninstallTarget(installed.id)}
-                    className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
-                    title="Uninstall App"
-                  >
-                    <Trash2Icon className="w-3.5 h-3.5" />
-                  </button>
+                    {/* Dropdown Menu */}
+                    <AnimatePresence>
+                      {activeMenuId === installed.id && (
+                        <>
+                          {/* Transparent backdrop overlay to close menu on click outside */}
+                          <div
+                            className="fixed inset-0 z-30"
+                            onClick={() => setActiveMenuId(null)}
+                          />
+
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                            transition={{ duration: 0.12 }}
+                            className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-white/10 shadow-xl z-40 py-1.5 overflow-hidden text-xs"
+                          >
+                            {/* Item 1: Open Details */}
+                            <button
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                const slug = installed.application?.slug || installed.id;
+                                navigate('app-detail', { slug });
+                              }}
+                              className="w-full px-3 py-2 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 font-medium flex items-center gap-2 cursor-pointer transition-colors"
+                            >
+                              <InfoIcon className="w-4 h-4 text-zinc-400" />
+                              <span>Open Details</span>
+                            </button>
+
+                            {/* Item 2: Open in Folders */}
+                            <button
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                handleOpenFolder(installed);
+                              }}
+                              className="w-full px-3 py-2 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 font-medium flex items-center gap-2 cursor-pointer transition-colors"
+                            >
+                              <FolderOpenIcon className="w-4 h-4 text-zinc-400" />
+                              <span>Open in Folders</span>
+                            </button>
+
+                            <div className="my-1 border-t border-zinc-100 dark:border-white/5" />
+
+                            {/* Item 3: Uninstall */}
+                            <button
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setUninstallTarget(installed.id);
+                              }}
+                              className="w-full px-3 py-2 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+                            >
+                              <Trash2Icon className="w-4 h-4" />
+                              <span>Uninstall</span>
+                            </button>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </div>
             </motion.div>
