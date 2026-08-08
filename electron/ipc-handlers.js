@@ -15,6 +15,7 @@ const { analyzeRepositoryWithGroq, diagnoseFailureWithGroq } = require('./groq-a
 
 const auditLog = [];
 const managedProcesses = new Map();
+const activeCommandProcesses = new Set();
 
 function logAudit(action, source, result, details = '') {
   const entry = {
@@ -458,6 +459,8 @@ function registerAgentHandlers(ipcMain) {
         env: { ...process.env },
       });
 
+      activeCommandProcesses.add(child);
+
       let stdoutData = '';
       let stderrData = '';
 
@@ -476,11 +479,13 @@ function registerAgentHandlers(ipcMain) {
       });
 
       child.on('close', (code) => {
+        activeCommandProcesses.delete(child);
         logAudit('execute-command', 'renderer', 'finished', `Exit code ${code}`);
         resolve({ success: code === 0, code, output: stdoutData + stderrData });
       });
 
       child.on('error', (err) => {
+        activeCommandProcesses.delete(child);
         logAudit('execute-command', 'renderer', 'error', err.message);
         reject(err);
       });
@@ -798,7 +803,19 @@ function registerAgentHandlers(ipcMain) {
       managedProcesses.delete(appId);
     }
 
-    // 2. Kill any stray git.exe on Windows that might hold open handles
+    // 2. Kill any active spawned terminal commands & processes
+    for (const child of activeCommandProcesses) {
+      try {
+        if (os.platform() === 'win32') {
+          try { await execPromise(`taskkill /F /PID ${child.pid} /T`); } catch {}
+        } else {
+          try { child.kill('SIGKILL'); } catch {}
+        }
+      } catch {}
+    }
+    activeCommandProcesses.clear();
+
+    // 3. Kill any stray git.exe on Windows that might hold open handles
     if (os.platform() === 'win32') {
       try {
         await execPromise(`taskkill /F /IM git.exe /T`);
