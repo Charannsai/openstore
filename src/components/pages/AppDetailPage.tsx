@@ -184,9 +184,23 @@ export default function AppDetailPage() {
       navigate('my-apps');
       return;
     }
-    const mode = installedRecord.run_mode || 'folder';
     const path = installedRecord.install_path;
     setStartingAppId(installedRecord.id);
+
+    let mode = installedRecord.run_mode || 'executable';
+    if (!installedRecord.run_mode) {
+      if (
+        installedRecord.local_url ||
+        installedRecord.start_command?.includes('next') ||
+        installedRecord.start_command?.includes('vite') ||
+        installedRecord.start_command?.includes('react') ||
+        installedRecord.start_command?.includes('http')
+      ) {
+        mode = 'browser';
+      } else {
+        mode = 'executable';
+      }
+    }
 
     try {
       if (mode === 'browser') {
@@ -209,7 +223,7 @@ export default function AppDetailPage() {
           }, 1000);
         } else {
           setStartingAppId(null);
-          await window.electronAPI!.launchApp({ path });
+          await window.electronAPI!.launchApp({ path, command: installedRecord.start_command });
         }
       } else if (mode === 'ide') {
         await window.electronAPI!.openInIDE(path);
@@ -218,7 +232,8 @@ export default function AppDetailPage() {
         await window.electronAPI!.executeTerminalCommand(`start cmd /k "cd /d ${path}"`, path);
         setStartingAppId(null);
       } else {
-        await window.electronAPI!.openFolder(path);
+        await window.electronAPI!.launchApp({ path, command: installedRecord.start_command });
+        useAppStore.getState().updateInstalledAppStatus(installedRecord.id, 'running');
         setStartingAppId(null);
       }
     } catch (err) {
