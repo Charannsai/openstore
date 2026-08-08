@@ -30,17 +30,17 @@ export default function App() {
   const PageComponent = pageComponents[currentView] || HomePage;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen relative">
       <Sidebar />
-      <main className="flex-1 ml-[240px]">
-        <div className="max-w-[1200px] mx-auto px-8 py-6">
+      <main className="flex-1 ml-[280px]">
+        <div className="max-w-[1240px] mx-auto px-8 py-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentView}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, scale: 0.97, filter: 'blur(12px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 1.02, filter: 'blur(12px)' }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             >
               <PageComponent />
             </motion.div>

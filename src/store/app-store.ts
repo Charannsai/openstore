@@ -33,6 +33,10 @@ interface AppStoreState {
   systemInfo: SystemInfo | null;
   isElectron: boolean;
 
+  // Theme
+  theme: 'dark' | 'light' | 'system';
+  setTheme: (theme: 'dark' | 'light' | 'system') => void;
+
   // Actions
   navigate: (view: AppStoreState['currentView'], params?: { slug?: string; categoryId?: string }) => void;
   setSearchQuery: (query: string) => void;
@@ -97,11 +101,27 @@ export const useAppStore = create<AppStoreState>((set) => ({
     logs: [],
   },
 
-  // ─── System ──────────────────────────────────────────────────────────────
+  // ─── System & Theme ──────────────────────────────────────────────────────
   systemInfo: null,
   isElectron: typeof window !== 'undefined' && !!window.electronAPI,
+  theme: 'dark',
 
   // ─── Actions ─────────────────────────────────────────────────────────────
+  setTheme: (theme) => {
+    if (typeof window !== 'undefined') {
+      const root = document.documentElement;
+      root.classList.remove('dark', 'light');
+      if (theme === 'system') {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        root.classList.add(systemTheme);
+      } else {
+        root.classList.add(theme);
+      }
+      localStorage.setItem('openstore-theme', theme);
+    }
+    set({ theme });
+  },
+
   navigate: (view, params) =>
     set({
       currentView: view,
