@@ -14,8 +14,6 @@ import { searchLiveGitHub } from '@/lib/github-api';
 import type { GitHubRepoResult } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const QUICK_TAGS = ['Excalidraw', 'Ollama', 'Supabase', 'AFFiNE', 'shadcn/ui', 'Cal.com'];
-
 export default function SearchBar() {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -47,12 +45,6 @@ export default function SearchBar() {
       clearTimeout(timer);
     };
   }, [query]);
-
-  const handleTagClick = (tag: string) => {
-    setQuery(tag);
-    setIsFocused(true);
-    inputRef.current?.focus();
-  };
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-3">
@@ -180,21 +172,6 @@ export default function SearchBar() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-
-      {/* Quick Test Tags */}
-      <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-        <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 mr-1">Popular:</span>
-        {QUICK_TAGS.map((tag) => (
-          <button
-            key={tag}
-            type="button"
-            onClick={() => handleTagClick(tag)}
-            className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200/80 dark:border-white/5 text-[11px] font-medium text-zinc-700 dark:text-zinc-300 transition-all cursor-pointer"
-          >
-            {tag}
-          </button>
-        ))}
       </div>
     </div>
   );
