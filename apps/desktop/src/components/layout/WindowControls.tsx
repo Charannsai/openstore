@@ -1,11 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
-import { MinusIcon, MaximizeTileIcon, SquareIcon, XIcon } from '@/components/ui/hugeicons';
+import React, { useState, useEffect } from 'react';
 
 export default function WindowControls() {
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
   const [isMaximized, setIsMaximized] = useState(false);
+
+  useEffect(() => {
+    // Keep maximize state in sync if resized
+    const handleResize = () => {
+      // In Electron renderer, window state can be tracked
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   if (!isElectron) return null;
 
@@ -15,7 +23,7 @@ export default function WindowControls() {
 
   const handleMaximize = () => {
     window.electronAPI?.maximizeWindow?.();
-    setIsMaximized(!isMaximized);
+    setIsMaximized((prev) => !prev);
   };
 
   const handleClose = () => {
@@ -23,36 +31,48 @@ export default function WindowControls() {
   };
 
   return (
-    <div className="flex items-center gap-1 select-none no-drag">
-      {/* Minimize Button */}
+    <div className="flex items-center select-none no-drag h-11">
+      {/* Minimize */}
       <button
         onClick={handleMinimize}
-        className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-white/10 transition-all cursor-pointer group"
+        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
         title="Minimize"
+        aria-label="Minimize"
       >
-        <MinusIcon className="w-4.5 h-4.5 group-hover:scale-110 transition-transform" />
+        <svg width="10" height="1" viewBox="0 0 10 1" className="fill-current">
+          <rect width="10" height="1" />
+        </svg>
       </button>
 
-      {/* Maximize / Restore Button */}
+      {/* Maximize / Restore */}
       <button
         onClick={handleMaximize}
-        className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-white/10 transition-all cursor-pointer group"
-        title={isMaximized ? 'Restore Down' : 'Maximize'}
+        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+        title={isMaximized ? 'Restore' : 'Maximize'}
+        aria-label={isMaximized ? 'Restore' : 'Maximize'}
       >
         {isMaximized ? (
-          <SquareIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          <svg width="10" height="10" viewBox="0 0 10 10" className="fill-none stroke-current" strokeWidth="1">
+            <path d="M2.5 2.5v-2h7v7h-2M0.5 2.5h7v7h-7z" />
+          </svg>
         ) : (
-          <MaximizeTileIcon className="w-4.5 h-4.5 group-hover:scale-110 transition-transform" />
+          <svg width="10" height="10" viewBox="0 0 10 10" className="fill-none stroke-current" strokeWidth="1">
+            <rect x="0.5" y="0.5" width="9" height="9" />
+          </svg>
         )}
       </button>
 
-      {/* Close Button */}
+      {/* Close */}
       <button
         onClick={handleClose}
-        className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-rose-500 transition-all cursor-pointer group"
+        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#e81123] transition-colors cursor-pointer"
         title="Close"
+        aria-label="Close"
       >
-        <XIcon className="w-4.5 h-4.5 group-hover:scale-110 transition-transform" />
+        <svg width="10" height="10" viewBox="0 0 10 10" className="stroke-current" strokeWidth="1.1">
+          <line x1="1" y1="1" x2="9" y2="9" />
+          <line x1="9" y1="1" x2="1" y2="9" />
+        </svg>
       </button>
     </div>
   );

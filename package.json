@@ -25,5 +25,8 @@
     "electron:build": "npm --workspace=@openstore/desktop run electron:build",
     "dev": "npm --workspace=@openstore/desktop run electron:dev",
     "build": "npm --workspace=@openstore/desktop run build"
+  },
+  "overrides": {
+    "@noble/hashes": "^1.7.1"
   }
 }
