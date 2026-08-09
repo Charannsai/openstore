@@ -22,11 +22,13 @@ import {
   GithubIcon,
   StarIcon,
   ArrowUpRightIcon,
+  XIcon,
 } from '@/components/ui/hugeicons';
 import SearchBar from '@/components/landing/SearchBar';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type TabType = 'overview' | 'sandbox' | 'engine' | 'download';
+type PreviewModeType = 'runner' | 'explore' | 'detail' | 'install';
 
 const TABS: { id: TabType; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -70,9 +72,32 @@ const CURATED_HIGHLIGHTS = [
   },
 ];
 
+const PREVIEW_SCREENSHOTS = {
+  explore: {
+    src: '/screenshots/explore-store.png',
+    alt: 'OpenStore Explore Open-Source Projects',
+    title: 'Explore & Discover 100M+ Repositories',
+    desc: 'Filter by category (AI, Dev, Media, Privacy), difficulty, and stars.',
+  },
+  detail: {
+    src: '/screenshots/app-detail.png',
+    alt: 'OpenStore Application Details View',
+    title: 'App Overview & Architecture Specs',
+    desc: 'Full package details, licensing, and 1-click install triggers.',
+  },
+  install: {
+    src: '/screenshots/app-install.png',
+    alt: 'OpenStore 1-Click Automated Installation',
+    title: '1-Click Automated Lifecycle & Progress',
+    desc: 'Real-time cloning, automated winget dependencies, and background daemon execution.',
+  },
+};
+
 export default function LandingPage() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [previewMode, setPreviewMode] = useState<PreviewModeType>('runner');
+  const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -111,7 +136,7 @@ export default function LandingPage() {
       {/* Background Ambient Glow */}
       <div className="ambient-glow" />
 
-      {/* ─── Top Navigation Header ────────────────────────────────────────── */}
+      {/* ─── Top Navigation Header (No Background) ────────────────────────── */}
       <header className="w-full z-50 pt-3 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto px-2 py-2 flex items-center justify-between">
           {/* Brand Emblem */}
@@ -191,7 +216,7 @@ export default function LandingPage() {
       {/* ─── Main Single-Screen Content View ──────────────────────────────── */}
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-center relative overflow-hidden py-2">
         <AnimatePresence mode="wait">
-          {/* VIEW 1: OVERVIEW & LIVE SIMULATOR */}
+          {/* VIEW 1: OVERVIEW & LIVE SIMULATOR / SCREENSHOT PREVIEW */}
           {activeTab === 'overview' && (
             <motion.div
               key="overview"
@@ -251,65 +276,133 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right Column App Simulation */}
+              {/* Right Column App Simulation & Live Screenshots */}
               <div className="lg:col-span-6 w-full">
-                <div className="rounded-2xl overflow-hidden glass-card border border-zinc-200 dark:border-white/10 shadow-2xl bg-white dark:bg-[#121215] p-3.5 text-left relative">
-                  <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-white/10 mb-3 px-1">
+                <div className="rounded-2xl overflow-hidden glass-card border border-zinc-200 dark:border-white/10 shadow-2xl bg-white dark:bg-[#121215] p-3 text-left relative">
+                  {/* Window Bar with Preview Mode Tabs */}
+                  <div className="flex items-center justify-between pb-2.5 border-b border-zinc-200 dark:border-white/10 mb-2.5 px-1">
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
                       <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
                       <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-400">OpenStore Agent — Windows x64</span>
-                    <div className="w-10" />
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/10 space-y-1.5">
-                      <div className="text-[11px] font-semibold text-zinc-950 dark:text-white flex items-center gap-1.5 mb-2">
-                        <div className="w-4 h-4 rounded bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center text-[8px] font-bold">OS</div>
-                        <span>OpenStore</span>
-                      </div>
-                      <div className="p-1.5 rounded-lg bg-zinc-200/70 dark:bg-white/[0.08] text-[10px] font-semibold text-zinc-950 dark:text-white flex items-center gap-1.5">
-                        <CompassIcon className="w-3 h-3" />
-                        <span>Discover</span>
-                      </div>
-                      <div className="p-1.5 rounded-lg text-[10px] font-medium text-zinc-500 flex items-center gap-1.5">
-                        <PackageIcon className="w-3 h-3" />
-                        <span>My Apps (4)</span>
-                      </div>
-                      <div className="p-1.5 rounded-lg text-[10px] font-medium text-zinc-500 flex items-center gap-1.5">
-                        <TerminalIcon className="w-3 h-3" />
-                        <span>Terminal</span>
-                      </div>
+                    {/* Preview Switcher Tabs */}
+                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg text-[10px] font-medium border border-zinc-200/60 dark:border-white/5">
+                      <button
+                        onClick={() => setPreviewMode('runner')}
+                        className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                          previewMode === 'runner'
+                            ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white font-semibold shadow-xs'
+                            : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        Live Runner
+                      </button>
+                      <button
+                        onClick={() => setPreviewMode('explore')}
+                        className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                          previewMode === 'explore'
+                            ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white font-semibold shadow-xs'
+                            : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        Catalog
+                      </button>
+                      <button
+                        onClick={() => setPreviewMode('detail')}
+                        className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                          previewMode === 'detail'
+                            ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white font-semibold shadow-xs'
+                            : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        Details
+                      </button>
+                      <button
+                        onClick={() => setPreviewMode('install')}
+                        className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                          previewMode === 'install'
+                            ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white font-semibold shadow-xs'
+                            : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        Install
+                      </button>
                     </div>
 
-                    <div className="sm:col-span-2 p-3 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/60 border border-zinc-200 dark:border-white/10 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-[11px] font-semibold text-zinc-950 dark:text-white">Developer Roadmap</h4>
-                          <p className="text-[9px] text-zinc-500 font-mono">github.com/kamranahmedse/developer-roadmap</p>
+                    <span className="text-[10px] text-zinc-400 font-mono hidden sm:inline">Windows x64</span>
+                  </div>
+
+                  {/* Mode 1: Simulated Runner */}
+                  {previewMode === 'runner' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/10 space-y-1.5">
+                        <div className="text-[11px] font-semibold text-zinc-950 dark:text-white flex items-center gap-1.5 mb-2">
+                          <div className="w-4 h-4 rounded bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center text-[8px] font-bold">OS</div>
+                          <span>OpenStore</span>
                         </div>
-                        <span className="badge-minimal text-[9px] flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot" />
-                          Active :3000
-                        </span>
+                        <div className="p-1.5 rounded-lg bg-zinc-200/70 dark:bg-white/[0.08] text-[10px] font-semibold text-zinc-950 dark:text-white flex items-center gap-1.5">
+                          <CompassIcon className="w-3 h-3" />
+                          <span>Discover</span>
+                        </div>
+                        <div className="p-1.5 rounded-lg text-[10px] font-medium text-zinc-500 flex items-center gap-1.5">
+                          <PackageIcon className="w-3 h-3" />
+                          <span>My Apps (4)</span>
+                        </div>
+                        <div className="p-1.5 rounded-lg text-[10px] font-medium text-zinc-500 flex items-center gap-1.5">
+                          <TerminalIcon className="w-3 h-3" />
+                          <span>Terminal</span>
+                        </div>
                       </div>
 
-                      <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                        <div className="w-5/6 h-full bg-zinc-900 dark:bg-zinc-100 rounded-full" />
-                      </div>
+                      <div className="sm:col-span-2 p-3 rounded-xl bg-zinc-50/80 dark:bg-zinc-950/60 border border-zinc-200 dark:border-white/10 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-[11px] font-semibold text-zinc-950 dark:text-white">Developer Roadmap</h4>
+                            <p className="text-[9px] text-zinc-500 font-mono">github.com/kamranahmedse/developer-roadmap</p>
+                          </div>
+                          <span className="badge-minimal text-[9px] flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot" />
+                            Active :3000
+                          </span>
+                        </div>
 
-                      <div className="p-2.5 rounded-lg bg-zinc-900 text-zinc-200 font-mono text-[10px] leading-tight space-y-1">
-                        <div className="text-zinc-400">[WINGET] Git 2.44 & Node.js v20.12 detected.</div>
-                        <div className="text-zinc-400">[AGENT] npm install completed (0 errors).</div>
-                        <div className="text-emerald-400 flex items-center justify-between">
-                          <span>[RUNNER] Server online</span>
-                          <span className="underline">http://localhost:3000</span>
+                        <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="w-5/6 h-full bg-zinc-900 dark:bg-zinc-100 rounded-full" />
+                        </div>
+
+                        <div className="p-2.5 rounded-lg bg-zinc-900 text-zinc-200 font-mono text-[10px] leading-tight space-y-1">
+                          <div className="text-zinc-400">[WINGET] Git 2.44 & Node.js v20.12 detected.</div>
+                          <div className="text-zinc-400">[AGENT] npm install completed (0 errors).</div>
+                          <div className="text-emerald-400 flex items-center justify-between">
+                            <span>[RUNNER] Server online</span>
+                            <span className="underline">http://localhost:3000</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    /* Mode 2, 3, 4: Real Desktop App Screenshot Preview */
+                    <div className="relative group cursor-pointer" onClick={() => setSelectedScreenshot(PREVIEW_SCREENSHOTS[previewMode as 'explore' | 'detail' | 'install'].src)}>
+                      <div className="rounded-xl overflow-hidden border border-zinc-200/80 dark:border-white/10 bg-zinc-950 aspect-[16/9] relative">
+                        <img
+                          src={PREVIEW_SCREENSHOTS[previewMode as 'explore' | 'detail' | 'install'].src}
+                          alt={PREVIEW_SCREENSHOTS[previewMode as 'explore' | 'detail' | 'install'].alt}
+                          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="px-3 py-1 rounded-lg bg-zinc-900/90 text-white text-[11px] font-medium backdrop-blur-md border border-white/20">
+                            Click to Expand Fullscreen
+                          </span>
+                        </div>
+                      </div>
+                      <div className="pt-2 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400">
+                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{PREVIEW_SCREENSHOTS[previewMode as 'explore' | 'detail' | 'install'].title}</span>
+                        <span className="text-[10px]">Real Desktop Screenshot</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -472,7 +565,7 @@ export default function LandingPage() {
         </AnimatePresence>
       </main>
 
-      {/* ─── Pinned Bottom Minimal Footer ─────────────────────────────────── */}
+      {/* ─── Pinned Bottom Minimal Footer (No Background) ─────────────────── */}
       <footer className="w-full z-50 pb-3 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto py-2 px-2 flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 gap-2">
           <p>© {new Date().getFullYear()} OpenStore Platform. Open-source software desktop agent.</p>
@@ -499,6 +592,40 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* ─── Full-Screen Screenshot Lightbox Modal ────────────────────────── */}
+      <AnimatePresence>
+        {selectedScreenshot && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedScreenshot(null)}
+            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 sm:p-8 cursor-pointer"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-5xl w-full rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-zinc-950"
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedScreenshot(null)}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-zinc-900/90 text-white hover:bg-zinc-800 border border-white/10 transition-colors"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
+              <img
+                src={selectedScreenshot}
+                alt="OpenStore Desktop Preview"
+                className="w-full h-auto object-contain max-h-[85vh]"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

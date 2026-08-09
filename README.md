@@ -21,7 +21,28 @@ No more `git clone && npm install && npm run build` — just click install.
 
 <br/>
 
-[**Download**](#download) · [**Features**](#features) · [**Quick Start**](#quick-start) · [**Contributing**](#contributing) · [**Sponsor**](https://github.com/sponsors/Charannsai) · [**Roadmap**](#roadmap)
+[**Download**](#download) · [**Screenshots**](#live-preview--screenshots) · [**Features**](#features) · [**Quick Start**](#quick-start) · [**Contributing**](#contributing) · [**Sponsor**](https://github.com/sponsors/Charannsai) · [**Roadmap**](#roadmap)
+
+</div>
+
+---
+
+## Live Preview & Screenshots
+
+<div align="center">
+
+### 1. Explore & Discover Top Open-Source Projects
+<img src="public/screenshots/explore-store.png" alt="OpenStore Explore Page" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);" />
+
+<br/><br/>
+
+### 2. Rich Application Details, Architecture & External Links
+<img src="public/screenshots/app-detail.png" alt="OpenStore App Detail View" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);" />
+
+<br/><br/>
+
+### 3. 1-Click Automated Cloning, Prerequisite Auto-Fixer & Lifecycle Runner
+<img src="public/screenshots/app-install.png" alt="OpenStore 1-Click Installation Progress" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);" />
 
 </div>
 
