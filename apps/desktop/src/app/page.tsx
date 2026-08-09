@@ -35,17 +35,22 @@ export default function DesktopDashboard() {
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== 'undefined' && window.electronAPI?.getInstalledApps) {
-      window.electronAPI
-        .getInstalledApps()
-        .then((list) => {
-          if (Array.isArray(list)) {
-            useAppStore.setState({ installedApps: list });
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to sync installed apps registry:', err);
-        });
+    if (typeof window !== 'undefined') {
+      const savedTheme = (localStorage.getItem('openstore-theme') as 'dark' | 'light' | 'system') || 'dark';
+      useAppStore.getState().setTheme(savedTheme);
+
+      if (window.electronAPI?.getInstalledApps) {
+        window.electronAPI
+          .getInstalledApps()
+          .then((list) => {
+            if (Array.isArray(list)) {
+              useAppStore.setState({ installedApps: list });
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to sync installed apps registry:', err);
+          });
+      }
     }
   }, []);
 

@@ -148,13 +148,15 @@ export const useAppStore = create<AppStoreState>((set) => ({
     if (typeof window !== 'undefined') {
       const root = document.documentElement;
       root.classList.remove('dark', 'light');
+      let effectiveTheme = theme;
       if (theme === 'system') {
-        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        root.classList.add(systemTheme);
-      } else {
-        root.classList.add(theme);
+        effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       }
+      root.classList.add(effectiveTheme);
       localStorage.setItem('openstore-theme', theme);
+      if (window.electronAPI?.setTitlebarTheme) {
+        window.electronAPI.setTitlebarTheme(effectiveTheme);
+      }
     }
     set({ theme });
   },

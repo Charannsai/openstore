@@ -139,15 +139,15 @@ export default function SettingsPage() {
                 {/* Dark Mode */}
                 <button
                   onClick={() => setTheme('dark')}
-                  className={`p-4 rounded-xl border flex flex-col items-start gap-3 transition-all cursor-pointer text-left relative ${
+                  className={`p-4 rounded-xl border-2 flex flex-col items-start gap-3 transition-all cursor-pointer text-left relative ${
                     theme === 'dark'
-                      ? 'bg-zinc-950 text-white border-zinc-950 dark:bg-white dark:text-zinc-950 dark:border-white shadow-sm'
-                      : 'bg-zinc-50/60 dark:bg-zinc-900/40 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
+                      ? 'border-zinc-950 dark:border-white bg-zinc-100/80 dark:bg-white/[0.08] text-zinc-950 dark:text-white shadow-xs'
+                      : 'border-zinc-200 dark:border-white/10 bg-zinc-50/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/20 hover:text-zinc-950 dark:hover:text-white'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
                     <MoonIcon className="w-5 h-5" />
-                    {theme === 'dark' && <CheckIcon className="w-4 h-4 text-emerald-500 dark:text-emerald-600" />}
+                    {theme === 'dark' && <CheckIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
                   </div>
                   <div>
                     <span className="text-xs font-bold block">Dark Mode</span>
@@ -158,15 +158,15 @@ export default function SettingsPage() {
                 {/* Light Mode */}
                 <button
                   onClick={() => setTheme('light')}
-                  className={`p-4 rounded-xl border flex flex-col items-start gap-3 transition-all cursor-pointer text-left relative ${
+                  className={`p-4 rounded-xl border-2 flex flex-col items-start gap-3 transition-all cursor-pointer text-left relative ${
                     theme === 'light'
-                      ? 'bg-zinc-950 text-white border-zinc-950 dark:bg-white dark:text-zinc-950 dark:border-white shadow-sm'
-                      : 'bg-zinc-50/60 dark:bg-zinc-900/40 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
+                      ? 'border-zinc-950 dark:border-white bg-zinc-100/80 dark:bg-white/[0.08] text-zinc-950 dark:text-white shadow-xs'
+                      : 'border-zinc-200 dark:border-white/10 bg-zinc-50/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/20 hover:text-zinc-950 dark:hover:text-white'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
                     <SunIcon className="w-5 h-5" />
-                    {theme === 'light' && <CheckIcon className="w-4 h-4 text-emerald-500 dark:text-emerald-600" />}
+                    {theme === 'light' && <CheckIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
                   </div>
                   <div>
                     <span className="text-xs font-bold block">Light Mode</span>
@@ -177,15 +177,15 @@ export default function SettingsPage() {
                 {/* System */}
                 <button
                   onClick={() => setTheme('system')}
-                  className={`p-4 rounded-xl border flex flex-col items-start gap-3 transition-all cursor-pointer text-left relative ${
+                  className={`p-4 rounded-xl border-2 flex flex-col items-start gap-3 transition-all cursor-pointer text-left relative ${
                     theme === 'system'
-                      ? 'bg-zinc-950 text-white border-zinc-950 dark:bg-white dark:text-zinc-950 dark:border-white shadow-sm'
-                      : 'bg-zinc-50/60 dark:bg-zinc-900/40 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
+                      ? 'border-zinc-950 dark:border-white bg-zinc-100/80 dark:bg-white/[0.08] text-zinc-950 dark:text-white shadow-xs'
+                      : 'border-zinc-200 dark:border-white/10 bg-zinc-50/40 dark:bg-zinc-900/40 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/20 hover:text-zinc-950 dark:hover:text-white'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
                     <MonitorIcon className="w-5 h-5" />
-                    {theme === 'system' && <CheckIcon className="w-4 h-4 text-emerald-500 dark:text-emerald-600" />}
+                    {theme === 'system' && <CheckIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
                   </div>
                   <div>
                     <span className="text-xs font-bold block">System Default</span>

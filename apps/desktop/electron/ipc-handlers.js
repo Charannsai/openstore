@@ -76,15 +76,15 @@ function registerAgentHandlers(ipcMain) {
       try {
         if (theme === 'light') {
           win.setTitleBarOverlay({
-            color: '#ffffff',
+            color: '#00000000',
             symbolColor: '#09090b',
-            height: 38,
+            height: 44,
           });
         } else {
           win.setTitleBarOverlay({
-            color: '#09090b',
+            color: '#00000000',
             symbolColor: '#f4f4f5',
-            height: 38,
+            height: 44,
           });
         }
       } catch {}
