@@ -40,6 +40,11 @@ button[disabled],
   cursor: not-allowed !important;
 }
 
+.window-control-btn,
+.cursor-default {
+  cursor: default !important;
+}
+
 /* ─── Electron Desktop Window Dragging Utilities ────────────────────────── */
 .drag-region {
   -webkit-app-region: drag !important;
