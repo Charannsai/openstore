@@ -113,7 +113,7 @@ export default function LandingPage() {
 
       {/* ─── Top Navigation Header ────────────────────────────────────────── */}
       <header className="w-full z-50 pt-3 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto glass-panel rounded-2xl px-4 py-2.5 flex items-center justify-between border border-zinc-200/80 dark:border-white/10 shadow-lg">
+        <div className="max-w-6xl mx-auto px-2 py-2 flex items-center justify-between">
           {/* Brand Emblem */}
           <button
             onClick={() => setActiveTab('overview')}
@@ -133,17 +133,17 @@ export default function LandingPage() {
           </button>
 
           {/* Tab Navigation Switcher */}
-          <nav className="flex items-center gap-1 bg-zinc-100/90 dark:bg-zinc-900/90 p-1 rounded-xl border border-zinc-200/60 dark:border-white/5">
+          <nav className="flex items-center gap-1">
             {TABS.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-1 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-xs'
-                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
+                      ? 'bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-xs'
+                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100/60 dark:hover:bg-white/[0.04]'
                   }`}
                 >
                   {tab.label}
@@ -158,7 +158,7 @@ export default function LandingPage() {
               href={BRAND.githubUrl}
               target="_blank"
               rel="noreferrer"
-              className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300 transition-all flex items-center gap-1.5 text-[11px] font-semibold"
+              className="p-1.5 rounded-xl hover:bg-zinc-100/80 dark:hover:bg-white/[0.06] text-zinc-700 dark:text-zinc-300 transition-all flex items-center gap-1.5 text-xs font-semibold"
               title="GitHub Star"
             >
               <GithubIcon className="w-3.5 h-3.5" />
@@ -167,7 +167,7 @@ export default function LandingPage() {
 
             <button
               onClick={toggleTheme}
-              className="p-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-white/10 text-zinc-900 dark:text-zinc-100 transition-all cursor-pointer"
+              className="p-1.5 rounded-xl hover:bg-zinc-100/80 dark:hover:bg-white/[0.06] text-zinc-900 dark:text-zinc-100 transition-all cursor-pointer"
               title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
               {theme === 'light' ? (
@@ -179,7 +179,7 @@ export default function LandingPage() {
 
             <button
               onClick={() => setActiveTab('download')}
-              className="btn-primary px-3 py-1.5 text-[11px] font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <DownloadIcon className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Get App</span>
@@ -474,7 +474,7 @@ export default function LandingPage() {
 
       {/* ─── Pinned Bottom Minimal Footer ─────────────────────────────────── */}
       <footer className="w-full z-50 pb-3 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto py-2.5 px-4 glass-panel rounded-2xl border border-zinc-200/80 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 gap-2 shadow-sm">
+        <div className="max-w-6xl mx-auto py-2 px-2 flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 gap-2">
           <p>© {new Date().getFullYear()} OpenStore Platform. Open-source software desktop agent.</p>
           <div className="flex items-center gap-4 font-medium">
             <button onClick={() => setActiveTab('overview')} className="hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
