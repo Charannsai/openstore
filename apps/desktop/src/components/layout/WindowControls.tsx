@@ -30,7 +30,7 @@ export default function WindowControls() {
       {/* Minimize */}
       <button
         onClick={handleMinimize}
-        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/[0.08] transition-colors cursor-default"
         title="Minimize"
         aria-label="Minimize"
       >
@@ -42,7 +42,7 @@ export default function WindowControls() {
       {/* Maximize / Restore */}
       <button
         onClick={handleMaximize}
-        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-white/[0.08] transition-colors cursor-default"
         title={isMaximized ? 'Restore' : 'Maximize'}
         aria-label={isMaximized ? 'Restore' : 'Maximize'}
       >
@@ -60,7 +60,7 @@ export default function WindowControls() {
       {/* Close */}
       <button
         onClick={handleClose}
-        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#e81123] transition-colors cursor-pointer"
+        className="w-11 h-11 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#e81123] transition-colors cursor-default"
         title="Close"
         aria-label="Close"
       >
