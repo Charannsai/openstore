@@ -3,19 +3,14 @@
 import React, { useState, useEffect } from 'react';
 
 export default function WindowControls() {
-  const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+  const [mounted, setMounted] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
-    // Keep maximize state in sync if resized
-    const handleResize = () => {
-      // In Electron renderer, window state can be tracked
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    setMounted(true);
   }, []);
 
-  if (!isElectron) return null;
+  if (!mounted) return null;
 
   const handleMinimize = () => {
     window.electronAPI?.minimizeWindow?.();

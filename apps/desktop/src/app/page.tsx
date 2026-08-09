@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/app-store';
 import TopNav from '@/components/layout/TopNav';
 import HomePage from '@/components/pages/HomePage';
@@ -28,11 +28,13 @@ const pageComponents: Record<string, React.ComponentType> = {
 };
 
 export default function DesktopDashboard() {
+  const [mounted, setMounted] = useState(false);
   const { currentView, navigate } = useAppStore();
   const PageComponent = pageComponents[currentView] || HomePage;
   const isNativeElectron = typeof window !== 'undefined' && !!window.electronAPI;
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window !== 'undefined' && window.electronAPI?.getInstalledApps) {
       window.electronAPI
         .getInstalledApps()
@@ -48,7 +50,7 @@ export default function DesktopDashboard() {
   }, []);
 
   // If someone directly opens the internal desktop port in Chrome/Edge, guard it
-  if (typeof window !== 'undefined' && !isNativeElectron) {
+  if (mounted && !isNativeElectron) {
     return (
       <div className="min-h-screen bg-[#09090b] text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
         <div className="w-12 h-12 rounded-2xl bg-white text-zinc-950 flex items-center justify-center font-extrabold text-xl shadow-xl">
