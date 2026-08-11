@@ -94,16 +94,38 @@ function createWindow() {
 
 // ─── App lifecycle ───────────────────────────────────────────────────────────
 app.whenReady().then(() => {
-  // Handle custom app:// scheme to correctly serve static exported Next.js app
+  // Handle custom app:// scheme to correctly serve static exported Next.js app from app.asar
   protocol.handle('app', (request) => {
-    let reqUrl = request.url.replace(/^app:\/\/[\w.-]+/, '');
-    if (reqUrl === '' || reqUrl === '/') {
-      reqUrl = '/index.html';
-    }
-    const safePath = path.normalize(decodeURIComponent(reqUrl)).replace(/^(\.\.[\/\\])+/, '');
-    const fullPath = path.join(__dirname, '../out', safePath);
+    try {
+      let reqUrl = request.url.replace(/^app:\/\/[\w.-]+/, '');
+      if (reqUrl === '' || reqUrl === '/') {
+        reqUrl = '/index.html';
+      }
+      const safePath = path.normalize(decodeURIComponent(reqUrl)).replace(/^(\.\.[\/\\])+/, '');
+      let fullPath = path.join(__dirname, '../out', safePath);
 
-    return net.fetch(`file://${fullPath}`);
+      if (!fs.existsSync(fullPath) || fs.statSync(fullPath).isDirectory()) {
+        fullPath = path.join(__dirname, '../out/index.html');
+      }
+
+      const data = fs.readFileSync(fullPath);
+      let mimeType = 'text/html';
+      if (fullPath.endsWith('.js')) mimeType = 'text/javascript';
+      else if (fullPath.endsWith('.css')) mimeType = 'text/css';
+      else if (fullPath.endsWith('.json')) mimeType = 'application/json';
+      else if (fullPath.endsWith('.png')) mimeType = 'image/png';
+      else if (fullPath.endsWith('.jpg') || fullPath.endsWith('.jpeg')) mimeType = 'image/jpeg';
+      else if (fullPath.endsWith('.svg')) mimeType = 'image/svg+xml';
+      else if (fullPath.endsWith('.woff2')) mimeType = 'font/woff2';
+
+      return new Response(data, {
+        status: 200,
+        headers: { 'content-type': mimeType },
+      });
+    } catch (err) {
+      console.error('App protocol error:', err);
+      return new Response('Not Found', { status: 404 });
+    }
   });
 
   // Register IPC handlers for desktop agent
