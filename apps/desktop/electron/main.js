@@ -19,7 +19,7 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 // ─── Configuration ───────────────────────────────────────────────────────────
-const isDev = process.env.NODE_ENV !== 'production';
+const isDev = !app.isPackaged && process.env.NODE_ENV !== 'production';
 const DEV_URL = 'http://localhost:3002';
 
 function loadWindowState() {
