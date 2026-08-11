@@ -555,14 +555,19 @@ export default function LandingPage() {
                   </a>
                 </div>
 
-                <div className="pt-1 text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center justify-center gap-2">
-                  <span>Requires Windows 10/11 x64</span>
-                  <span>•</span>
-                  <span>Version {BRAND.version}</span>
-                  <span>•</span>
-                  <a href={BRAND.githubUrl} target="_blank" rel="noreferrer" className="underline hover:text-zinc-900 dark:hover:text-white">
-                    Source Code
-                  </a>
+                <div className="pt-2 space-y-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                  <div className="flex items-center justify-center gap-2">
+                    <span>Requires Windows 10/11 x64</span>
+                    <span>•</span>
+                    <span>Version {BRAND.version}</span>
+                    <span>•</span>
+                    <a href={BRAND.githubUrl} target="_blank" rel="noreferrer" className="underline hover:text-zinc-900 dark:hover:text-white">
+                      Source Code
+                    </a>
+                  </div>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 max-w-md mx-auto">
+                    *Windows SmartScreen notice: Click <strong className="text-zinc-600 dark:text-zinc-300 font-semibold">"More info"</strong> ➔ <strong className="text-zinc-600 dark:text-zinc-300 font-semibold">"Run anyway"</strong>. OpenStore is 100% open source.
+                  </p>
                 </div>
               </div>
             </motion.div>
