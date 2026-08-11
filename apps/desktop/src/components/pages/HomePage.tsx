@@ -56,6 +56,11 @@ export default function HomePage() {
         className="relative z-20 pt-6 pb-4"
       >
         <div className="relative text-center max-w-2xl mx-auto space-y-4">
+          <img
+            src="/logo.png"
+            alt="OpenStore Logo"
+            className="w-16 h-16 object-contain mx-auto mb-1 drop-shadow-xl"
+          />
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-white">
             Open-source software, simplified.
           </h1>

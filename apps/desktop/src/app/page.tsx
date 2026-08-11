@@ -93,9 +93,7 @@ export default function DesktopDashboard() {
   if (mounted && !isNativeElectron) {
     return (
       <div className="min-h-screen bg-[#09090b] text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-white text-zinc-950 flex items-center justify-center font-extrabold text-xl shadow-xl">
-          OS
-        </div>
+        <img src="/logo.png" alt="OpenStore Logo" className="w-14 h-14 object-contain drop-shadow-xl" />
         <div className="space-y-1 max-w-md">
           <h1 className="text-lg font-bold">OpenStore Desktop Application</h1>
           <p className="text-xs text-zinc-400 leading-relaxed font-normal">

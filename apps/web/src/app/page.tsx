@@ -144,9 +144,7 @@ export default function LandingPage() {
             onClick={() => setActiveTab('overview')}
             className="flex items-center gap-2.5 text-left cursor-pointer"
           >
-            <div className="w-7 h-7 rounded-lg bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-bold text-xs flex items-center justify-center shadow-xs">
-              OS
-            </div>
+            <img src="/logo.png" alt="OpenStore Logo" className="w-7 h-7 object-contain drop-shadow-xs" />
             <div className="hidden sm:block">
               <span className="text-xs font-bold tracking-tight text-zinc-950 dark:text-white block">
                 {BRAND.name}
@@ -339,7 +337,7 @@ export default function LandingPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-white/10 space-y-1.5">
                         <div className="text-[11px] font-semibold text-zinc-950 dark:text-white flex items-center gap-1.5 mb-2">
-                          <div className="w-4 h-4 rounded bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center text-[8px] font-bold">OS</div>
+                          <img src="/logo.png" alt="OpenStore Logo" className="w-4 h-4 object-contain" />
                           <span>OpenStore</span>
                         </div>
                         <div className="p-1.5 rounded-lg bg-zinc-200/70 dark:bg-white/[0.08] text-[10px] font-semibold text-zinc-950 dark:text-white flex items-center gap-1.5">
@@ -516,9 +514,7 @@ export default function LandingPage() {
               className="w-full max-w-3xl mx-auto text-center space-y-4"
             >
               <div className="glass-card rounded-3xl p-6 sm:p-9 border border-zinc-200 dark:border-white/15 shadow-2xl bg-white dark:bg-[#121215] space-y-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-bold text-base flex items-center justify-center mx-auto shadow-xs">
-                  OS
-                </div>
+                <img src="/logo.png" alt="OpenStore Logo" className="w-14 h-14 object-contain mx-auto drop-shadow-xl" />
 
                 <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">
                   Get OpenStore Desktop Agent

@@ -354,9 +354,11 @@ export default function SettingsPage() {
             <div className="rounded-2xl bg-white dark:bg-[#121215] border border-zinc-200 dark:border-white/10 p-6 shadow-xs space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-white/5">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-xs">
-                    OS
-                  </div>
+                  <img
+                    src="/logo.png"
+                    alt="OpenStore Logo"
+                    className="w-11 h-11 object-contain flex-shrink-0 drop-shadow-md"
+                  />
                   <div>
                     <h2 className="text-sm font-bold text-zinc-950 dark:text-white">{BRAND.name} Desktop Agent</h2>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Version {BRAND.version} • Open Source Platform</p>
