@@ -247,16 +247,16 @@ export default function LandingPage() {
                     className="btn-primary px-5 py-2.5 text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-md"
                   >
                     <DownloadIcon className="w-4 h-4" />
-                    <span>Download OpenStore Setup (.exe)</span>
+                    <span>Download Setup (.exe)</span>
                   </a>
                   <a
-                    href={BRAND.releasesUrl}
+                    href={BRAND.downloads.windowsPortable}
                     target="_blank"
                     rel="noreferrer"
                     className="btn-secondary px-4 py-2.5 text-xs font-semibold flex items-center gap-2 cursor-pointer"
                   >
-                    <LayersIcon className="w-4 h-4" />
-                    <span>All Releases</span>
+                    <DownloadIcon className="w-4 h-4" />
+                    <span>Portable (.exe)</span>
                   </a>
 
                   <button
@@ -541,17 +541,17 @@ export default function LandingPage() {
                     className="btn-primary px-7 py-3 text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-md w-full sm:w-auto justify-center"
                   >
                     <DownloadIcon className="w-4 h-4" />
-                    <span>Download OpenStore for Windows</span>
+                    <span>Download Setup (.exe)</span>
                   </a>
 
                   <a
-                    href={BRAND.releasesUrl}
+                    href={BRAND.downloads.windowsPortable}
                     target="_blank"
                     rel="noreferrer"
                     className="btn-secondary px-5 py-3 text-xs font-semibold flex items-center gap-2 cursor-pointer w-full sm:w-auto justify-center"
                   >
-                    <LayersIcon className="w-4 h-4" />
-                    <span>All Releases (macOS / Linux)</span>
+                    <DownloadIcon className="w-4 h-4" />
+                    <span>Download Portable (.exe)</span>
                   </a>
                 </div>
 

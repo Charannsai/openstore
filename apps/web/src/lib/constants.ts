@@ -11,8 +11,8 @@ export const BRAND = {
   issuesUrl: 'https://github.com/Charannsai/openstore/issues',
   licenseUrl: 'https://github.com/Charannsai/openstore/blob/main/LICENSE',
   downloads: {
-    windowsExe: 'https://github.com/Charannsai/openstore/releases/latest',
-    windowsPortable: 'https://github.com/Charannsai/openstore/releases/latest',
+    windowsExe: 'https://github.com/Charannsai/openstore/releases/download/v0.1.0/OpenStore.Setup.0.1.0.exe',
+    windowsPortable: 'https://github.com/Charannsai/openstore/releases/download/v0.1.0/OpenStore.0.1.0.exe',
     macDmg: 'https://github.com/Charannsai/openstore/releases/latest',
     linuxAppImage: 'https://github.com/Charannsai/openstore/releases/latest',
   },
