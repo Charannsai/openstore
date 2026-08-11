@@ -87,21 +87,6 @@ export default function AppDetailPage() {
     }
   }
 
-  if (!app) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-3">
-        <p className="text-xs text-zinc-500 font-semibold">Repository metadata not found.</p>
-        <button
-          onClick={() => navigate('home')}
-          className="btn-secondary px-4 py-2 text-xs font-bold flex items-center gap-2 cursor-pointer"
-        >
-          <ArrowLeftIcon className="w-4 h-4" />
-          <span>Return Home</span>
-        </button>
-      </div>
-    );
-  }
-
   const isInstalling = Boolean(app && currentInstallation.appId === app.id && currentInstallation.status === 'running');
 
   useEffect(() => {
@@ -148,7 +133,22 @@ export default function AppDetailPage() {
     return () => {
       isMounted = false;
     };
-  }, [app, isInstalling]);
+  }, [app, isInstalling, addActivity, addInstalledApp]);
+
+  if (!app) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-3">
+        <p className="text-xs text-zinc-500 font-semibold">Repository metadata not found.</p>
+        <button
+          onClick={() => navigate('home')}
+          className="btn-secondary px-4 py-2 text-xs font-bold flex items-center gap-2 cursor-pointer"
+        >
+          <ArrowLeftIcon className="w-4 h-4" />
+          <span>Return Home</span>
+        </button>
+      </div>
+    );
+  }
 
   const handleCancelInstallation = async () => {
     cancelInstallation();
