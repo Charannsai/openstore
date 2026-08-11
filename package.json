@@ -27,6 +27,9 @@
     "build": "npm --workspace=@openstore/desktop run build"
   },
   "overrides": {
-    "@noble/hashes": "^1.7.1"
+    "app-builder-lib": {
+      "@noble/hashes": "1.4.0"
+    },
+    "@noble/hashes": "1.4.0"
   }
 }
