@@ -100,12 +100,24 @@ export default function LandingPage() {
   const [previewMode, setPreviewMode] = useState<PreviewModeType>('runner');
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [repoStars, setRepoStars] = useState<number | null>(null);
+  const [repoStars, setRepoStars] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('openstore_repo_stars');
+      if (cached) {
+        const parsed = parseInt(cached, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+    }
+    return 3;
+  });
 
   useEffect(() => {
     fetchRepoStarCount(BRAND.githubUrl).then((stars) => {
       if (stars !== null) {
         setRepoStars(stars);
+        try {
+          localStorage.setItem('openstore_repo_stars', stars.toString());
+        } catch {}
       }
     });
   }, []);
@@ -191,14 +203,14 @@ export default function LandingPage() {
               href={BRAND.githubUrl}
               target="_blank"
               rel="noreferrer"
-              className="px-2.5 py-1.5 rounded-xl border border-zinc-200/80 dark:border-white/10 bg-white/60 dark:bg-zinc-900/60 hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-zinc-700 dark:text-zinc-300 transition-all flex items-center gap-1.5 text-xs font-semibold shadow-2xs"
+              className="p-1.5 rounded-xl hover:bg-zinc-100/80 dark:hover:bg-white/[0.06] text-zinc-700 dark:text-zinc-300 transition-all flex items-center gap-1.5 text-xs font-semibold"
               title="GitHub Repository & Stars"
             >
               <GithubIcon className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Star</span>
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20">
-                <StarIcon className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
-                {repoStars !== null ? formatStarCount(repoStars) : '...'}
+              <span className="flex items-center gap-0.5 text-zinc-500 dark:text-zinc-400 font-normal">
+                <StarIcon className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
+                {formatStarCount(repoStars)}
               </span>
             </a>
 
@@ -609,12 +621,7 @@ export default function LandingPage() {
             <span>•</span>
             <a href={BRAND.githubUrl} target="_blank" rel="noreferrer" className="hover:text-zinc-900 dark:hover:text-white transition-colors flex items-center gap-1">
               <span>GitHub</span>
-              {repoStars !== null && (
-                <span className="inline-flex items-center gap-0.5 text-amber-500 font-semibold text-[10px]">
-                  <StarIcon className="w-2.5 h-2.5 fill-amber-500" />
-                  {formatStarCount(repoStars)}
-                </span>
-              )}
+              <span className="text-zinc-400 dark:text-zinc-500 text-[10px]">★ {formatStarCount(repoStars)}</span>
             </a>
             <a href={BRAND.licenseUrl} target="_blank" rel="noreferrer" className="hover:text-zinc-900 dark:hover:text-white transition-colors">
               MIT License
