@@ -54,31 +54,6 @@ export default function DesktopDashboard() {
     }
   }, []);
 
-  // If someone directly opens the internal desktop port in Chrome/Edge, guard it
-  if (mounted && !isNativeElectron) {
-    return (
-      <div className="min-h-screen bg-[#09090b] text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-white text-zinc-950 flex items-center justify-center font-extrabold text-xl shadow-xl">
-          OS
-        </div>
-        <div className="space-y-1 max-w-md">
-          <h1 className="text-lg font-bold">OpenStore Desktop Application</h1>
-          <p className="text-xs text-zinc-400 leading-relaxed font-normal">
-            This dashboard requires the native Electron runtime to perform Git cloning, terminal streaming, and background process management.
-          </p>
-        </div>
-        <div className="pt-2 flex items-center gap-3">
-          <a
-            href="http://localhost:3000"
-            className="px-4 py-2 rounded-xl bg-white text-zinc-950 font-bold text-xs hover:bg-zinc-200 transition-all shadow-md"
-          >
-            Open Web Landing Page (Port 3000)
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ctrl+F / Cmd+F -> Focus Search
@@ -113,6 +88,31 @@ export default function DesktopDashboard() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
+
+  // If someone directly opens the internal desktop port in Chrome/Edge, guard it
+  if (mounted && !isNativeElectron) {
+    return (
+      <div className="min-h-screen bg-[#09090b] text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-white text-zinc-950 flex items-center justify-center font-extrabold text-xl shadow-xl">
+          OS
+        </div>
+        <div className="space-y-1 max-w-md">
+          <h1 className="text-lg font-bold">OpenStore Desktop Application</h1>
+          <p className="text-xs text-zinc-400 leading-relaxed font-normal">
+            This dashboard requires the native Electron runtime to perform Git cloning, terminal streaming, and background process management.
+          </p>
+        </div>
+        <div className="pt-2 flex items-center gap-3">
+          <a
+            href="http://localhost:3000"
+            className="px-4 py-2 rounded-xl bg-white text-zinc-950 font-bold text-xs hover:bg-zinc-200 transition-all shadow-md"
+          >
+            Open Web Landing Page (Port 3000)
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>
