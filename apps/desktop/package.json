@@ -10,7 +10,7 @@
     "start": "next start -p 3002",
     "lint": "eslint",
     "electron:dev": "concurrently -k \"cross-env NODE_ENV=development next dev -p 3002\" \"wait-on http://localhost:3002 && cross-env NODE_ENV=development electron .\"",
-    "electron:build": "next build && electron-builder",
+    "electron:build": "next build && electron-builder -p never",
     "electron:start": "electron ."
   },
   "dependencies": {
@@ -34,6 +34,11 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "wait-on": "^9.1.0"
+  },
+  "author": "OpenStore Community <openstore@proton.me>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Charannsai/openstore.git"
   },
   "build": {
     "appId": "com.openstore.app",
