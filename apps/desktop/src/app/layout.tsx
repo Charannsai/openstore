@@ -14,6 +14,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: `${BRAND.name} — ${BRAND.tagline}`,
   description: BRAND.description,
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({

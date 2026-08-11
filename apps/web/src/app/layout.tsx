@@ -14,6 +14,11 @@ export const metadata: Metadata = {
   title: 'OpenStore — The Open-Source Software Discovery & Execution Platform',
   description:
     'Discover, install, auto-fix prerequisites via Winget, and run open-source repositories hands-free on your desktop.',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
   openGraph: {
     title: 'OpenStore — Open-Source App Store & Execution Agent',
     description:

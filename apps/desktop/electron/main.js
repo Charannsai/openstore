@@ -39,6 +39,7 @@ function createWindow() {
     y: savedState.y,
     minWidth: 1000,
     minHeight: 700,
+    icon: path.join(__dirname, '../public/icon.png'),
     titleBarStyle: 'hidden',
     titleBarOverlay: {
       color: '#00000000',
