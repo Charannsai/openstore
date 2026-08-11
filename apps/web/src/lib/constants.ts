@@ -12,6 +12,7 @@ export const BRAND = {
   licenseUrl: 'https://github.com/Charannsai/openstore/blob/main/LICENSE',
   downloads: {
     windowsExe: 'https://github.com/Charannsai/openstore/releases/latest',
+    windowsPortable: 'https://github.com/Charannsai/openstore/releases/latest',
     macDmg: 'https://github.com/Charannsai/openstore/releases/latest',
     linuxAppImage: 'https://github.com/Charannsai/openstore/releases/latest',
   },

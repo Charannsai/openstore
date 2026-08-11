@@ -1,13 +1,26 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, net } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { registerAgentHandlers } = require('./ipc-handlers');
+
+// Register privileged custom scheme BEFORE app is ready
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'app',
+    privileges: {
+      standard: true,
+      secure: true,
+      allowFirstParty: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
+]);
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 const isDev = process.env.NODE_ENV !== 'production';
 const DEV_URL = 'http://localhost:3002';
-
-const fs = require('fs');
 
 function loadWindowState() {
   const statePath = path.join(app.getPath('userData'), 'window-state.json');
@@ -71,7 +84,7 @@ function createWindow() {
   if (isDev) {
     mainWindow.loadURL(DEV_URL);
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../out/index.html'));
+    mainWindow.loadURL('app://localhost/index.html');
   }
 
   mainWindow.on('closed', () => {
@@ -81,6 +94,18 @@ function createWindow() {
 
 // ─── App lifecycle ───────────────────────────────────────────────────────────
 app.whenReady().then(() => {
+  // Handle custom app:// scheme to correctly serve static exported Next.js app
+  protocol.handle('app', (request) => {
+    let reqUrl = request.url.replace(/^app:\/\/[\w.-]+/, '');
+    if (reqUrl === '' || reqUrl === '/') {
+      reqUrl = '/index.html';
+    }
+    const safePath = path.normalize(decodeURIComponent(reqUrl)).replace(/^(\.\.[\/\\])+/, '');
+    const fullPath = path.join(__dirname, '../out', safePath);
+
+    return net.fetch(`file://${fullPath}`);
+  });
+
   // Register IPC handlers for desktop agent
   registerAgentHandlers(ipcMain);
 
