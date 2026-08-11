@@ -161,3 +161,45 @@ export async function searchLiveGitHub(query: string): Promise<GitHubRepoResult[
 
   return localMatches.length > 0 ? localMatches : CURATED_REPOSITORIES.slice(0, 4);
 }
+
+export async function fetchRepoStarCount(repoUrlOrSlug: string): Promise<number | null> {
+  try {
+    const match = repoUrlOrSlug.match(/(?:github\.com\/)?([^/]+)\/([^/]+)/);
+    if (!match) return null;
+    const owner = match[1];
+    const repo = match[2].replace(/\.git$/, '');
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof data.stargazers_count === 'number') {
+        return data.stargazers_count;
+      }
+    }
+  } catch (error) {
+    console.warn(`Failed to fetch star count for ${repoUrlOrSlug}:`, error);
+  }
+  return null;
+}
+
+export function formatStarCount(count: number): string {
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1)}m`;
+  }
+  if (count >= 1_000) {
+    return `${(count / 1_000).toFixed(1)}k`;
+  }
+  return count.toLocaleString();
+}
+
