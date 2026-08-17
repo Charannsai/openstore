@@ -8,7 +8,7 @@
     "dev": "next dev -p 3002",
     "build": "next build",
     "start": "next start -p 3002",
-    "lint": "eslint",
+    "lint": "tsc --noEmit",
     "electron:dev": "concurrently -k \"cross-env NODE_ENV=development next dev -p 3002\" \"wait-on http://localhost:3002 && cross-env NODE_ENV=development electron .\"",
     "electron:build": "next build && electron-builder -p never",
     "electron:start": "electron ."

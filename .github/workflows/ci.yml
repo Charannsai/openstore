@@ -17,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x]
+        node-version: [22.x]
 
     steps:
       - name: Checkout repository
@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -35,8 +35,14 @@ jobs:
       - name: Run linter
         run: npm run lint
 
-      - name: Type check
+      - name: Type check (Desktop)
         run: npx tsc --noEmit
+        working-directory: apps/desktop
 
-      - name: Build Next.js
-        run: npm run build
+      - name: Type check (Web)
+        run: npx tsc --noEmit
+        working-directory: apps/web
+
+      - name: Build Web
+        run: npm run build:web
+

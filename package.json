@@ -23,6 +23,7 @@
     "build:web": "npm --workspace=@openstore/web run build",
     "electron:dev": "npm --workspace=@openstore/desktop run electron:dev",
     "electron:build": "npm --workspace=@openstore/desktop run electron:build",
+    "lint": "npm --workspace=@openstore/desktop run lint && npm --workspace=@openstore/web run lint",
     "dev": "npm --workspace=@openstore/desktop run electron:dev",
     "build": "npm --workspace=@openstore/desktop run build"
   }
