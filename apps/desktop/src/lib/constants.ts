@@ -6,7 +6,7 @@ export const BRAND = {
   description:
     'Discover, install, and manage open-source software — clean, fast, and minimal.',
   searchPlaceholder: 'Search open-source software, repositories, or tools...',
-  version: '0.2.0',
+  version: '0.2.1',
 } as const;
 
 // ─── Categories ──────────────────────────────────────────────────────────────
