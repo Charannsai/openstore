@@ -22,13 +22,28 @@ export default function SettingsPage() {
   const { theme, setTheme, settings, updateSetting } = useAppStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
   const [isEditingPath, setIsEditingPath] = useState(false);
-  const [customPathInput, setCustomPathInput] = useState(settings.installDir);
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+  const [resolvedDefaultDir, setResolvedDefaultDir] = useState<string>('Downloads/OpenStore');
+  const [customPathInput, setCustomPathInput] = useState(settings.installDir);
+
+  useState(() => {
+    if (isElectron && window.electronAPI?.getDownloadsDir) {
+      window.electronAPI.getDownloadsDir().then((dir) => {
+        if (dir) {
+          setResolvedDefaultDir(dir);
+          if (!settings.installDir) {
+            updateSetting('installDir', dir);
+            setCustomPathInput(dir);
+          }
+        }
+      }).catch(() => {});
+    }
+  });
 
   const handleSelectDirectory = async () => {
     if (typeof window !== 'undefined' && typeof window.electronAPI?.selectDirectory === 'function') {
       try {
-        const res = await window.electronAPI.selectDirectory(settings.installDir);
+        const res = await window.electronAPI.selectDirectory(settings.installDir || resolvedDefaultDir);
         if (res?.success && res.path) {
           updateSetting('installDir', res.path);
           setCustomPathInput(res.path);
@@ -37,7 +52,7 @@ export default function SettingsPage() {
         console.error('Error opening file manager dialog:', err);
       }
     } else {
-      setCustomPathInput(settings.installDir);
+      setCustomPathInput(settings.installDir || resolvedDefaultDir);
       setIsEditingPath(true);
     }
   };

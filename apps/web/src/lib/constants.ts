@@ -5,14 +5,15 @@ export const BRAND = {
   description:
     'Discover, install, auto-fix prerequisites via Winget, and run any GitHub repository or binary on your PC hands-free.',
   searchPlaceholder: 'Search repositories (e.g. excalidraw, ollama, affine) or paste GitHub URL...',
-  version: '0.1.0',
+  version: '0.2.0',
   githubUrl: 'https://github.com/Charannsai/openstore',
   releasesUrl: 'https://github.com/Charannsai/openstore/releases',
+  latestReleaseUrl: 'https://github.com/Charannsai/openstore/releases/latest',
   issuesUrl: 'https://github.com/Charannsai/openstore/issues',
   licenseUrl: 'https://github.com/Charannsai/openstore/blob/main/LICENSE',
   downloads: {
-    windowsExe: 'https://github.com/Charannsai/openstore/releases/download/v0.1.0/OpenStore.Setup.0.1.0.exe',
-    windowsPortable: 'https://github.com/Charannsai/openstore/releases/download/v0.1.0/OpenStore.0.1.0.exe',
+    windowsExe: 'https://github.com/Charannsai/openstore/releases/latest/download/OpenStore-Setup.exe',
+    windowsPortable: 'https://github.com/Charannsai/openstore/releases/latest/download/OpenStore.exe',
     macDmg: 'https://github.com/Charannsai/openstore/releases/latest',
     linuxAppImage: 'https://github.com/Charannsai/openstore/releases/latest',
   },

@@ -2,15 +2,22 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'apps/desktop/**'
+      - 'package.json'
+      - '.github/workflows/release.yml'
     tags:
-      - "v*"
+      - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.platform }})
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -32,34 +39,43 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: "npm"
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js
-        run: npm run build
-
-      - name: Build Electron app
-        run: npx electron-builder --publish never
+      - name: Build Next.js & Electron Desktop App
+        run: npm run build:desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create generic alias binaries (Windows)
+        if: matrix.platform == 'win'
+        shell: bash
+        run: |
+          cd apps/desktop/dist
+          for f in *Setup*.exe; do
+            [ -f "$f" ] && cp "$f" OpenStore-Setup.exe && echo "Created OpenStore-Setup.exe alias from $f"
+          done
+          for f in OpenStore*.exe; do
+            [ -f "$f" ] && [[ "$f" != *Setup* ]] && cp "$f" OpenStore.exe && echo "Created OpenStore.exe alias from $f"
+          done || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: openstore-${{ matrix.platform }}
           path: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.rpm
-            dist/*.snap
+            apps/desktop/dist/*.exe
+            apps/desktop/dist/*.dmg
+            apps/desktop/dist/*.AppImage
+            apps/desktop/dist/*.deb
+            apps/desktop/dist/*.rpm
+            apps/desktop/dist/*.zip
           if-no-files-found: ignore
 
   release:
-    name: Create Release
+    name: Publish GitHub Release
     needs: build
     runs-on: ubuntu-latest
 
@@ -67,17 +83,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Get Version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./apps/desktop/package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="v$VERSION"
+          fi
+          echo "TAG_NAME=$TAG" >> $GITHUB_ENV
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: release-artifacts
 
-      - name: Create GitHub Release
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG_NAME }}
+          name: 'OpenStore Desktop v${{ env.VERSION }}'
           draft: false
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          prerelease: false
           generate_release_notes: true
-          files: release-artifacts/**/*
+          files: |
+            release-artifacts/**/*.exe
+            release-artifacts/**/*.dmg
+            release-artifacts/**/*.AppImage
+            release-artifacts/**/*.deb
+            release-artifacts/**/*.rpm
+            release-artifacts/**/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

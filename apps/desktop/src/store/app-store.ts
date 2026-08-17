@@ -24,7 +24,7 @@ const getInitialActivities = (): ActivityEvent[] => {
 
 const getInitialSettings = (): AppSettings => {
   const defaults: AppSettings = {
-    installDir: 'C:\\Users\\Public\\Downloads\\OpenStore',
+    installDir: '',
     autoCheckUpdates: true,
     sendDiagnostics: false,
     verifyChecksums: true,
@@ -34,7 +34,15 @@ const getInitialSettings = (): AppSettings => {
   if (typeof window === 'undefined') return defaults;
   try {
     const saved = localStorage.getItem('openstore-settings');
-    return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Migrate legacy hardcoded Public path to personal user downloads
+      if (parsed.installDir && parsed.installDir.toLowerCase().includes('public\\downloads')) {
+        parsed.installDir = '';
+      }
+      return { ...defaults, ...parsed };
+    }
+    return defaults;
   } catch {
     return defaults;
   }

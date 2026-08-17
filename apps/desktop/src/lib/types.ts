@@ -270,6 +270,30 @@ export interface ElectronAPI {
     python: { installed: boolean; version: string | null };
     docker: { installed: boolean; version: string | null };
   }>;
+  reloadPath: () => Promise<{ success: boolean; path?: string }>;
+  ensureRuntimesBatch: (runtimes: string[]) => Promise<{
+    success: boolean;
+    all_installed: boolean;
+    error?: string;
+    missing?: string[];
+    runtimes: Array<{
+      runtime: string;
+      installed: boolean;
+      newly_installed?: boolean;
+      version?: string | null;
+      error?: string;
+    }>;
+  }>;
+  checkAppUpdate: () => Promise<{
+    has_update: boolean;
+    current_version: string;
+    latest_version?: string;
+    release_name?: string;
+    release_url?: string;
+    download_url?: string;
+    release_notes?: string;
+    published_at?: string;
+  }>;
 
   // Winget Package Manager Integration
   checkWinget: () => Promise<{ available: boolean; version?: string }>;
@@ -291,6 +315,7 @@ export interface ElectronAPI {
     has_dockerfile: boolean;
     run_mode: RunMode;
     resolved_cwd: string;
+    required_runtimes?: string[];
     env_setup_required?: boolean;
     env_commands?: string[];
     explanation?: string;

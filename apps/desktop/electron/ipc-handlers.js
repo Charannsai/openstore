@@ -426,6 +426,16 @@ function registerAgentHandlers(ipcMain) {
       }
     }
 
+    const runtimeMap = {
+      node: ['git', 'node'],
+      python: ['git', 'python'],
+      docker: ['git', 'docker'],
+      go: ['git', 'go'],
+      rust: ['git', 'rust'],
+      'static-html': ['git'],
+    };
+    result.required_runtimes = runtimeMap[result.ecosystem] || ['git'];
+
     logAudit('inspect-repo', 'renderer', 'success', `Ecosystem: ${result.ecosystem}, Mode: ${result.run_mode}, Run: "${result.start_command}" in "${result.resolved_cwd}" on port ${result.detected_port}`);
     return result;
   });
@@ -948,7 +958,195 @@ function registerAgentHandlers(ipcMain) {
     });
   });
 
+  // ── Reload In-Memory System PATH ─────────────────────────────────────────
+  ipcMain.handle('agent:reload-path', () => {
+    reloadSystemPath();
+    return { success: true, path: process.env.PATH };
+  });
+
+  // ── Batch Global Runtime Auto-Installer ──────────────────────────────────
+  ipcMain.handle('agent:ensure-runtimes-batch', async (event, requestedRuntimes = []) => {
+    reloadSystemPath();
+    const sender = event.sender;
+
+    const runtimeConfig = {
+      git: { cmd: 'git', pkgId: 'Git.Git', name: 'Git' },
+      python: { cmd: 'python', pkgId: 'Python.Python.3.12', name: 'Python 3.12' },
+      node: { cmd: 'node', pkgId: 'OpenJS.NodeJS', name: 'Node.js LTS' },
+      rust: { cmd: 'cargo', pkgId: 'Rustlang.Rustup', name: 'Rust' },
+      go: { cmd: 'go', pkgId: 'GoLang.Go', name: 'Go' },
+      docker: { cmd: 'docker', pkgId: 'Docker.DockerDesktop', name: 'Docker Desktop' },
+      java: { cmd: 'java', pkgId: 'EclipseAdoptium.Temurin.21.JDK', name: 'Java JDK' },
+      dotnet: { cmd: 'dotnet', pkgId: 'Microsoft.DotNet.SDK.8', name: '.NET SDK' },
+    };
+
+    const results = [];
+    const missing = [];
+
+    for (const rtKey of requestedRuntimes) {
+      const cfg = runtimeConfig[rtKey.toLowerCase()];
+      if (!cfg) continue;
+
+      let exists = false;
+      let version = null;
+      try {
+        const flag = cfg.cmd === 'docker' ? 'version' : '--version';
+        const out = await execPromise(`${cfg.cmd} ${flag}`, { timeout: 6000 });
+        const match = out.match(/(\d+\.\d+[\.\d]*)/);
+        exists = true;
+        version = match ? match[1] : 'installed';
+      } catch {
+        exists = false;
+      }
+
+      if (exists) {
+        results.push({ runtime: rtKey, installed: true, newly_installed: false, version });
+      } else {
+        missing.push(cfg);
+      }
+    }
+
+    if (missing.length === 0) {
+      return { success: true, all_installed: true, runtimes: results };
+    }
+
+    // Check Winget
+    let wingetAvailable = false;
+    try {
+      await execPromise('winget --version', { timeout: 6000 });
+      wingetAvailable = true;
+    } catch {
+      wingetAvailable = false;
+    }
+
+    if (!wingetAvailable) {
+      return {
+        success: false,
+        all_installed: false,
+        error: 'Windows Package Manager (winget) is required to auto-install missing runtimes.',
+        missing: missing.map((m) => m.name),
+        runtimes: results,
+      };
+    }
+
+    // Batch install missing runtimes silently
+    for (const item of missing) {
+      sender.send('winget:progress', `[PROVISION] Auto-installing ${item.name} globally via Windows Package Manager...`);
+      logAudit('ensure-runtime', 'agent', 'installing', `${item.name} (${item.pkgId})`);
+
+      const installCmd = `winget install --id "${item.pkgId}" --exact --silent --accept-package-agreements --accept-source-agreements --disable-interactivity`;
+
+      try {
+        const code = await new Promise((resolve) => {
+          const child = spawn(installCmd, { shell: true });
+          child.stdout.on('data', (d) => sender.send('winget:progress', `[WINGET] ${d.toString().trim()}`));
+          child.stderr.on('data', (d) => sender.send('winget:progress', `[WINGET LOG] ${d.toString().trim()}`));
+          child.on('close', (c) => resolve(c));
+          child.on('error', () => resolve(1));
+        });
+
+        reloadSystemPath();
+
+        let installed = false;
+        let version = null;
+        try {
+          const flag = item.cmd === 'docker' ? 'version' : '--version';
+          const out = await execPromise(`${item.cmd} ${flag}`, { timeout: 8000 });
+          const match = out.match(/(\d+\.\d+[\.\d]*)/);
+          installed = true;
+          version = match ? match[1] : 'installed';
+        } catch {
+          reloadSystemPath();
+          try {
+            const out = await execPromise(`${item.cmd} --version`, { timeout: 8000 });
+            const match = out.match(/(\d+\.\d+[\.\d]*)/);
+            installed = true;
+            version = match ? match[1] : 'installed';
+          } catch {}
+        }
+
+        if (installed || code === 0 || code === 3010) {
+          sender.send('winget:progress', `[PROVISION] Successfully installed ${item.name} globally.`);
+          results.push({ runtime: item.cmd, installed: true, newly_installed: true, version });
+        } else {
+          sender.send('winget:progress', `[PROVISION] Warning: Could not verify ${item.name} after installation.`);
+          results.push({ runtime: item.cmd, installed: false, error: `Exit code ${code}` });
+        }
+      } catch (err) {
+        results.push({ runtime: item.cmd, installed: false, error: err.message });
+      }
+    }
+
+    reloadSystemPath();
+    const allInstalled = results.every((r) => r.installed);
+    return { success: allInstalled, all_installed: allInstalled, runtimes: results };
+  });
+
+  // ── OpenStore In-App Update Checker ──────────────────────────────────────
+  ipcMain.handle('agent:check-app-update', async () => {
+    return new Promise((resolve) => {
+      try {
+        const pkgPath = path.join(__dirname, '../package.json');
+        let currentVersion = '0.1.0';
+        if (fs.existsSync(pkgPath)) {
+          try {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+            currentVersion = pkg.version || '0.1.0';
+          } catch {}
+        }
+
+        const req = https.get(
+          'https://api.github.com/repos/Charannsai/openstore/releases/latest',
+          {
+            headers: {
+              'User-Agent': 'OpenStore-Desktop-App',
+              Accept: 'application/vnd.github.v3+json',
+            },
+          },
+          (res) => {
+            let data = '';
+            res.on('data', (chunk) => {
+              data += chunk;
+            });
+            res.on('end', () => {
+              if (res.statusCode === 200) {
+                try {
+                  const release = JSON.parse(data);
+                  const tag = (release.tag_name || '').replace(/^v/, '');
+                  const hasUpdate = compareVersions(tag, currentVersion) > 0;
+                  const exeAsset = (release.assets || []).find((a) => a.name.endsWith('.exe')) || {};
+                  resolve({
+                    has_update: hasUpdate,
+                    current_version: currentVersion,
+                    latest_version: tag || currentVersion,
+                    release_name: release.name || `OpenStore v${tag}`,
+                    release_url: release.html_url || 'https://github.com/Charannsai/openstore/releases',
+                    download_url: exeAsset.browser_download_url || release.html_url || '',
+                    release_notes: release.body || '',
+                    published_at: release.published_at || new Date().toISOString(),
+                  });
+                } catch {
+                  resolve({ has_update: false, current_version: currentVersion });
+                }
+              } else {
+                resolve({ has_update: false, current_version: currentVersion });
+              }
+            });
+          }
+        );
+        req.on('error', () => resolve({ has_update: false, current_version: currentVersion }));
+        req.setTimeout(8000, () => {
+          req.destroy();
+          resolve({ has_update: false, current_version: currentVersion });
+        });
+      } catch {
+        resolve({ has_update: false, current_version: '0.1.0' });
+      }
+    });
+  });
+
   ipcMain.handle('agent:check-prerequisites', async () => {
+    reloadSystemPath();
     const check = async (cmd, flag = '--version') => {
       try {
         const out = await execPromise(`${cmd} ${flag}`, { timeout: 8000 });
@@ -977,7 +1175,106 @@ function registerAgentHandlers(ipcMain) {
   });
 }
 
+function reloadSystemPath() {
+  if (os.platform() !== 'win32') return;
+  try {
+    const currentPathSet = new Set(
+      (process.env.PATH || '')
+        .split(';')
+        .filter(Boolean)
+        .map((p) => path.normalize(p.trim().toLowerCase()))
+    );
+
+    const extraDirs = [];
+
+    // Local AppData programs (Python, etc.)
+    const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
+    const pyProgramsDir = path.join(localAppData, 'Programs', 'Python');
+    if (fs.existsSync(pyProgramsDir)) {
+      try {
+        const pyDirs = fs.readdirSync(pyProgramsDir);
+        for (const d of pyDirs) {
+          const fullPy = path.join(pyProgramsDir, d);
+          const fullScripts = path.join(fullPy, 'Scripts');
+          if (fs.existsSync(fullPy)) extraDirs.push(fullPy);
+          if (fs.existsSync(fullScripts)) extraDirs.push(fullScripts);
+        }
+      } catch {}
+    }
+
+    // Standard Program Files candidates
+    const progFiles = process.env.ProgramFiles || 'C:\\Program Files';
+    const standardCandidates = [
+      path.join(progFiles, 'Git', 'cmd'),
+      path.join(progFiles, 'Git', 'bin'),
+      path.join(progFiles, 'nodejs'),
+      path.join(progFiles, 'Go', 'bin'),
+      path.join(os.homedir(), '.cargo', 'bin'),
+      path.join(localAppData, 'Microsoft', 'WindowsApps'),
+    ];
+
+    for (const cand of standardCandidates) {
+      if (fs.existsSync(cand)) extraDirs.push(cand);
+    }
+
+    // Query Registry User and Machine PATH
+    try {
+      const userPathOut = require('child_process').execSync('reg query "HKCU\\Environment" /v Path', {
+        encoding: 'utf-8',
+        timeout: 3000,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      });
+      const match = userPathOut.match(/REG_(?:SZ|EXPAND_SZ)\s+(.*)/i);
+      if (match && match[1]) {
+        match[1].split(';').filter(Boolean).forEach((p) => extraDirs.push(p.trim()));
+      }
+    } catch {}
+
+    try {
+      const sysPathOut = require('child_process').execSync(
+        'reg query "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment" /v Path',
+        { encoding: 'utf-8', timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'] }
+      );
+      const match = sysPathOut.match(/REG_(?:SZ|EXPAND_SZ)\s+(.*)/i);
+      if (match && match[1]) {
+        match[1].split(';').filter(Boolean).forEach((p) => extraDirs.push(p.trim()));
+      }
+    } catch {}
+
+    const newSegments = [];
+    for (const dir of extraDirs) {
+      if (!dir) continue;
+      const normalized = path.normalize(dir.toLowerCase());
+      if (!currentPathSet.has(normalized) && fs.existsSync(dir)) {
+        currentPathSet.add(normalized);
+        newSegments.push(dir);
+      }
+    }
+
+    if (newSegments.length > 0) {
+      process.env.PATH = `${newSegments.join(';')};${process.env.PATH}`;
+      logAudit('reload-path', 'agent', 'success', `Added ${newSegments.length} directory segments to process.env.PATH`);
+    }
+  } catch (err) {
+    console.error('Error reloading system PATH:', err);
+  }
+}
+
+function compareVersions(v1, v2) {
+  if (!v1 || !v2) return 0;
+  const p1 = v1.split('.').map((n) => parseInt(n, 10) || 0);
+  const p2 = v2.split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    const num1 = p1[i] || 0;
+    const num2 = p2[i] || 0;
+    if (num1 > num2) return 1;
+    if (num1 < num2) return -1;
+  }
+  return 0;
+}
+
 function execPromise(command, options = {}) {
+  reloadSystemPath();
   return new Promise((resolve, reject) => {
     exec(command, { timeout: 300000, ...options }, (error, stdout) => {
       if (error) reject(error);

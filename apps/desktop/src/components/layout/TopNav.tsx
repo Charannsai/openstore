@@ -17,6 +17,7 @@ const navItems = [
 export default function TopNav() {
   const { currentView, navigate, installedApps } = useAppStore();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [appUpdateVersion, setAppUpdateVersion] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,12 +25,24 @@ export default function TopNav() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+
+    if (typeof window !== 'undefined' && window.electronAPI?.checkAppUpdate) {
+      window.electronAPI
+        .checkAppUpdate()
+        .then((info) => {
+          if (info?.has_update && info.latest_version) {
+            setAppUpdateVersion(info.latest_version);
+          }
+        })
+        .catch(() => {});
+    }
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const updatesCount = installedApps.filter(
     (a) => a.version !== a.application.latest_version
-  ).length;
+  ).length + (appUpdateVersion ? 1 : 0);
   const installedCount = installedApps.length;
 
   return (

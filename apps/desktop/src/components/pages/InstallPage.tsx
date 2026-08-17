@@ -30,9 +30,17 @@ export default function InstallPage() {
   const [isStartingServer, setIsStartingServer] = useState(false);
 
   // Prerequisite State
-  const [prereqs, setPrereqs] = useState<{ git: boolean; node: boolean }>({ git: true, node: true });
+  const [prereqs, setPrereqs] = useState<{ git: boolean; node: boolean; python: boolean; docker: boolean }>({
+    git: true,
+    node: true,
+    python: true,
+    docker: true,
+  });
   const [wingetAvailable, setWingetAvailable] = useState(false);
   const [isInstallingWinget, setIsInstallingWinget] = useState<string | null>(null);
+  const [activeLogMessage, setActiveLogMessage] = useState<string>('Initializing environment...');
+  const [logHistory, setLogHistory] = useState<string[]>([]);
+  const [showLogs, setShowLogs] = useState(false);
 
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
 
@@ -48,6 +56,8 @@ export default function InstallPage() {
           setPrereqs({
             git: prereqCheck.git.installed,
             node: prereqCheck.node.installed,
+            python: prereqCheck.python.installed,
+            docker: prereqCheck.docker.installed,
           });
           setWingetAvailable(wingetCheck.available);
         } catch {}
@@ -69,7 +79,12 @@ export default function InstallPage() {
           onOverallProgress: (pct: number) => {
             if (isMounted) setOverallProgress(pct);
           },
-          onLog: () => {},
+          onLog: (msg: string) => {
+            if (isMounted) {
+              setActiveLogMessage(msg);
+              setLogHistory((prev) => [...prev.slice(-30), msg]);
+            }
+          },
         });
 
         if (isMounted) {
@@ -108,7 +123,12 @@ export default function InstallPage() {
       if (res.success) {
         if (window.electronAPI.checkPrerequisites) {
           const updated = await window.electronAPI.checkPrerequisites();
-          setPrereqs({ git: updated.git.installed, node: updated.node.installed });
+          setPrereqs({
+            git: updated.git.installed,
+            node: updated.node.installed,
+            python: updated.python.installed,
+            docker: updated.docker.installed,
+          });
         }
       }
     } catch {} finally {
@@ -221,7 +241,7 @@ export default function InstallPage() {
                 ? 'Installation complete & workspace configured'
                 : status === 'failed'
                 ? 'Installation failed'
-                : 'Downloading & setting up dependencies...'}
+                : activeLogMessage || 'Downloading & setting up dependencies...'}
             </p>
           </div>
           {status === 'running' && (
@@ -243,42 +263,77 @@ export default function InstallPage() {
                 transition={{ duration: 0.2, ease: 'easeOut' }}
               />
             </div>
+            {logHistory.length > 0 && (
+              <div className="pt-2">
+                <button
+                  onClick={() => setShowLogs(!showLogs)}
+                  className="text-[11px] font-mono text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <TerminalIcon className="w-3.5 h-3.5" />
+                  <span>{showLogs ? 'Hide Console Logs' : 'View Installation Console Logs'}</span>
+                </button>
+                {showLogs && (
+                  <div className="mt-2 p-3 rounded-xl bg-zinc-950 text-zinc-300 font-mono text-[11px] leading-relaxed max-h-44 overflow-y-auto border border-white/10 space-y-1">
+                    {logHistory.map((line, idx) => (
+                      <div key={idx} className="truncate">
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Prerequisite Missing Card */}
-      {(!prereqs.git || !prereqs.node) && (
-        <div className="glass-card rounded-2xl p-5 mt-4 border border-amber-500/30 bg-amber-500/5">
+      {/* Prerequisite Missing Card (Git, Node, Python, Docker) */}
+      {(!prereqs.git || !prereqs.node || !prereqs.python) && (
+        <div className="glass-card rounded-2xl p-5 mt-4 border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-900/50">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                <ShieldCheckIcon className="w-4 h-4" />
-                <span>Prerequisites Missing</span>
+              <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                <ShieldCheckIcon className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                <span>Prerequisites Status</span>
               </h3>
               <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
-                {!prereqs.git && !prereqs.node
-                  ? 'Git CLI & Node.js are missing on your system.'
-                  : !prereqs.git
-                  ? 'Git CLI is not installed on your system.'
-                  : 'Node.js runtime is not installed on your system.'}
+                {[
+                  !prereqs.git && 'Git',
+                  !prereqs.python && 'Python',
+                  !prereqs.node && 'Node.js',
+                ].filter(Boolean).join(', ')} not found in system PATH. OpenStore will auto-install missing tools globally during setup.
               </p>
             </div>
 
             {wingetAvailable && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {!prereqs.git && (
                   <button
                     onClick={() => handleAutoFixPrerequisite('Git.Git')}
                     disabled={!!isInstallingWinget}
-                    className="btn-primary px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     {isInstallingWinget === 'Git.Git' ? (
                       <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <DownloadIcon className="w-3.5 h-3.5" />
                     )}
-                    <span>1-Click Fix Git</span>
+                    <span>Install Git</span>
+                  </button>
+                )}
+
+                {!prereqs.python && (
+                  <button
+                    onClick={() => handleAutoFixPrerequisite('Python.Python.3.12')}
+                    disabled={!!isInstallingWinget}
+                    className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    {isInstallingWinget === 'Python.Python.3.12' ? (
+                      <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <DownloadIcon className="w-3.5 h-3.5" />
+                    )}
+                    <span>Install Python 3.12</span>
                   </button>
                 )}
 
@@ -286,14 +341,14 @@ export default function InstallPage() {
                   <button
                     onClick={() => handleAutoFixPrerequisite('OpenJS.NodeJS')}
                     disabled={!!isInstallingWinget}
-                    className="btn-primary px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     {isInstallingWinget === 'OpenJS.NodeJS' ? (
                       <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <DownloadIcon className="w-3.5 h-3.5" />
                     )}
-                    <span>1-Click Fix Node</span>
+                    <span>Install Node.js</span>
                   </button>
                 )}
               </div>

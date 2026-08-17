@@ -269,3 +269,94 @@ function inferCategory(topics: string[] = [], language: string | null, name: str
 
   return 'utilities';
 }
+
+export async function detectRepoPrerequisitesFromGitHub(
+  repoSlugOrUrl: string
+): Promise<{ requiredRuntimes: string[]; ecosystem: string; language: string | null }> {
+  const parsed = parseGitHubUrl(repoSlugOrUrl);
+  const result = {
+    requiredRuntimes: ['git'],
+    ecosystem: 'unknown',
+    language: null as string | null,
+  };
+
+  if (!parsed) return result;
+
+  const { owner, repo } = parsed;
+
+  try {
+    const [repoRes, contentsRes] = await Promise.all([
+      fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+        headers: { Accept: 'application/vnd.github.v3+json' },
+      }).catch(() => null),
+      fetch(`https://api.github.com/repos/${owner}/${repo}/contents`, {
+        headers: { Accept: 'application/vnd.github.v3+json' },
+      }).catch(() => null),
+    ]);
+
+    let language: string | null = null;
+    if (repoRes && repoRes.ok) {
+      const data = await repoRes.json();
+      language = data.language || null;
+      result.language = language;
+    }
+
+    const fileNames: string[] = [];
+    if (contentsRes && contentsRes.ok) {
+      const contents = await contentsRes.json();
+      if (Array.isArray(contents)) {
+        contents.forEach((c: { name: string }) => fileNames.push(c.name.toLowerCase()));
+      }
+    }
+
+    const hasFile = (name: string) => fileNames.includes(name.toLowerCase());
+
+    // Python detection
+    if (
+      hasFile('requirements.txt') ||
+      hasFile('pyproject.toml') ||
+      hasFile('setup.py') ||
+      hasFile('pipfile') ||
+      hasFile('environment.yml') ||
+      language?.toLowerCase() === 'python'
+    ) {
+      result.ecosystem = 'python';
+      if (!result.requiredRuntimes.includes('python')) result.requiredRuntimes.push('python');
+    }
+
+    // Node.js detection
+    if (
+      hasFile('package.json') ||
+      hasFile('yarn.lock') ||
+      hasFile('pnpm-lock.yaml') ||
+      hasFile('bun.lockb') ||
+      language?.toLowerCase() === 'javascript' ||
+      language?.toLowerCase() === 'typescript'
+    ) {
+      if (result.ecosystem === 'unknown') result.ecosystem = 'node';
+      if (!result.requiredRuntimes.includes('node')) result.requiredRuntimes.push('node');
+    }
+
+    // Rust detection
+    if (hasFile('cargo.toml') || language?.toLowerCase() === 'rust') {
+      if (result.ecosystem === 'unknown') result.ecosystem = 'rust';
+      if (!result.requiredRuntimes.includes('rust')) result.requiredRuntimes.push('rust');
+    }
+
+    // Go detection
+    if (hasFile('go.mod') || language?.toLowerCase() === 'go') {
+      if (result.ecosystem === 'unknown') result.ecosystem = 'go';
+      if (!result.requiredRuntimes.includes('go')) result.requiredRuntimes.push('go');
+    }
+
+    // Docker detection
+    if (hasFile('dockerfile') || hasFile('docker-compose.yml') || hasFile('docker-compose.yaml')) {
+      if (!result.requiredRuntimes.includes('docker')) result.requiredRuntimes.push('docker');
+    }
+  } catch (err) {
+    console.warn('[PRE-CLONE] Error discovering repo requirements from GitHub:', err);
+  }
+
+  return result;
+}
+

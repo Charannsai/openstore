@@ -7,6 +7,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkCommand: (command) => ipcRenderer.invoke('agent:check-command', command),
   checkPort: (port) => ipcRenderer.invoke('agent:check-port', port),
   checkPrerequisites: () => ipcRenderer.invoke('agent:check-prerequisites'),
+  reloadPath: () => ipcRenderer.invoke('agent:reload-path'),
+  ensureRuntimesBatch: (runtimes) => ipcRenderer.invoke('agent:ensure-runtimes-batch', runtimes),
+  checkAppUpdate: () => ipcRenderer.invoke('agent:check-app-update'),
 
   // ─── Winget Package Manager Integration ────────────────────────────────
   checkWinget: () => ipcRenderer.invoke('agent:check-winget'),
