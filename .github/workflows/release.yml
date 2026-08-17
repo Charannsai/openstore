@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'apps/desktop/**'
-      - 'package.json'
-      - '.github/workflows/release.yml'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -19,6 +15,7 @@ jobs:
   build:
     name: Build (${{ matrix.platform }})
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.platform != 'win' }}
 
     strategy:
       fail-fast: false
@@ -79,6 +76,7 @@ jobs:
     name: Publish GitHub Release
     needs: build
     runs-on: ubuntu-latest
+    if: always() && !cancelled()
 
     steps:
       - name: Checkout repository
