@@ -42,7 +42,7 @@ export default function TopNav() {
 
   const updatesCount = installedApps.filter(
     (a) => a.version !== a.application.latest_version
-  ).length + (appUpdateVersion ? 1 : 0);
+  ).length;
   const installedCount = installedApps.length;
 
   return (

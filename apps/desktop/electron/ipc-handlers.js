@@ -1087,11 +1087,11 @@ function registerAgentHandlers(ipcMain) {
     return new Promise((resolve) => {
       try {
         const pkgPath = path.join(__dirname, '../package.json');
-        let currentVersion = '0.2.1';
+        let currentVersion = '0.2.2';
         if (fs.existsSync(pkgPath)) {
           try {
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-            currentVersion = pkg.version || '0.2.1';
+            currentVersion = pkg.version || '0.2.2';
           } catch {}
         }
 

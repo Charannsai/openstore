@@ -28,16 +28,8 @@ export default function UpdatesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
   const [checkNotice, setCheckNotice] = useState<string | null>(null);
-  const [appUpdate, setAppUpdate] = useState<{
-    has_update: boolean;
-    current_version: string;
-    latest_version?: string;
-    release_name?: string;
-    download_url?: string;
-    release_url?: string;
-  } | null>(null);
 
-  // Sync registry and check app update on mount
+  // Sync registry on mount
   useEffect(() => {
     setLastChecked(new Date().toLocaleTimeString());
     if (typeof window !== 'undefined' && window.electronAPI?.getInstalledApps) {
@@ -51,14 +43,6 @@ export default function UpdatesPage() {
         .catch((err: unknown) => {
           console.error('Error fetching installed apps:', err);
         });
-
-      if (window.electronAPI.checkAppUpdate) {
-        window.electronAPI.checkAppUpdate().then((info) => {
-          if (info && info.has_update) {
-            setAppUpdate(info);
-          }
-        }).catch(() => {});
-      }
     }
   }, []);
 
@@ -196,45 +180,6 @@ export default function UpdatesPage() {
         </div>
       </div>
 
-      {/* OpenStore App Update Card */}
-      {appUpdate && appUpdate.has_update && (
-        <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-white/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-950 dark:bg-white flex items-center justify-center text-white dark:text-zinc-950 font-bold text-xs">
-              OS
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xs font-bold text-zinc-950 dark:text-white uppercase tracking-wider">
-                  OpenStore Update Available
-                </h2>
-                <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-zinc-950 text-white dark:bg-white dark:text-zinc-950">
-                  v{appUpdate.latest_version}
-                </span>
-              </div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                Current version: v{appUpdate.current_version}. Update includes latest runtime provisioning and bug fixes.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                if (appUpdate.download_url && window.electronAPI?.launchApp) {
-                  window.electronAPI.launchApp({ url: appUpdate.download_url });
-                } else if (appUpdate.release_url && window.electronAPI?.launchApp) {
-                  window.electronAPI.launchApp({ url: appUpdate.release_url });
-                }
-              }}
-              className="btn-primary px-4 py-2 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-            >
-              <ExternalLinkIcon className="w-3.5 h-3.5" />
-              <span>Download v{appUpdate.latest_version}</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Notice Banner */}
       <AnimatePresence>
