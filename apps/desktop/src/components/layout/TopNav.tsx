@@ -95,8 +95,7 @@ export default function TopNav() {
         </div>
 
         {/* Center Top: OpenStore Branding Name */}
-        <div className="absolute left-1/2 -translate-x-1/2 text-xs font-extrabold tracking-tight text-zinc-950 dark:text-white pointer-events-none select-none flex items-center gap-2">
-          <img src="/logo.png" alt="OpenStore Logo" className="w-5 h-5 object-contain" />
+        <div className="absolute left-1/2 -translate-x-1/2 text-xs font-extrabold tracking-tight text-zinc-950 dark:text-white pointer-events-none select-none flex items-center">
           <span>{BRAND.name}</span>
         </div>
 
