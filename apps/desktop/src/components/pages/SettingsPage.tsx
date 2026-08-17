@@ -26,6 +26,8 @@ export default function SettingsPage() {
   const [resolvedDefaultDir, setResolvedDefaultDir] = useState<string>('Downloads/OpenStore');
   const [customPathInput, setCustomPathInput] = useState(settings.installDir);
   const [updateCheckStatus, setUpdateCheckStatus] = useState<'idle' | 'checking' | 'up-to-date'>('idle');
+  const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+  const [updateProgressPercent, setUpdateProgressPercent] = useState<number | null>(null);
   const [updateInfo, setUpdateInfo] = useState<{
     has_update: boolean;
     current_version: string;
@@ -62,6 +64,21 @@ export default function SettingsPage() {
       }
     } catch {
       setUpdateCheckStatus('idle');
+    }
+  };
+
+  const handleApplyUpdate = async () => {
+    if (!updateInfo?.download_url || !window.electronAPI?.downloadAndInstallAppUpdate) return;
+    setIsUpdatingApp(true);
+    try {
+      const unsub = window.electronAPI.onAppUpdateProgress?.((data) => {
+        setUpdateProgressPercent(data.percent);
+      });
+      await window.electronAPI.downloadAndInstallAppUpdate(updateInfo.download_url);
+      if (unsub) unsub();
+    } catch {
+      setIsUpdatingApp(false);
+      setUpdateProgressPercent(null);
     }
   };
 
@@ -415,16 +432,17 @@ export default function SettingsPage() {
                             v{updateInfo.latest_version} Available
                           </span>
                           <button
-                            onClick={() => {
-                              if (updateInfo.download_url && window.electronAPI?.launchApp) {
-                                window.electronAPI.launchApp({ url: updateInfo.download_url });
-                              } else if (updateInfo.release_url && window.electronAPI?.launchApp) {
-                                window.electronAPI.launchApp({ url: updateInfo.release_url });
-                              }
-                            }}
-                            className="btn-primary px-2.5 py-1 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                            onClick={handleApplyUpdate}
+                            disabled={isUpdatingApp}
+                            className="btn-primary px-2.5 py-1 text-[11px] font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-75"
                           >
-                            <span>Update OpenStore</span>
+                            <span>
+                              {isUpdatingApp
+                                ? updateProgressPercent !== null && updateProgressPercent > 0
+                                  ? `Updating (${updateProgressPercent}%)...`
+                                  : 'Restarting to update...'
+                                : 'Update OpenStore'}
+                            </span>
                           </button>
                         </div>
                       ) : updateCheckStatus === 'up-to-date' ? (

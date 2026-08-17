@@ -294,6 +294,8 @@ export interface ElectronAPI {
     release_notes?: string;
     published_at?: string;
   }>;
+  downloadAndInstallAppUpdate: (downloadUrl: string) => Promise<{ success: boolean; error?: string }>;
+  onAppUpdateProgress: (callback: (data: { percent: number; received: number; total: number }) => void) => () => void;
 
   // Winget Package Manager Integration
   checkWinget: () => Promise<{ available: boolean; version?: string }>;

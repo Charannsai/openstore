@@ -6,7 +6,7 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const net = require('net');
-const { BrowserWindow, shell, dialog } = require('electron');
+const { app, BrowserWindow, shell, dialog } = require('electron');
 const { analyzeRepositoryWithGroq, diagnoseFailureWithGroq } = require('./groq-agent');
 
 /**
@@ -1140,9 +1140,92 @@ function registerAgentHandlers(ipcMain) {
           resolve({ has_update: false, current_version: currentVersion });
         });
       } catch {
-        resolve({ has_update: false, current_version: '0.1.0' });
+        resolve({ has_update: false, current_version: '0.2.2' });
       }
     });
+  });
+
+  // ── OpenStore Silent Background Downloader & Auto-Updater ──────────────────
+  ipcMain.handle('agent:download-and-install-app-update', async (event, downloadUrl) => {
+    if (!downloadUrl || typeof downloadUrl !== 'string' || !downloadUrl.startsWith('http')) {
+      return { success: false, error: 'Invalid download URL' };
+    }
+
+    const tempDir = os.tmpdir();
+    const installerPath = path.join(tempDir, 'OpenStore-Update-Setup.exe');
+
+    const downloadWithRedirects = (url, dest) => {
+      return new Promise((resolve, reject) => {
+        const file = fs.createWriteStream(dest);
+        const requestUrl = (targetUrl) => {
+          const client = targetUrl.startsWith('https') ? https : http;
+          const req = client.get(
+            targetUrl,
+            {
+              headers: {
+                'User-Agent': 'OpenStore-Desktop-Updater',
+                Accept: 'application/octet-stream, application/vnd.github.v3+json, */*',
+              },
+            },
+            (res) => {
+              if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                return requestUrl(res.headers.location);
+              }
+              if (res.statusCode !== 200) {
+                return reject(new Error(`Failed to download installer: HTTP ${res.statusCode}`));
+              }
+
+              const total = parseInt(res.headers['content-length'] || '0', 10);
+              let received = 0;
+
+              res.on('data', (chunk) => {
+                received += chunk.length;
+                const percent = total > 0 ? Math.round((received / total) * 100) : 0;
+                try {
+                  event.sender.send('agent:app-update-progress', {
+                    percent,
+                    received,
+                    total,
+                  });
+                } catch {}
+              });
+
+              res.pipe(file);
+              file.on('finish', () => {
+                file.close(() => resolve(dest));
+              });
+            }
+          );
+          req.on('error', (err) => {
+            try {
+              fs.unlinkSync(dest);
+            } catch {}
+            reject(err);
+          });
+        };
+        requestUrl(url);
+      });
+    };
+
+    try {
+      await downloadWithRedirects(downloadUrl, installerPath);
+
+      // Launch the installer silently (/S) and unref so it keeps running
+      const child = spawn(installerPath, ['/S'], {
+        detached: true,
+        stdio: 'ignore',
+      });
+      child.unref();
+
+      // Exit current electron process to allow in-place file replacement
+      setTimeout(() => {
+        app.quit();
+      }, 600);
+
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message || 'Failed to download and install update' };
+    }
   });
 
   ipcMain.handle('agent:check-prerequisites', async () => {

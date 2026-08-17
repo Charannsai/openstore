@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   reloadPath: () => ipcRenderer.invoke('agent:reload-path'),
   ensureRuntimesBatch: (runtimes) => ipcRenderer.invoke('agent:ensure-runtimes-batch', runtimes),
   checkAppUpdate: () => ipcRenderer.invoke('agent:check-app-update'),
+  downloadAndInstallAppUpdate: (downloadUrl) => ipcRenderer.invoke('agent:download-and-install-app-update', downloadUrl),
 
   // ─── Winget Package Manager Integration ────────────────────────────────
   checkWinget: () => ipcRenderer.invoke('agent:check-winget'),
@@ -61,6 +62,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('winget:progress', handler);
     return () => ipcRenderer.removeListener('winget:progress', handler);
+  },
+  onAppUpdateProgress: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('agent:app-update-progress', handler);
+    return () => ipcRenderer.removeListener('agent:app-update-progress', handler);
   },
 
   // ─── Window Controls ──────────────────────────────────────────────────

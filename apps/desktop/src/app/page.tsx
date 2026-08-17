@@ -40,6 +40,23 @@ export default function DesktopDashboard() {
     release_url?: string;
   } | null>(null);
   const [isUpdateDismissed, setIsUpdateDismissed] = useState(false);
+  const [isUpdatingToast, setIsUpdatingToast] = useState(false);
+  const [toastProgress, setToastProgress] = useState<number | null>(null);
+
+  const handleToastApplyUpdate = async () => {
+    if (!appUpdate?.download_url || !window.electronAPI?.downloadAndInstallAppUpdate) return;
+    setIsUpdatingToast(true);
+    try {
+      const unsub = window.electronAPI.onAppUpdateProgress?.((data) => {
+        setToastProgress(data.percent);
+      });
+      await window.electronAPI.downloadAndInstallAppUpdate(appUpdate.download_url);
+      if (unsub) unsub();
+    } catch {
+      setIsUpdatingToast(false);
+      setToastProgress(null);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -182,16 +199,17 @@ export default function DesktopDashboard() {
 
               <div className="flex items-center gap-2 pt-1">
                 <button
-                  onClick={() => {
-                    if (appUpdate.download_url && window.electronAPI?.launchApp) {
-                      window.electronAPI.launchApp({ url: appUpdate.download_url });
-                    } else if (appUpdate.release_url && window.electronAPI?.launchApp) {
-                      window.electronAPI.launchApp({ url: appUpdate.release_url });
-                    }
-                  }}
-                  className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  onClick={handleToastApplyUpdate}
+                  disabled={isUpdatingToast}
+                  className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-75"
                 >
-                  <span>Update</span>
+                  <span>
+                    {isUpdatingToast
+                      ? toastProgress !== null && toastProgress > 0
+                        ? `Updating (${toastProgress}%)...`
+                        : 'Restarting...'
+                      : 'Update'}
+                  </span>
                 </button>
                 <button
                   onClick={() => {
