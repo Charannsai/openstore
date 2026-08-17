@@ -32,6 +32,14 @@ export default function DesktopDashboard() {
   const { currentView, navigate } = useAppStore();
   const PageComponent = pageComponents[currentView] || HomePage;
   const isNativeElectron = typeof window !== 'undefined' && !!window.electronAPI;
+  const [appUpdate, setAppUpdate] = useState<{
+    has_update: boolean;
+    current_version: string;
+    latest_version?: string;
+    download_url?: string;
+    release_url?: string;
+  } | null>(null);
+  const [isUpdateDismissed, setIsUpdateDismissed] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -50,6 +58,17 @@ export default function DesktopDashboard() {
           .catch((err) => {
             console.error('Failed to sync installed apps registry:', err);
           });
+      }
+
+      if (window.electronAPI?.checkAppUpdate) {
+        window.electronAPI
+          .checkAppUpdate()
+          .then((info) => {
+            if (info?.has_update) {
+              setAppUpdate(info);
+            }
+          })
+          .catch(() => {});
       }
     }
   }, []);
@@ -131,6 +150,62 @@ export default function DesktopDashboard() {
             </AnimatePresence>
           </div>
         </main>
+
+        {/* Bottom-Right New Version Notification Popup */}
+        <AnimatePresence>
+          {appUpdate && appUpdate.has_update && !isUpdateDismissed && (
+            <motion.aside
+              aria-label="Update notification"
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="fixed bottom-6 right-6 z-50 w-80 p-4 rounded-2xl bg-white dark:bg-[#121215] border border-zinc-200 dark:border-white/10 shadow-2xl space-y-3 select-none"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="text-xs font-bold text-zinc-950 dark:text-white uppercase tracking-wider">
+                    New Version Available
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">
+                    OpenStore v{appUpdate.latest_version} is available.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsUpdateDismissed(true)}
+                  className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs p-1 cursor-pointer"
+                  title="Dismiss"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    if (appUpdate.download_url && window.electronAPI?.launchApp) {
+                      window.electronAPI.launchApp({ url: appUpdate.download_url });
+                    } else if (appUpdate.release_url && window.electronAPI?.launchApp) {
+                      window.electronAPI.launchApp({ url: appUpdate.release_url });
+                    }
+                  }}
+                  className="btn-primary px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <span>Update</span>
+                </button>
+                <button
+                  onClick={() => {
+                    navigate('updates');
+                    setIsUpdateDismissed(true);
+                  }}
+                  className="px-3 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white cursor-pointer"
+                >
+                  View Details
+                </button>
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
       </div>
     </ErrorBoundary>
   );

@@ -25,6 +25,14 @@ export default function SettingsPage() {
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
   const [resolvedDefaultDir, setResolvedDefaultDir] = useState<string>('Downloads/OpenStore');
   const [customPathInput, setCustomPathInput] = useState(settings.installDir);
+  const [updateCheckStatus, setUpdateCheckStatus] = useState<'idle' | 'checking' | 'up-to-date'>('idle');
+  const [updateInfo, setUpdateInfo] = useState<{
+    has_update: boolean;
+    current_version: string;
+    latest_version?: string;
+    download_url?: string;
+    release_url?: string;
+  } | null>(null);
 
   useState(() => {
     if (isElectron && window.electronAPI?.getDownloadsDir) {
@@ -39,6 +47,23 @@ export default function SettingsPage() {
       }).catch(() => {});
     }
   });
+
+  const handleCheckAppUpdateInSettings = async () => {
+    if (!isElectron || !window.electronAPI?.checkAppUpdate) return;
+    setUpdateCheckStatus('checking');
+    try {
+      const res = await window.electronAPI.checkAppUpdate();
+      if (res?.has_update) {
+        setUpdateInfo(res);
+        setUpdateCheckStatus('idle');
+      } else {
+        setUpdateCheckStatus('up-to-date');
+        setTimeout(() => setUpdateCheckStatus('idle'), 4000);
+      }
+    } catch {
+      setUpdateCheckStatus('idle');
+    }
+  };
 
   const handleSelectDirectory = async () => {
     if (typeof window !== 'undefined' && typeof window.electronAPI?.selectDirectory === 'function') {
@@ -376,7 +401,45 @@ export default function SettingsPage() {
                   />
                   <div>
                     <h2 className="text-sm font-bold text-zinc-950 dark:text-white">{BRAND.name} Desktop Agent</h2>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Version {BRAND.version} • Open Source Platform</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                        Version {BRAND.version}
+                      </p>
+                      {updateCheckStatus === 'checking' ? (
+                        <span className="text-[11px] text-zinc-400 font-medium flex items-center gap-1">
+                          Checking for updates...
+                        </span>
+                      ) : updateInfo?.has_update ? (
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-zinc-950 text-white dark:bg-white dark:text-zinc-950">
+                            v{updateInfo.latest_version} Available
+                          </span>
+                          <button
+                            onClick={() => {
+                              if (updateInfo.download_url && window.electronAPI?.launchApp) {
+                                window.electronAPI.launchApp({ url: updateInfo.download_url });
+                              } else if (updateInfo.release_url && window.electronAPI?.launchApp) {
+                                window.electronAPI.launchApp({ url: updateInfo.release_url });
+                              }
+                            }}
+                            className="btn-primary px-2.5 py-1 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                          >
+                            <span>Update OpenStore</span>
+                          </button>
+                        </div>
+                      ) : updateCheckStatus === 'up-to-date' ? (
+                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                          <CheckIcon className="w-3 h-3" /> Up to date
+                        </span>
+                      ) : (
+                        <button
+                          onClick={handleCheckAppUpdateInSettings}
+                          className="text-[11px] font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white underline underline-offset-2 cursor-pointer"
+                        >
+                          Check for new release
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
