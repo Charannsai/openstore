@@ -5,7 +5,7 @@ export const BRAND = {
   description:
     'Discover, install, auto-fix prerequisites via Winget, and run any GitHub repository or binary on your PC hands-free.',
   searchPlaceholder: 'Search repositories (e.g. excalidraw, ollama, affine) or paste GitHub URL...',
-  version: '0.2.2',
+  version: '0.2.3',
   githubUrl: 'https://github.com/Charannsai/openstore',
   releasesUrl: 'https://github.com/Charannsai/openstore/releases',
   latestReleaseUrl: 'https://github.com/Charannsai/openstore/releases/latest',
