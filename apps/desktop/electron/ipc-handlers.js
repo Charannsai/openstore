@@ -1112,16 +1112,29 @@ function registerAgentHandlers(ipcMain) {
               if (res.statusCode === 200) {
                 try {
                   const release = JSON.parse(data);
-                  const tag = (release.tag_name || '').replace(/^v/, '');
-                  const hasUpdate = compareVersions(tag, currentVersion) > 0;
-                  const exeAsset = (release.assets || []).find((a) => a.name.endsWith('.exe')) || {};
+                  const assets = release.assets || [];
+                  const exeAsset =
+                    assets.find((a) => {
+                      const name = (a.name || '').toLowerCase();
+                      return name.endsWith('.exe') && !name.includes('uninstall') && (name.includes('setup') || name.includes('installer'));
+                    }) ||
+                    assets.find((a) => {
+                      const name = (a.name || '').toLowerCase();
+                      return name.endsWith('.exe') && !name.includes('uninstall');
+                    }) ||
+                    {};
+
+                  const downloadUrl = exeAsset.browser_download_url && exeAsset.browser_download_url.endsWith('.exe')
+                    ? exeAsset.browser_download_url
+                    : '';
+
                   resolve({
-                    has_update: hasUpdate,
+                    has_update: hasUpdate && Boolean(downloadUrl),
                     current_version: currentVersion,
                     latest_version: tag || currentVersion,
                     release_name: release.name || `OpenStore v${tag}`,
                     release_url: release.html_url || 'https://github.com/Charannsai/openstore/releases',
-                    download_url: exeAsset.browser_download_url || release.html_url || '',
+                    download_url: downloadUrl,
                     release_notes: release.body || '',
                     published_at: release.published_at || new Date().toISOString(),
                   });
@@ -1210,8 +1223,8 @@ function registerAgentHandlers(ipcMain) {
     try {
       await downloadWithRedirects(downloadUrl, installerPath);
 
-      // Launch the installer silently (/S) and unref so it keeps running
-      const child = spawn(installerPath, ['/S'], {
+      // Launch the setup installer binary cleanly (detached)
+      const child = spawn(installerPath, [], {
         detached: true,
         stdio: 'ignore',
       });
@@ -1220,7 +1233,7 @@ function registerAgentHandlers(ipcMain) {
       // Exit current electron process to allow in-place file replacement
       setTimeout(() => {
         app.quit();
-      }, 600);
+      }, 1000);
 
       return { success: true };
     } catch (err) {

@@ -60,8 +60,9 @@
       "icon": "public/icon.png"
     },
     "nsis": {
-      "oneClick": false,
+      "oneClick": true,
       "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
       "differentialPackage": false
     },
     "mac": {
