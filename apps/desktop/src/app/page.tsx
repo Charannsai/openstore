@@ -12,6 +12,7 @@ import UpdatesPage from '@/components/pages/UpdatesPage';
 import ActivityPage from '@/components/pages/ActivityPage';
 import SettingsPage from '@/components/pages/SettingsPage';
 import CategoryPage from '@/components/pages/CategoryPage';
+import OnboardingTour from '@/components/ui/OnboardingTour';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -87,6 +88,14 @@ export default function DesktopDashboard() {
           })
           .catch(() => {});
       }
+
+      // Check if user is opening for the first time
+      const tourCompleted = localStorage.getItem('openstore-tour-completed');
+      if (!tourCompleted) {
+        setTimeout(() => {
+          useAppStore.getState().startTour();
+        }, 400);
+      }
     }
   }, []);
 
@@ -151,6 +160,7 @@ export default function DesktopDashboard() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen relative select-none bg-zinc-50 dark:bg-[#0a0a0c]">
+        <OnboardingTour />
         <TopNav />
         <main className="pt-16 pb-12">
           <div className="max-w-[1280px] mx-auto px-6 py-4">

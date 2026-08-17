@@ -88,6 +88,17 @@ interface AppStoreState {
   isSidebarCollapsed: boolean;
   toggleSidebar: () => void;
 
+  // Onboarding Tour
+  hasCompletedTour: boolean;
+  isTourActive: boolean;
+  tourStep: number;
+  startTour: () => void;
+  nextTourStep: () => void;
+  prevTourStep: () => void;
+  skipTour: () => void;
+  completeTour: () => void;
+  resetTour: () => void;
+
   // Actions
   navigate: (view: AppStoreState['currentView'], params?: { slug?: string; categoryId?: string }) => void;
   setSearchQuery: (query: string) => void;
@@ -150,6 +161,72 @@ export const useAppStore = create<AppStoreState>((set) => ({
   theme: 'dark',
   isSidebarCollapsed: false,
   toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+
+  // ─── Onboarding Tour ──────────────────────────────────────────────────────
+  hasCompletedTour: typeof window !== 'undefined' ? Boolean(localStorage.getItem('openstore-tour-completed')) : false,
+  isTourActive: false,
+  tourStep: 0,
+
+  startTour: () =>
+    set((state) => {
+      state.navigate('settings');
+      return { isTourActive: true, tourStep: 0 };
+    }),
+
+  nextTourStep: () =>
+    set((state) => {
+      const nextStep = state.tourStep + 1;
+      if (nextStep === 1) {
+        // Step 1 -> Step 2: Highlight Explore Tab
+        state.navigate('settings');
+      } else if (nextStep === 2) {
+        // Step 2 -> Step 3: Search Repos
+        state.navigate('search');
+      } else if (nextStep >= 5) {
+        // Completed
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('openstore-tour-completed', 'true');
+        }
+        return { isTourActive: false, hasCompletedTour: true, tourStep: 0 };
+      }
+      return { tourStep: nextStep };
+    }),
+
+  prevTourStep: () =>
+    set((state) => {
+      const prevStep = Math.max(0, state.tourStep - 1);
+      if (prevStep === 0) {
+        state.navigate('settings');
+      } else if (prevStep === 1 || prevStep === 2 || prevStep === 3) {
+        state.navigate('search');
+      }
+      return { tourStep: prevStep };
+    }),
+
+  skipTour: () =>
+    set(() => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('openstore-tour-completed', 'true');
+      }
+      return { isTourActive: false, hasCompletedTour: true };
+    }),
+
+  completeTour: () =>
+    set(() => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('openstore-tour-completed', 'true');
+      }
+      return { isTourActive: false, hasCompletedTour: true, tourStep: 0 };
+    }),
+
+  resetTour: () =>
+    set((state) => {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('openstore-tour-completed');
+      }
+      state.navigate('settings');
+      return { hasCompletedTour: false, isTourActive: true, tourStep: 0 };
+    }),
 
   // ─── Actions ─────────────────────────────────────────────────────────────
   setTheme: (theme) => {

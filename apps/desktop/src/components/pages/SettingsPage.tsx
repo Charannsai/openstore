@@ -19,8 +19,8 @@ import {
 type SettingsTab = 'appearance' | 'general' | 'privacy' | 'about';
 
 export default function SettingsPage() {
-  const { theme, setTheme, settings, updateSetting } = useAppStore();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
+  const { theme, setTheme, settings, updateSetting, resetTour } = useAppStore();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const [isEditingPath, setIsEditingPath] = useState(false);
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
   const [resolvedDefaultDir, setResolvedDefaultDir] = useState<string>('Downloads/OpenStore');
@@ -124,8 +124,8 @@ export default function SettingsPage() {
   };
 
   const tabs: { id: SettingsTab; label: string }[] = [
-    { id: 'appearance', label: 'Appearance' },
     { id: 'general', label: 'General & Storage' },
+    { id: 'appearance', label: 'Appearance' },
     { id: 'privacy', label: 'Privacy & Security' },
     { id: 'about', label: 'About OpenStore' },
   ];
@@ -260,7 +260,7 @@ export default function SettingsPage() {
                 <h2 className="text-xs font-bold text-zinc-950 dark:text-white uppercase tracking-wider mb-2">Workspace & Updates</h2>
                 <div className="divide-y divide-zinc-100 dark:divide-white/5">
                   {/* Local Workspace Directory Selector */}
-                  <div className="py-3.5 space-y-2.5">
+                  <div className="py-3.5 space-y-2.5" data-tour="settings-storage-path">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-bold text-zinc-950 dark:text-zinc-100">Local Workspace Directory</p>
@@ -333,6 +333,20 @@ export default function SettingsPage() {
                     checked={settings.updateNotifications}
                     onToggle={(checked) => updateSetting('updateNotifications', checked)}
                   />
+                  <div className="flex items-center justify-between py-3.5">
+                    <div>
+                      <p className="text-xs font-bold text-zinc-950 dark:text-zinc-100">Interactive Guided Tour</p>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 font-normal leading-relaxed">
+                        Replay the 5-step interactive onboarding tour to highlight core desktop app features
+                      </p>
+                    </div>
+                    <button
+                      onClick={resetTour}
+                      className="px-3 py-1.5 rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all cursor-pointer shadow-xs flex-shrink-0"
+                    >
+                      Re-watch Tour
+                    </button>
+                  </div>
                 </div>
               </div>
 

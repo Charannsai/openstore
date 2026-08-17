@@ -33,6 +33,7 @@ export default function AppCard({ app, index = 0 }: AppCardProps) {
 
   return (
     <motion.button
+      data-tour={index === 0 ? 'app-card-first' : undefined}
       initial={{ opacity: 0, scale: 0.97, filter: 'blur(6px)' }}
       animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
       transition={{ duration: 0.22, delay: index * 0.03 }}

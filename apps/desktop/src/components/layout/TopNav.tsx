@@ -64,10 +64,12 @@ export default function TopNav() {
           <nav className="flex items-center gap-1">
             {navItems.map((item) => {
               const isActive = currentView === item.id;
+              const dataTourAttr = item.id === 'settings' ? 'nav-settings' : item.id === 'search' ? 'nav-explore' : undefined;
 
               return (
                 <button
                   key={item.id}
+                  data-tour={dataTourAttr}
                   onClick={() => navigate(item.id)}
                   className={`px-2.5 py-1 text-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
                     isActive

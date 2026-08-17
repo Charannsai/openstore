@@ -75,7 +75,7 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="relative z-50 w-full max-w-2xl mx-auto">
+    <div className="relative z-50 w-full max-w-2xl mx-auto" data-tour="explore-search">
       <form onSubmit={handleSubmit}>
         <div
           className={`
